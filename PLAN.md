@@ -123,7 +123,11 @@ the IWER emulator with real hand/controller input:
    3,40 -> "un euro soixante" + 1 EUR/50c/10c coins.
 3. Voice (`src/voice/*`, `server/stt-handler.mjs`): push-to-talk (mic button or palm up),
    pronunciation score vs the nearest suggested reply, voice commands, "voila cinq euros" pays.
-   **Needs OPENAI_API_KEY or DEEPGRAM_API_KEY for Quest** (Web Speech fallback on desktop Chrome).
+   Engines: server key (optional) > desktop Web Speech > **on-device Whisper-tiny in a worker**
+   (`src/voice/local-voice-worker.ts`, no key, used by Quest Browser). Madame Lune speaks with the
+   browser's French voice, or an on-device MMS-TTS French voice (fp32, measured ~3x faster than
+   int8 under WASM) when there is none. Verified in headless Chromium against production:
+   synthesized French -> Whisper round trip, ~0.8-1.5 s per phrase on a Mac.
 4. Madame Lune rig + NpcSystem: looks at you / what you look at, lip flap, blinks, emotes, points.
 5. Live AI verified with the key: feminine agreement, "vous", amounts copied from the engine,
    warm-up ping, instant scripted greeting, 1.8 to 2.5 s warm turns.
@@ -136,9 +140,14 @@ the IWER emulator with real hand/controller input:
 10. Mixed reality (`src/world/mixed-reality-system.ts`, passthrough, table height) + synthesized
     spatial audio (`src/audio/audio-system.ts`).
 
+Deployed (Nov 12): https://lingo-pal-vr.vercel.app (Vercel team talk-to-my-hand, project
+lingo-pal-vr, ANTHROPIC_API_KEY set for all environments). Verified: page 200, COOP/COEP headers,
+/api/agent live turn ~2 s, app renders with no console errors. Paste-ready Devpost text and the
+video shot list are in SUBMISSION.md; licenses in CREDITS.md (MMS-TTS is CC-BY-NC 4.0).
+
 Not yet verified (needs a real Quest): fps, hand-joint thresholds (gestures.ts TUNING),
-mic in Quest Browser, passthrough mode, Meta VR Glasses fit.
-Next: deploy to Vercel, Quest device pass, demo video, Devpost form.
+mic + on-device voice speed in Quest Browser, passthrough mode, Meta VR Glasses fit.
+Next: Quest device pass, demo video, Devpost form.
 
 ---
 
