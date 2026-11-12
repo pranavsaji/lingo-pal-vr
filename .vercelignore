@@ -1,0 +1,10 @@
+# Never upload secrets; Vercel environment variables hold the keys.
+.env
+.env.*
+!.env.example
+node_modules
+dist
+.iwsdk
+.tmp
+artifacts
+*.log

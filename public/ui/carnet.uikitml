@@ -1,0 +1,181 @@
+<!--
+  Mon Carnet: the learner's word book. Mastery dots come from spaced repetition.
+  Pinch a word to hear it. "Revision" starts today's review of due words.
+  Swaps into the lesson panel's slot (see src/ui/panels-system.ts).
+-->
+<style>
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Regular.ttf);
+    font-weight: normal;
+  }
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Bold.ttf);
+    font-weight: bold;
+  }
+
+  .root {
+    flex-direction: column;
+    width: 560px;
+    font-family: poppins;
+  }
+
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 22px;
+    padding-right: 22px;
+    background-color: #2a9d8f;
+  }
+
+  .brand {
+    color: #fafaf7;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .count {
+    color: #fff3c4;
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  .grid {
+    flex-direction: row;
+    gap: 10px;
+    padding-top: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .col {
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 6px;
+  }
+
+  .word {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    background-color: #2b2d33;
+    cursor: pointer;
+  }
+
+  .word:hover {
+    background-color: #3d5a80;
+  }
+
+  .labels {
+    flex-direction: column;
+  }
+
+  .fr {
+    color: #fafaf7;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .en {
+    color: #b8bcc6;
+    font-size: 12px;
+  }
+
+  .dots {
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: #4a4c55;
+  }
+
+  .hint {
+    color: #3a3b40;
+    font-size: 14px;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .hint:dark {
+    color: #9fd3c7;
+  }
+
+  .actions {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 10px;
+    padding-bottom: 18px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .action {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 22px;
+    padding-right: 22px;
+    border-radius: 18px;
+    background-color: #e63946;
+    cursor: pointer;
+  }
+
+  .action:hover {
+    background-color: #ff5a67;
+  }
+
+  .action-text {
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: bold;
+  }
+</style>
+<Panel class="root">
+  <div class="header">
+    <span class="brand">MON CARNET</span>
+    <span class="count" id="carnet-count">0 / 12 mots</span>
+  </div>
+  <div class="grid">
+    <div class="col">
+      <div class="word" id="w-0"><div class="labels"><span class="fr" id="w-0-fr">le croissant</span><span class="en" id="w-0-en">the croissant</span></div><div class="dots"><div class="dot" id="w-0-d0"></div><div class="dot" id="w-0-d1"></div><div class="dot" id="w-0-d2"></div><div class="dot" id="w-0-d3"></div></div></div>
+      <div class="word" id="w-1"><div class="labels"><span class="fr" id="w-1-fr">le café</span><span class="en" id="w-1-en">the coffee</span></div><div class="dots"><div class="dot" id="w-1-d0"></div><div class="dot" id="w-1-d1"></div><div class="dot" id="w-1-d2"></div><div class="dot" id="w-1-d3"></div></div></div>
+      <div class="word" id="w-2"><div class="labels"><span class="fr" id="w-2-fr">la baguette</span><span class="en" id="w-2-en">the baguette</span></div><div class="dots"><div class="dot" id="w-2-d0"></div><div class="dot" id="w-2-d1"></div><div class="dot" id="w-2-d2"></div><div class="dot" id="w-2-d3"></div></div></div>
+      <div class="word" id="w-3"><div class="labels"><span class="fr" id="w-3-fr">la pomme</span><span class="en" id="w-3-en">the apple</span></div><div class="dots"><div class="dot" id="w-3-d0"></div><div class="dot" id="w-3-d1"></div><div class="dot" id="w-3-d2"></div><div class="dot" id="w-3-d3"></div></div></div>
+      <div class="word" id="w-4"><div class="labels"><span class="fr" id="w-4-fr">l'orange</span><span class="en" id="w-4-en">the orange</span></div><div class="dots"><div class="dot" id="w-4-d0"></div><div class="dot" id="w-4-d1"></div><div class="dot" id="w-4-d2"></div><div class="dot" id="w-4-d3"></div></div></div>
+      <div class="word" id="w-5"><div class="labels"><span class="fr" id="w-5-fr">le fromage</span><span class="en" id="w-5-en">the cheese</span></div><div class="dots"><div class="dot" id="w-5-d0"></div><div class="dot" id="w-5-d1"></div><div class="dot" id="w-5-d2"></div><div class="dot" id="w-5-d3"></div></div></div>
+    </div>
+    <div class="col">
+      <div class="word" id="w-6"><div class="labels"><span class="fr" id="w-6-fr">la bouteille d'eau</span><span class="en" id="w-6-en">the bottle of water</span></div><div class="dots"><div class="dot" id="w-6-d0"></div><div class="dot" id="w-6-d1"></div><div class="dot" id="w-6-d2"></div><div class="dot" id="w-6-d3"></div></div></div>
+      <div class="word" id="w-7"><div class="labels"><span class="fr" id="w-7-fr">l'assiette</span><span class="en" id="w-7-en">the plate</span></div><div class="dots"><div class="dot" id="w-7-d0"></div><div class="dot" id="w-7-d1"></div><div class="dot" id="w-7-d2"></div><div class="dot" id="w-7-d3"></div></div></div>
+      <div class="word" id="w-8"><div class="labels"><span class="fr" id="w-8-fr">le gâteau</span><span class="en" id="w-8-en">the cake</span></div><div class="dots"><div class="dot" id="w-8-d0"></div><div class="dot" id="w-8-d1"></div><div class="dot" id="w-8-d2"></div><div class="dot" id="w-8-d3"></div></div></div>
+      <div class="word" id="w-9"><div class="labels"><span class="fr" id="w-9-fr">le verre</span><span class="en" id="w-9-en">the glass</span></div><div class="dots"><div class="dot" id="w-9-d0"></div><div class="dot" id="w-9-d1"></div><div class="dot" id="w-9-d2"></div><div class="dot" id="w-9-d3"></div></div></div>
+      <div class="word" id="w-10"><div class="labels"><span class="fr" id="w-10-fr">la carte</span><span class="en" id="w-10-en">the menu</span></div><div class="dots"><div class="dot" id="w-10-d0"></div><div class="dot" id="w-10-d1"></div><div class="dot" id="w-10-d2"></div><div class="dot" id="w-10-d3"></div></div></div>
+      <div class="word" id="w-11"><div class="labels"><span class="fr" id="w-11-fr">la fleur</span><span class="en" id="w-11-en">the flower</span></div><div class="dots"><div class="dot" id="w-11-d0"></div><div class="dot" id="w-11-d1"></div><div class="dot" id="w-11-d2"></div><div class="dot" id="w-11-d3"></div></div></div>
+    </div>
+  </div>
+  <span class="hint" id="carnet-hint">Pinch a word to hear it. Dots grow each time you remember it on a later day.</span>
+  <div class="actions">
+    <div class="action" id="review-button" style="background-color: #2a9d8f">
+      <span class="action-text" id="review-label">Révision du jour</span>
+    </div>
+    <div class="action" id="carnet-back" style="background-color: #6c757d">
+      <span class="action-text">Retour</span>
+    </div>
+  </div>
+</Panel>

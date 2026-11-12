@@ -1,0 +1,145 @@
+/**
+ * Learner profile persistence. localStorage today; the shape is plain JSON so
+ * a server sync can be added later. Storage can throw (private mode, blocked
+ * site data), so every access is defensive and the app works without it.
+ */
+
+import type { SrsCard } from './srs.js';
+
+export interface Settings {
+  highContrast: boolean;
+  textSize: 's' | 'm' | 'l';
+  slowSpeech: boolean;
+  subtitles: boolean;
+  leftHanded: boolean;
+  gazeDwell: boolean;
+  reduceMotion: boolean;
+  mixedReality: boolean;
+}
+
+export interface Profile {
+  version: 2;
+  name: string;
+  xp: number;
+  streakDays: number;
+  lastPlayedDay: string;
+  sessions: number;
+  bestScore: number;
+  wordsSeen: string[];
+  srs: Record<string, SrsCard>;
+  memories: Record<string, string>;
+  unlocks: string[];
+  onboarded: boolean;
+  lastVisit: string;
+  stats: { orders: number; payments: number; phrases: number; pronunciationTotal: number; pronunciationCount: number };
+  settings: Settings;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  highContrast: false,
+  textSize: 'm',
+  slowSpeech: false,
+  subtitles: true,
+  leftHanded: false,
+  gazeDwell: false,
+  reduceMotion: false,
+  mixedReality: false,
+};
+
+export function defaultProfile(): Profile {
+  return {
+    version: 2,
+    name: '',
+    xp: 0,
+    streakDays: 0,
+    lastPlayedDay: '',
+    sessions: 0,
+    bestScore: 0,
+    wordsSeen: [],
+    srs: {},
+    memories: {},
+    unlocks: [],
+    onboarded: false,
+    lastVisit: '',
+    stats: { orders: 0, payments: 0, phrases: 0, pronunciationTotal: 0, pronunciationCount: 0 },
+    settings: { ...DEFAULT_SETTINGS },
+  };
+}
+
+export interface KV {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+export const PROFILE_KEY = 'lingo-pal-vr.profile.v2';
+const LEGACY_KEY = 'lingo-pal-vr.progress.v1';
+
+/**
+ * Browser storage. `?reset` in the URL starts a brand-new learner (first-launch
+ * tutorial again): handy for demos and judging a fresh first five minutes.
+ */
+export function browserKV(): KV | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const kv = window.localStorage;
+    if (new URLSearchParams(window.location.search).has('reset')) {
+      kv.removeItem(PROFILE_KEY);
+      kv.removeItem(LEGACY_KEY);
+    }
+    return kv;
+  } catch {
+    return null;
+  }
+}
+
+function safeParse(raw: string | null): unknown {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/** Merge stored JSON over defaults so new fields always exist. */
+export function loadProfile(kv: KV | null): Profile {
+  const base = defaultProfile();
+  if (!kv) return base;
+  try {
+    const stored = safeParse(kv.getItem(PROFILE_KEY)) as Partial<Profile> | null;
+    if (stored && typeof stored === 'object') {
+      return {
+        ...base,
+        ...stored,
+        version: 2,
+        stats: { ...base.stats, ...(stored.stats ?? {}) },
+        settings: { ...base.settings, ...(stored.settings ?? {}) },
+        srs: { ...(stored.srs ?? {}) },
+        memories: { ...(stored.memories ?? {}) },
+      };
+    }
+    // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).
+    const legacy = safeParse(kv.getItem(LEGACY_KEY)) as Record<string, unknown> | null;
+    if (legacy && typeof legacy === 'object') {
+      return {
+        ...base,
+        bestScore: Number(legacy.bestScore) || 0,
+        wordsSeen: Array.isArray(legacy.wordsHeard) ? (legacy.wordsHeard as unknown[]).filter((w): w is string => typeof w === 'string') : [],
+        lastPlayedDay: typeof legacy.lastPlayedDay === 'string' ? legacy.lastPlayedDay : '',
+        streakDays: Number(legacy.streakDays) || 0,
+      };
+    }
+  } catch {
+    // fall through to defaults
+  }
+  return base;
+}
+
+export function saveProfile(kv: KV | null, p: Profile): void {
+  if (!kv) return;
+  try {
+    kv.setItem(PROFILE_KEY, JSON.stringify(p));
+  } catch {
+    // Progress is a convenience; never break the session over it.
+  }
+}

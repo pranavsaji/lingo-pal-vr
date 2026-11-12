@@ -1,0 +1,197 @@
+<!--
+  Lesson panel: shows the word you just pinched, the current mission and your score.
+  Poppins is bundled because the default font has no French accents.
+-->
+<style>
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Regular.ttf);
+    font-weight: normal;
+  }
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Bold.ttf);
+    font-weight: bold;
+  }
+
+  .root {
+    flex-direction: column;
+    width: 560px;
+    font-family: poppins;
+  }
+
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 24px;
+    padding-right: 24px;
+    background-color: #1d3557;
+  }
+
+  .brand {
+    color: #fafaf7;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .score {
+    color: #f5d90a;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .content {
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 18px;
+    padding-bottom: 8px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .eyebrow {
+    color: #6b5a00;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .eyebrow:dark {
+    color: #f5d90a;
+  }
+
+  .word {
+    color: #1c1d20;
+    font-size: 44px;
+    font-weight: bold;
+  }
+
+  .word:dark {
+    color: #fafaf7;
+  }
+
+  .english {
+    color: #3a3b40;
+    font-size: 22px;
+  }
+
+  .english:dark {
+    color: #c9ccd3;
+  }
+
+  .tip {
+    color: #3a3b40;
+    font-size: 18px;
+  }
+
+  .tip:dark {
+    color: #9fd3c7;
+  }
+
+  .actions {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 10px;
+    padding-bottom: 22px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .action {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 22px;
+    padding-right: 22px;
+    border-radius: 18px;
+    background-color: #e63946;
+    cursor: pointer;
+  }
+
+  .action:hover {
+    background-color: #ff5a67;
+  }
+
+  .action-text {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .xp {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .xp-track {
+    width: 400px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #4a4c55;
+  }
+
+  .xp-fill {
+    width: 0px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #f5d90a;
+  }
+
+  .xp-label {
+    color: #3a3b40;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .xp-label:dark {
+    color: #f5d90a;
+  }
+</style>
+<Panel class="root">
+  <div class="header" id="header">
+    <span class="brand">LINGO PAL CAFE</span>
+    <span class="score" id="score">0 pts</span>
+  </div>
+  <div class="xp">
+    <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+    <span class="xp-label" id="xp-label">A1.2</span>
+  </div>
+  <div class="content">
+    <span class="eyebrow" id="eyebrow">BIENVENUE ! WELCOME !</span>
+    <span class="word" id="word">Pincez un objet</span>
+    <span class="english" id="english">Pinch any object on the counter to hear its French name.</span>
+    <span class="tip" id="tip">Tip: point your hand at it, then touch thumb and index finger.</span>
+  </div>
+  <div class="actions">
+    <div class="action" id="start-button">
+      <span class="action-text" id="start-label">Commencer la mission</span>
+    </div>
+    <div class="action" id="repeat-button" style="background-color: #457b9d">
+      <span class="action-text">Répéter</span>
+    </div>
+  </div>
+  <div class="actions" id="menu-row">
+    <div class="action" id="carnet-button" style="background-color: #2a9d8f">
+      <span class="action-text">Mon Carnet</span>
+    </div>
+    <div class="action" id="settings-button" style="background-color: #6c4ab6">
+      <span class="action-text">Réglages</span>
+    </div>
+  </div>
+  <div class="actions" id="xr-row">
+    <div class="action" id="xr-button" style="background-color: #2a9d8f">
+      <span class="action-text" id="xr-label">Enter VR</span>
+    </div>
+    <div class="action" id="exit-button" style="display: none; background-color: #6c757d">
+      <span class="action-text">Exit VR</span>
+    </div>
+  </div>
+</Panel>

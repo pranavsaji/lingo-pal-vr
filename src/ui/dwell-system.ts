@@ -1,0 +1,106 @@
+/**
+ * Eyes-only navigation (Accessibility Forward): when "Selection du regard" is
+ * on, the target nearest the center of the learner's view (within its cone)
+ * fills a ring for 1 second and is then activated. Works without eye tracking
+ * (head gaze) and without hands or controllers. Zero per-frame allocations.
+ */
+
+import { createSystem, DoubleSide, Mesh, MeshBasicMaterial, RingGeometry, CircleGeometry, Vector3 } from '@iwsdk/core';
+import { events } from '../game-state.js';
+import { store } from '../state/store.js';
+import { dwellTargets, type DwellTarget } from './dwell.js';
+
+const DWELL_SECONDS = 1.0;
+const COOLDOWN_SECONDS = 0.8;
+
+export class DwellSystem extends createSystem({}) {
+  private enabled = false;
+  private candidate: DwellTarget | null = null;
+  private since = 0;
+  private cooldownUntil = 0;
+  private t = 0;
+  private ring!: Mesh;
+  private fill!: Mesh;
+  private head!: Vector3;
+  private fwd!: Vector3;
+  private to!: Vector3;
+
+  init(): void {
+    this.head = new Vector3();
+    this.fwd = new Vector3();
+    this.to = new Vector3();
+    const mat = new MeshBasicMaterial({ color: 0xf5d90a, transparent: true, opacity: 0.95, depthTest: false, side: DoubleSide });
+    this.ring = new Mesh(new RingGeometry(0.016, 0.021, 32), mat);
+    this.fill = new Mesh(new CircleGeometry(0.016, 32), new MeshBasicMaterial({ color: 0xf5d90a, transparent: true, opacity: 0.45, depthTest: false, side: DoubleSide }));
+    this.ring.renderOrder = 1000;
+    this.fill.renderOrder = 1000;
+    this.ring.add(this.fill);
+    this.ring.visible = false;
+    this.ring.name = 'Dwell Reticle';
+    this.world.createTransformEntity(this.ring);
+    this.enabled = store.profile.settings.gazeDwell;
+    this.cleanupFuncs.push(
+      events.settings.on((s) => {
+        this.enabled = s.gazeDwell;
+        if (!s.gazeDwell) this.ring.visible = false;
+      }),
+    );
+  }
+
+  update(delta: number): void {
+    this.t += delta;
+    if (!this.enabled) return;
+    const headObj = this.player.head;
+    headObj.getWorldPosition(this.head);
+    this.fwd.set(0, 0, -1).transformDirection(headObj.matrixWorld);
+
+    // Nearest target to the view center, inside its cone, and visible.
+    let best: DwellTarget | null = null;
+    let bestAngle = Infinity;
+    for (const target of dwellTargets) {
+      if (!isShown(target.obj)) continue;
+      target.obj.getWorldPosition(this.to);
+      this.to.sub(this.head);
+      const dist = this.to.length();
+      if (dist < 0.1 || dist > 6) continue;
+      const angle = (Math.acos(Math.min(1, this.to.dot(this.fwd) / dist)) * 180) / Math.PI;
+      if (angle < target.coneDeg && angle < bestAngle) {
+        best = target;
+        bestAngle = angle;
+      }
+    }
+
+    if (best !== this.candidate) {
+      this.candidate = best;
+      this.since = this.t;
+    }
+    if (!best || this.t < this.cooldownUntil) {
+      this.ring.visible = false;
+      return;
+    }
+
+    const p = Math.min(1, (this.t - this.since) / DWELL_SECONDS);
+    best.obj.getWorldPosition(this.to);
+    // Reticle slightly in front of the target, facing the learner.
+    this.ring.position.copy(this.to).lerp(this.head, 0.04);
+    this.ring.lookAt(this.head);
+    this.fill.scale.setScalar(Math.max(0.01, p));
+    this.ring.visible = true;
+    if (p >= 1) {
+      this.cooldownUntil = this.t + COOLDOWN_SECONDS;
+      this.candidate = null;
+      this.ring.visible = false;
+      best.fn();
+    }
+  }
+}
+
+/** False when the object or any ancestor is hidden. */
+function isShown(o: { visible: boolean; parent: unknown }): boolean {
+  let cur: { visible: boolean; parent: unknown } | null = o;
+  while (cur) {
+    if (!cur.visible) return false;
+    cur = cur.parent as typeof cur;
+  }
+  return true;
+}

@@ -1,0 +1,76 @@
+/**
+ * Event bus shared between systems. No World, no DOM rendering.
+ * Persistent learner state lives in src/state/store.ts.
+ */
+
+import type { AgentTurn, ReplyOption } from './agent/protocol.js';
+import type { Effect, OrderState } from './agent/tools.js';
+import type { Profile, Settings } from './state/profile.js';
+
+type Listener<T> = (value: T) => void;
+
+export class Emitter<T> {
+  private listeners = new Set<Listener<T>>();
+  on(fn: Listener<T>): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+  emit(value: T): void {
+    for (const fn of this.listeners) fn(value);
+  }
+}
+
+export const events = {
+  /** A vocabulary object was pinched (VOCAB id). */
+  itemPicked: new Emitter<string>(),
+  /** Points were awarded by the lesson or the agent (amount). */
+  points: new Emitter<number>(),
+  /** The current mission target changed (VOCAB id, or '' when none). */
+  missionTarget: new Emitter<string>(),
+  /** XP gained; levelUp is the new level id when one was reached. */
+  xp: new Emitter<{ amount: number; total: number; levelUp: string | null }>(),
+  /** Unlock id (decor, scenario) just earned. */
+  unlocked: new Emitter<string>(),
+  /** Profile saved (any change). */
+  profile: new Emitter<Profile>(),
+  /** Accessibility settings changed. */
+  settings: new Emitter<Settings>(),
+  /** Order state changed (items, tray, phase). */
+  order: new Emitter<OrderState>(),
+  /** Validated agent effects for the scene to play (spawn food, coins, emotes). */
+  effects: new Emitter<Effect[]>(),
+  /** Stable finger count changed (0 to 10). */
+  fingers: new Emitter<number>(),
+  /** Discrete hand gestures. */
+  gesture: new Emitter<'thumbs_up' | 'thumbs_down' | 'wave' | 'palm_up_start' | 'palm_up_end'>(),
+  /** The learner ordered without speaking (fingers + gaze); text is the phrase said for them. */
+  voiceOrder: new Emitter<string>(),
+  /** Show a panel in the home slot (voice command or button). */
+  openPanel: new Emitter<'home' | 'carnet' | 'settings'>(),
+  /** Start a spaced-repetition review of these word ids. */
+  review: new Emitter<string[]>(),
+  /** Replay the hand tutorial. */
+  tutorial: new Emitter<void>(),
+  /** Learner speech result: transcript and pronunciation feedback (null when not scored). */
+  heard: new Emitter<{ text: string; score: number | null; target: string | null; missed: string[] }>(),
+  /** Listening state for the mic UI. */
+  listening: new Emitter<boolean>(),
+  /** Every agent turn (from any input: pinch, voice, fingers, gestures, payment). */
+  turn: new Emitter<AgentTurn>(),
+  /** A payoff moment (confetti + fanfare). */
+  celebrate: new Emitter<void>(),
+  /** A coin or note landed on the payment tray (cents). */
+  coinDropped: new Emitter<number>(),
+  /** A spoken line for subtitles: who, French, English. */
+  subtitle: new Emitter<{ who: 'lune' | 'learner'; fr: string; en: string }>(),
+};
+
+/** Small shared UI state read by several systems (no rendering here). */
+export const appState = {
+  /** A lesson mission or review is running: pinches are answers, not "show" events. */
+  lessonActive: false,
+  /** The replies currently suggested on the chat panel (pronunciation targets). */
+  replies: [] as ReplyOption[],
+  /** Madame Lune's last line, for "repeter". */
+  lastLuneLine: '',
+};

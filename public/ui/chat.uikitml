@@ -1,0 +1,211 @@
+<!--
+  Shopkeeper chat: Madame Lune speaks French, you answer by pinching a reply.
+  Pinching an object while chatting "shows" it to her.
+-->
+<style>
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Regular.ttf);
+    font-weight: normal;
+  }
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Bold.ttf);
+    font-weight: bold;
+  }
+
+  .root {
+    flex-direction: column;
+    width: 520px;
+    font-family: poppins;
+  }
+
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 22px;
+    padding-right: 22px;
+    background-color: #7a2e2e;
+  }
+
+  .name {
+    color: #fafaf7;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .status {
+    color: #ffd6a5;
+    font-size: 15px;
+  }
+
+  .content {
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 16px;
+    padding-bottom: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .npc {
+    color: #1c1d20;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  .npc:dark {
+    color: #fafaf7;
+  }
+
+  .npc-en {
+    color: #3a3b40;
+    font-size: 18px;
+  }
+
+  .npc-en:dark {
+    color: #c9ccd3;
+  }
+
+  .label {
+    color: #6b5a00;
+    font-size: 14px;
+    font-weight: bold;
+    padding-top: 8px;
+  }
+
+  .label:dark {
+    color: #f5d90a;
+  }
+
+  .options {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 6px;
+    padding-bottom: 20px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .option {
+    flex-direction: column;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: #4a4c55;
+    background-color: #2b2d33;
+    cursor: pointer;
+  }
+
+  .option:hover {
+    background-color: #3d5a80;
+    border-color: #98c1d9;
+  }
+
+  .option-fr {
+    color: #fafaf7;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .option-en {
+    color: #b8bcc6;
+    font-size: 15px;
+  }
+
+  .voice {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 18px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .mic {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 18px;
+    padding-right: 18px;
+    border-radius: 18px;
+    background-color: #e63946;
+    cursor: pointer;
+  }
+
+  .mic:hover {
+    background-color: #ff5a67;
+  }
+
+  .mic-text {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .heard-box {
+    flex-direction: column;
+    flex-shrink: 1;
+  }
+
+  .heard {
+    color: #1c1d20;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .heard:dark {
+    color: #fafaf7;
+  }
+
+  .heard-detail {
+    color: #3a3b40;
+    font-size: 13px;
+  }
+
+  .heard-detail:dark {
+    color: #9fd3c7;
+  }
+</style>
+<Panel class="root">
+  <div class="header">
+    <span class="name">Madame Lune, la serveuse</span>
+    <span class="status" id="status">en ligne</span>
+  </div>
+  <div class="content">
+    <span class="npc" id="npc-line">Bonjour ! Bienvenue au café.</span>
+    <span class="npc-en" id="npc-en">Hello! Welcome to the cafe.</span>
+    <span class="label" id="label">PINCEZ UNE RÉPONSE / PINCH A REPLY</span>
+  </div>
+  <div class="options">
+    <div class="option" id="opt-0">
+      <span class="option-fr" id="opt-0-fr">Bonjour, madame !</span>
+      <span class="option-en" id="opt-0-en">Hello, ma'am!</span>
+    </div>
+    <div class="option" id="opt-1">
+      <span class="option-fr" id="opt-1-fr">Un café, s'il vous plaît.</span>
+      <span class="option-en" id="opt-1-en">A coffee, please.</span>
+    </div>
+    <div class="option" id="opt-2">
+      <span class="option-fr" id="opt-2-fr">Je voudrais un croissant.</span>
+      <span class="option-en" id="opt-2-en">I would like a croissant.</span>
+    </div>
+  </div>
+  <div class="voice" id="voice-row">
+    <div class="mic" id="mic-button">
+      <span class="mic-text" id="mic-label">Parler</span>
+    </div>
+    <div class="heard-box">
+      <span class="heard" id="heard">Pinch "Parler" or turn your palm up, then speak French.</span>
+      <span class="heard-detail" id="heard-detail">Or hold up fingers while looking at an item to order.</span>
+    </div>
+  </div>
+</Panel>
