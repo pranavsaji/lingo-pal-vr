@@ -11,6 +11,19 @@
 
 const MAX_BYTES = 2_000_000; // ~7 s of opus is far below this
 
+// Per-IP limit: the provider key is billed per request. In-memory, so per
+// serverless instance; set a spend cap on the provider account as well.
+const RATE = { windowMs: 60_000, max: 20 };
+const hits = new Map();
+export function sttRateLimited(ip) {
+  const now = Date.now();
+  const list = (hits.get(ip) ?? []).filter((t) => now - t < RATE.windowMs);
+  list.push(now);
+  hits.set(ip, list);
+  if (hits.size > 5000) hits.clear(); // bound memory
+  return list.length > RATE.max;
+}
+
 export function sttProvider(env = process.env) {
   if (env.OPENAI_API_KEY) return 'openai';
   if (env.DEEPGRAM_API_KEY) return 'deepgram';
@@ -18,11 +31,12 @@ export function sttProvider(env = process.env) {
 }
 
 /** @param {Buffer} audio @param {string} contentType */
-export async function handleStt(method, audio, contentType, env = process.env) {
+export async function handleStt(method, audio, contentType, env = process.env, ip = 'unknown') {
   const provider = sttProvider(env);
   // The client probes with GET; "not configured" is a normal answer, not an error (clean console).
   if (method === 'GET') return { status: 200, body: { provider } };
   if (!provider) return { status: 503, body: { error: 'no STT provider key set' } };
+  if (sttRateLimited(ip)) return { status: 429, body: { error: 'slow down' } };
   if (!audio || audio.length < 1000) return { status: 400, body: { error: 'no audio' } };
   if (audio.length > MAX_BYTES) return { status: 413, body: { error: 'audio too long' } };
   const type = /^audio\/[a-z0-9.+-]+/i.exec(contentType || '')?.[0] ?? 'audio/webm';

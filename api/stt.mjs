@@ -24,7 +24,8 @@ export default async function handler(req, res) {
   }
   try {
     const audio = req.method === 'POST' ? await readBody(req) : null;
-    const { status, body } = await handleStt(req.method, audio, req.headers['content-type'], process.env);
+    const ip = String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() || 'unknown';
+    const { status, body } = await handleStt(req.method, audio, req.headers['content-type'], process.env, ip);
     res.status(status).json(body);
   } catch (err) {
     res.status(500).json({ error: String(err) });

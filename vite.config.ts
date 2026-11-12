@@ -8,15 +8,13 @@
 import { iwsdkDev } from '@iwsdk/vite-plugin-dev';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 // @ts-expect-error plain ESM module shared with the Vercel function
-import { handleChat } from './server/chat-handler.mjs';
-// @ts-expect-error plain ESM module shared with the Vercel function
 import { handleAgent } from './server/agent-handler.mjs';
 // @ts-expect-error plain ESM module shared with the Vercel function
 import { handleStt } from './server/stt-handler.mjs';
 
 type Handler = (body: unknown, env: Record<string, string | undefined>) => Promise<{ status: number; body: unknown }>;
 
-/** Local /api/chat and /api/agent routes so the AI works in `npm run dev`. */
+/** Local /api/agent and /api/stt routes so the AI works in `npm run dev`. */
 function shopkeeperApi(): Plugin {
   return {
     name: 'lingo-pal-shopkeeper-api',
@@ -30,7 +28,7 @@ function shopkeeperApi(): Plugin {
           let status = 500;
           let body: unknown = { error: 'unknown' };
           try {
-            ({ status, body } = await handleStt(req.method, Buffer.concat(chunks), req.headers['content-type'], env));
+            ({ status, body } = await handleStt(req.method, Buffer.concat(chunks), req.headers['content-type'], env, req.socket.remoteAddress ?? 'local'));
           } catch (err) {
             body = { error: String(err) };
           }
@@ -39,7 +37,7 @@ function shopkeeperApi(): Plugin {
           res.end(JSON.stringify(body));
         });
       });
-      const routes: Record<string, Handler> = { '/api/chat': handleChat, '/api/agent': handleAgent };
+      const routes: Record<string, Handler> = { '/api/agent': handleAgent };
       for (const [route, handle] of Object.entries(routes)) server.middlewares.use(route, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;

@@ -219,7 +219,7 @@ French, and her line "A demain, Pranav !" shows she remembers him.
 | `src/chat-system.ts`, `src/shopkeeper.ts` | AI chat with 3 pinchable replies, offline script |
 | `src/speech.ts` | Browser TTS (fallback) |
 | `src/fonts.ts` | Poppins with French glyphs for panels |
-| `server/chat-handler.mjs`, `api/chat.mjs` | Server AI route (dev + Vercel) |
+| `server/agent-handler.mjs`, `api/agent.mjs` | Server AI route (dev + Vercel); legacy /api/chat removed |
 
 ### New modules to add
 ```
