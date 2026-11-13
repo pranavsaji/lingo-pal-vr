@@ -46,7 +46,7 @@ export const events = {
   /** The learner ordered without speaking (fingers + gaze); text is the phrase said for them. */
   voiceOrder: new Emitter<string>(),
   /** Show a panel in the home slot (voice command or button). */
-  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report'>(),
+  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport'>(),
   /** Start a spaced-repetition review of these word ids. */
   review: new Emitter<string[]>(),
   /** Replay the hand tutorial. */
@@ -69,6 +69,8 @@ export const events = {
   questProgress: new Emitter<{ done: number; total: number; completed: boolean; label: string }>(),
   /** The learner asked to go to a shop (map panel, voice). PlaceSystem decides and travels. */
   travel: new Emitter<PlaceId>(),
+  /** A passport stamp was just earned (stamp id, see src/state/passport.ts). */
+  stamp: new Emitter<string>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

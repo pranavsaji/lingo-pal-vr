@@ -40,6 +40,7 @@ export class CelebrationSystem extends createSystem({}) {
         if (levelUp) this.burst();
       }),
       events.celebrate.on(() => this.burst()),
+      events.stamp.on(() => this.burst()), // a new passport stamp
     );
   }
 

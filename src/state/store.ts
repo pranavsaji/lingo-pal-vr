@@ -7,12 +7,27 @@
 import { logFor, weekReport, type WeekReport } from './history.js';
 import { applyPaidOrder, dailyQuest, QUEST_XP, questComplete, type Quest, type QuestTask } from './quest.js';
 import type { PlaceId } from '../game-state.js';
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
 import { emptyOrder, type OrderState } from '../agent/tools.js';
 import { localDay, type Day } from './dates.js';
 import { browserKV, loadProfile, saveProfile, type KV, type Profile, type Settings } from './profile.js';
-import { levelFor, newlyUnlocked, touchStreak, unlockedIds, XP, type XpReason } from './progression.js';
+import { levelFor, newlyUnlocked, unlockedIds, XP, type XpReason } from './progression.js';
 import { dueWords, newCard, review, type Grade } from './srs.js';
+import { collectStamps, notePurchase, type StampFacts } from './passport.js';
+import { touchStreakWithRest } from './rest-days.js';
+import { withDemoSeed } from './demo.js';
+import { goalLadder, returnMoment, tomorrowHook, type GoalLadder, type Line, type ReturnMoment } from './goals.js';
+
+/** What changed at the start of this visit (for the "Bon retour !" moment). */
+export interface Arrival {
+  isNewDay: boolean;
+  broken: boolean;
+  newUnlocks: string[];
+  newStamps: string[];
+  restUsed: string[];
+  restEarned: boolean;
+  moment: ReturnMoment | null;
+}
 
 export interface SessionStats {
   xp: number;
@@ -26,6 +41,8 @@ export class Store {
   order: OrderState = emptyOrder();
   session: SessionStats = { xp: 0, words: new Set(), orders: 0, pronunciation: [] };
   readonly today: Day;
+  /** Set by startSession: what changed since the last visit. */
+  arrival: Arrival | null = null;
 
   constructor(
     private kv: KV | null,
@@ -36,23 +53,62 @@ export class Store {
   }
 
   private save(): void {
+    // Any progress can earn a passport stamp: collect them on every save.
+    const stamps = collectStamps(this.stampFacts(), this.today);
+    if (stamps.length) this.refreshUnlocks(); // stamps can open decor (the stamp board)
     saveProfile(this.kv, this.profile);
     events.profile.emit(this.profile);
+    for (const id of stamps) events.stamp.emit(id);
   }
 
-  /** Call once per launch: streak, session count, daily ritual XP, unlocks. */
+  /** Call once per launch: streak (with rest days), session count, daily ritual XP, unlocks, stamps. */
   startSession(): { isNewDay: boolean; broken: boolean; newUnlocks: string[] } {
     const p = this.profile;
     const before = [...p.unlocks];
-    const s = touchStreak(p.lastPlayedDay, p.streakDays, this.today);
+    const stampsBefore = Object.keys(p.passport.stamps);
+    const s = touchStreakWithRest(p.lastPlayedDay, p.streakDays, p.restDays, this.today);
     p.streakDays = s.streakDays;
     p.lastPlayedDay = s.lastPlayedDay;
+    p.restDays = s.restDays;
+    if (s.restUsed.length) p.restUsed = [...p.restUsed, ...s.restUsed].slice(-14);
     p.sessions += 1;
     if (s.isNewDay && p.sessions > 1) this.award('dailyRitual');
     this.refreshUnlocks();
-    const newUnlocks = newlyUnlocked(before, p.unlocks);
     this.save();
+    const newUnlocks = newlyUnlocked(before, p.unlocks);
+    const newStamps = Object.keys(p.passport.stamps).filter((id) => !stampsBefore.includes(id));
+    const moment = returnMoment({
+      name: p.name,
+      onboarded: p.onboarded,
+      sessions: p.sessions,
+      isNewDay: s.isNewDay,
+      broken: s.broken,
+      streakDays: p.streakDays,
+      restUsed: s.restUsed,
+      restEarned: s.restEarned,
+      newStamps,
+      newUnlocks,
+      due: dueWords(p.srs, this.today, 99).length,
+    });
+    this.arrival = { isNewDay: s.isNewDay, broken: s.broken, newUnlocks, newStamps, restUsed: s.restUsed, restEarned: s.restEarned, moment };
     return { isNewDay: s.isNewDay, broken: s.broken, newUnlocks };
+  }
+
+  /** Inputs for the passport stamps (live view over the profile). */
+  stampFacts(): StampFacts {
+    const p = this.profile;
+    return { passport: p.passport, streakDays: p.streakDays, wordsSeen: p.wordsSeen.length, xp: p.xp };
+  }
+
+  /** A1 -> A2 goal ladder. */
+  ladder(): GoalLadder {
+    return goalLadder(this.profile.xp);
+  }
+
+  /** Tomorrow's teaser: an item from tomorrow's list and the nearest unlock. */
+  tomorrowHook(): Line {
+    const p = this.profile;
+    return tomorrowHook({ xp: p.xp, streakDays: p.streakDays, orders: p.stats.orders, unlocks: p.unlocks, passport: p.passport, today: this.today });
   }
 
   get level() {
@@ -79,7 +135,7 @@ export class Store {
 
   private refreshUnlocks(): string[] {
     const p = this.profile;
-    const ids = unlockedIds({ xp: p.xp, streakDays: p.streakDays, orders: p.stats.orders });
+    const ids = unlockedIds({ xp: p.xp, streakDays: p.streakDays, orders: p.stats.orders, stamps: Object.keys(p.passport.stamps).length, placeOrders: p.passport.placeOrders });
     const fresh = newlyUnlocked(p.unlocks, ids);
     if (fresh.length) {
       p.unlocks = [...p.unlocks, ...fresh];
@@ -132,11 +188,13 @@ export class Store {
     log.pronSum += score;
     log.pronCount += 1;
     this.profile.stats.phrases += 1;
+    this.profile.passport.bestPron = Math.max(this.profile.passport.bestPron, Math.round(score));
     if (score >= 70) this.award('phraseSpoken');
     else this.save();
   }
 
   recordOrderPaid(exact: boolean): void {
+    notePurchase(this.profile.passport, appState.place, this.order.lines, exact); // passport counters (shop, croissant, change)
     this.session.orders += 1;
     this.profile.stats.orders += 1;
     this.profile.stats.payments += 1;
@@ -173,6 +231,7 @@ export class Store {
     if (fresh.length && questComplete(quest) && !quest.rewarded) {
       quest.rewarded = true;
       completed = true;
+      this.profile.passport.listsDone += 1;
       this.addXp(QUEST_XP);
     } else if (fresh.length) this.save();
     return { fresh, completed };
@@ -215,4 +274,4 @@ export class Store {
 }
 
 /** App-wide store (browser storage). Tests construct their own Store. */
-export const store = new Store(browserKV());
+export const store = new Store(withDemoSeed(browserKV(), localDay())); // ?demo=week seeds a simulated week (src/state/demo.ts)

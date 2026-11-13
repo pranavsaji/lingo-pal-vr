@@ -148,6 +148,98 @@
     color: #9fd3c7;
   }
 
+  .goal {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    margin-left: 16px;
+    margin-right: 16px;
+    padding-top: 10px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 14px;
+    background-color: #e9e2cf;
+  }
+
+  .goal:dark {
+    background-color: #2b2d33;
+  }
+
+  .goal-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .goal-title {
+    color: #8a3a12;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .goal-title:dark {
+    color: #f4a261;
+  }
+
+  .goal-next {
+    color: #3a3b40;
+    font-size: 13px;
+  }
+
+  .goal-next:dark {
+    color: #c9ccd3;
+  }
+
+  .goal-track {
+    width: 496px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #4a4c55;
+  }
+
+  .goal-fill {
+    width: 7px;
+    height: 14px;
+    border-radius: 7px;
+    background-color: #f5d90a;
+  }
+
+  .rungs {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .rung {
+    color: #6c757d;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .hook {
+    color: #8a3a12;
+    font-size: 15px;
+    font-weight: bold;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .hook:dark {
+    color: #f4a261;
+  }
+
+  .hook-en {
+    color: #3a3b40;
+    font-size: 13px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .hook-en:dark {
+    color: #b8bcc6;
+  }
+
   .actions {
     flex-direction: row;
     gap: 12px;
@@ -203,9 +295,28 @@
     <div class="stat"><span class="num" id="stat-days">0 / 7</span><span class="lbl">Jours actifs · série</span></div>
   </div>
   <span class="note" id="week-note">Come back tomorrow to start your week.</span>
+  <div class="goal">
+    <div class="goal-head">
+      <span class="goal-title" id="goal-title">OBJECTIF · A1 > A2</span>
+      <span class="goal-next" id="goal-next">150 XP to A1.2</span>
+    </div>
+    <div class="goal-track"><div class="goal-fill" id="goal-fill"></div></div>
+    <div class="rungs">
+      <span class="rung" id="rung-0">A1.1</span>
+      <span class="rung" id="rung-1">A1.2</span>
+      <span class="rung" id="rung-2">A1.3</span>
+      <span class="rung" id="rung-3">A2.1</span>
+      <span class="rung" id="rung-4">A2.2</span>
+    </div>
+  </div>
+  <span class="hook" id="week-hook">Demain : une nouvelle liste.</span>
+  <span class="hook-en" id="week-hook-en">Tomorrow: a new list.</span>
   <div class="actions">
     <div class="action" id="week-back">
       <span class="action-text">Retour</span>
+    </div>
+    <div class="action" id="week-passport" style="background-color: #6d2e46">
+      <span class="action-text">Passeport</span>
     </div>
   </div>
 </Panel>

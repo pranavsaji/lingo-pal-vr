@@ -16,10 +16,11 @@ import { mastery } from '../state/srs.js';
 import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
 import { onActivate } from './dwell.js';
+import { renderGoals, renderPassport, renderPassportStrip } from './passport-view.js';
 
-type Slot = 'home' | 'carnet' | 'settings' | 'map' | 'report';
-const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel', report: 'report-panel' };
-const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel', 'report-panel'];
+type Slot = 'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport';
+const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel', report: 'report-panel', passport: 'passport-panel' };
+const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel', 'report-panel', 'passport-panel'];
 const CARNET_ROWS = 12;
 const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
@@ -34,7 +35,7 @@ const XP_TRACK_PX = 400;
  */
 const NARROW_TAN = Math.tan((42 * Math.PI) / 180);
 const NARROW_SCALE = 0.85;
-const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'map-panel': -21, 'report-panel': -21, 'chat-panel': 24 };
+const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'map-panel': -21, 'report-panel': -21, 'passport-panel': -21, 'chat-panel': 24 };
 
 const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality'];
 
@@ -97,6 +98,11 @@ export class PanelsSystem extends createSystem({}) {
     // Weekly report.
     this.click('lesson-panel', 'week-button', () => this.show('report'));
     this.click('report-panel', 'week-back', () => this.show('home'));
+    // Passeport de Paris (from the lesson panel, the map and the weekly report).
+    this.click('lesson-panel', 'passport-button', () => this.show('passport'));
+    this.click('passport-panel', 'passport-back', () => this.show('home'));
+    this.click('map-panel', 'map-passport', () => this.show('passport'));
+    this.click('report-panel', 'week-passport', () => this.show('passport'));
     // Paris map.
     this.click('lesson-panel', 'map-button', () => this.show('map'));
     this.click('map-panel', 'map-back', () => this.show('home'));
@@ -136,6 +142,9 @@ export class PanelsSystem extends createSystem({}) {
         this.renderMapBadge();
       }),
       events.settings.on((s) => this.applySettings(s)),
+      events.stamp.on(() => {
+        if (this.slot === 'passport') renderPassport(this.panels.get('passport-panel'));
+      }),
       events.profile.on(() => {
         this.renderXp();
         if (this.slot === 'carnet') this.renderCarnet();
@@ -174,6 +183,7 @@ export class PanelsSystem extends createSystem({}) {
     if (slot === 'carnet') this.renderCarnet();
     if (slot === 'map') this.renderMap();
     if (slot === 'report') this.renderReport();
+    if (slot === 'passport') renderPassport(this.panels.get('passport-panel'));
     if (slot === 'settings') this.renderSettings(store.profile.settings);
   }
 
@@ -230,6 +240,7 @@ export class PanelsSystem extends createSystem({}) {
           : `${Math.round(((t.xp - prev) / prev) * 100)} % XP vs last week. A few minutes a day is enough.`;
     const best = r.bestDay && r.bestDay.xp > 0 ? ` Best day: ${r.bestDay.xp} XP.` : '';
     this.text('report-panel', 'week-note', `${trend}${best}`);
+    renderGoals(this.panels.get('report-panel'), r.days); // A1 > A2 ladder, rest days, tomorrow's teaser
   }
 
   /** Shop cards: where you are, what is open, what opens next. */
@@ -284,6 +295,7 @@ export class PanelsSystem extends createSystem({}) {
     const lvl = store.level;
     this.style('lesson-panel', 'xp-fill', { width: Math.max(6, Math.round(XP_TRACK_PX * lvl.progress)) });
     this.text('lesson-panel', 'xp-label', lvl.next ? `${lvl.id} > ${lvl.next}` : `${lvl.id} MAX`);
+    renderPassportStrip(this.panels.get('lesson-panel'));
   }
 
   update(): void {

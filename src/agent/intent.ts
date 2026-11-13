@@ -23,7 +23,7 @@ export type Intent =
   | { kind: 'travel'; place: 'cafe' | 'boulangerie' | 'marche' }
   | { kind: 'unknown' };
 
-export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map';
+export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map' | 'passport';
 
 const NUMBER_WORDS: Record<string, number> = {
   un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5,
@@ -128,6 +128,7 @@ export function parseIntent(text: string, fingers = 0): Intent {
   if (has(n, /\b(reglages|parametres|settings)\b/)) return { kind: 'command', command: 'settings' };
   if (has(n, /\b(passer|skip)\b/)) return { kind: 'command', command: 'skip' };
   if (has(n, /\b(carnet|mes mots)\b/)) return { kind: 'command', command: 'carnet' };
+  if (has(n, /\b(passeport|passport|mes tampons)\b/)) return { kind: 'command', command: 'passport' };
   if (has(n, /\b(plus lentement|moins vite|lentement)\b/)) return { kind: 'command', command: 'slower' };
   // Travel: "allons à la boulangerie", "je vais au marché", "retour au café".
   const go = n.match(/\b(?:allons|aller|allez|vais|va|retour|retourner|direction)\b.*\b(boulangerie|marche|cafe)\b/);

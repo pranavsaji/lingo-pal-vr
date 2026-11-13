@@ -75,6 +75,12 @@ export interface Unlock {
   level?: number;
   streak?: number;
   orders?: number;
+  /** ...or this many passport stamps. */
+  stamps?: number;
+  /** ...or this many orders paid in one shop. */
+  placeOrders?: { place: string; count: number };
+  /** The shop this decor appears in (default: the cafe). */
+  place?: string;
 }
 
 export const UNLOCKS: Unlock[] = [
@@ -85,12 +91,21 @@ export const UNLOCKS: Unlock[] = [
   { id: 'gramophone', kind: 'decor', fr: 'le gramophone', en: 'the gramophone', streak: 3 },
   { id: 'marche', kind: 'scenario', fr: 'le marché', en: 'the market', level: 2 },
   { id: 'terrasse', kind: 'decor', fr: 'la terrasse', en: 'the terrace', streak: 7 },
+  // Visible growth in every shop (Reason to Come Back): each milestone changes the room.
+  { id: 'lanternes', kind: 'decor', fr: 'les lanternes', en: 'the lanterns', streak: 5 },
+  { id: 'mur-tampons', kind: 'decor', fr: 'le tableau des tampons', en: 'the stamp board', stamps: 4 },
+  { id: 'fleurs-boulangerie', kind: 'decor', fr: 'les fleurs de la boulangerie', en: 'the bakery flowers', placeOrders: { place: 'boulangerie', count: 3 }, place: 'boulangerie' },
+  { id: 'guirlandes-marche', kind: 'decor', fr: 'les guirlandes du marché', en: 'the market lights', placeOrders: { place: 'marche', count: 3 }, place: 'marche' },
 ];
 
 export interface UnlockInputs {
   xp: number;
   streakDays: number;
   orders: number;
+  /** Passport stamps earned (optional: older callers leave stamp unlocks locked). */
+  stamps?: number;
+  /** Orders paid per shop. */
+  placeOrders?: Record<string, number>;
 }
 
 export function unlockedIds(p: UnlockInputs): string[] {
@@ -99,7 +114,9 @@ export function unlockedIds(p: UnlockInputs): string[] {
     (u) =>
       (u.level === undefined || lvl >= u.level) &&
       (u.streak === undefined || p.streakDays >= u.streak) &&
-      (u.orders === undefined || p.orders >= u.orders),
+      (u.orders === undefined || p.orders >= u.orders) &&
+      (u.stamps === undefined || (p.stamps ?? 0) >= u.stamps) &&
+      (u.placeOrders === undefined || (p.placeOrders?.[u.placeOrders.place] ?? 0) >= u.placeOrders.count),
   ).map((u) => u.id);
 }
 

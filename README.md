@@ -117,5 +117,8 @@ on-device voice) and serves `api/*.mjs` as functions. `.vercelignore` keeps `.en
 | `tests/` | `npm test` (vitest) |
 
 Dev tips: `?debug` exposes `window.__lingoVoice` for automated voice checks. `Shift+R` (dev only) or `?reset` in the URL starts a brand-new learner (tutorial).
+`?demo=week` (demo seed, labelled in the UI) replaces the learner with a simulated week of history, so the
+"Bon retour !" moment, the 7-day streak, a rest day, the passport and the A1 > A2 ladder can be seen in one sitting;
+`?demo=rest` is the same week with yesterday missed, saved by a rest day.
 
 Licenses and credits: see `CREDITS.md`.

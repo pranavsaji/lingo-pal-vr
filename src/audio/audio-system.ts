@@ -56,6 +56,7 @@ export class AudioSystem extends createSystem({}) {
         if (levelUp) this.fanfare();
       }),
       events.unlocked.on(() => this.chime(0.4)),
+      events.stamp.on(() => this.stamp()),
       events.celebrate.on(() => this.fanfare()),
       events.questProgress.on(({ completed }) => {
         if (!completed) this.chime(0.2); // the full list gets the fanfare instead
@@ -167,6 +168,14 @@ export class AudioSystem extends createSystem({}) {
 
   private chime(delay: number): void {
     [1046, 1318, 1568, 2093].forEach((f, i) => this.tone(f, delay + i * 0.09, 0.7, { type: 'sine', gain: 0.09 }));
+  }
+
+  /** Rubber stamp: a soft thud on the desk, then a bright two-note sparkle. */
+  private stamp(): void {
+    this.tone(150, 0, 0.18, { type: 'sine', gain: 0.22, glide: 0.5 });
+    this.tone(95, 0.01, 0.12, { type: 'triangle', gain: 0.12, glide: 0.7 });
+    this.tone(1568, 0.22, 0.5, { type: 'sine', gain: 0.08 });
+    this.tone(2093, 0.32, 0.6, { type: 'sine', gain: 0.07 });
   }
 
   private fanfare(): void {

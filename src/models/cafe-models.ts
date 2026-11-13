@@ -884,7 +884,7 @@ export function buildPlant(): Group {
 
 const CHALK_FONT = `'Chalkduster', 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', cursive`;
 
-function drawChalkboard(ctx: CanvasRenderingContext2D, lines: string[]): void {
+function drawChalkboard(ctx: CanvasRenderingContext2D, lines: string[], title = 'Plat du jour'): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
   ctx.fillStyle = '#26352e';
@@ -906,7 +906,7 @@ function drawChalkboard(ctx: CanvasRenderingContext2D, lines: string[]): void {
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#f7f4ea';
   ctx.font = `bold 46px ${CHALK_FONT}`;
-  ctx.fillText('Plat du jour', w / 2, 66);
+  ctx.fillText(title, w / 2, 66);
   // Swirly underline in pink chalk + little stars in yellow.
   ctx.strokeStyle = '#f2a7b8';
   ctx.lineWidth = 4;
@@ -958,7 +958,7 @@ function drawChalkboard(ctx: CanvasRenderingContext2D, lines: string[]): void {
  * A-frame sidewalk chalkboard (~0.5 m wide x 0.7 m tall), board facing +Z, base at y = 0.
  * `setLines` redraws the chalk menu under the "Plat du jour" header.
  */
-export function buildChalkboard(): { root: Group; setLines(lines: string[]): void } {
+export function buildChalkboard(title = 'Plat du jour'): { root: Group; setLines(lines: string[]): void } {
   const root = grp('Chalkboard');
   const tilt = 0.2;
   const L = 0.7 / Math.cos(tilt);
@@ -994,7 +994,7 @@ export function buildChalkboard(): { root: Group; setLines(lines: string[]): voi
   const setLines = (lines: string[]): void => {
     root.userData.lines = lines.slice();
     if (!ct) return;
-    drawChalkboard(ct.ctx, lines);
+    drawChalkboard(ct.ctx, lines, title);
     ct.tex.needsUpdate = true;
   };
   setLines(['Croque-monsieur', 'Soupe à l\'oignon', 'Tarte Tatin']);

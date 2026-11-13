@@ -68,6 +68,7 @@ export default defineAssets({
   'settings-panel': uikitml('settings.uikitml', 'Settings Panel'),
   'map-panel': uikitml('map.uikitml', 'Map Panel'),
   'report-panel': uikitml('report.uikitml', 'Report Panel'),
+  'passport-panel': uikitml('passport.uikitml', 'Passport Panel'),
   ...props,
   ...shopkeepers, // shopkeeper characters (see block above)
 });

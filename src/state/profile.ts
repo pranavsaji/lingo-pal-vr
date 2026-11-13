@@ -5,6 +5,7 @@
  */
 
 import type { History } from './history.js';
+import { emptyPassport, type PassportProgress } from './passport.js';
 import type { Quest } from './quest.js';
 import type { SrsCard } from './srs.js';
 
@@ -39,6 +40,14 @@ export interface Profile {
   history: History;
   /** Today's shopping list across Paris (null until first created). */
   quest: Quest | null;
+  /** Passeport de Paris: stamps and the counters they are earned from. */
+  passport: PassportProgress;
+  /** Jours de repos (streak freezes) in reserve. */
+  restDays: number;
+  /** Recent days a rest day covered (shown in the weekly report). */
+  restUsed: string[];
+  /** Set when the profile was seeded by ?demo=week (labelled in the UI). */
+  demo: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -71,6 +80,10 @@ export function defaultProfile(): Profile {
     settings: { ...DEFAULT_SETTINGS },
     history: {},
     quest: null,
+    passport: emptyPassport(),
+    restDays: 0,
+    restUsed: [],
+    demo: '',
   };
 }
 
@@ -126,6 +139,15 @@ export function loadProfile(kv: KV | null): Profile {
         memories: { ...(stored.memories ?? {}) },
         history: { ...(stored.history ?? {}) },
         quest: stored.quest ?? null,
+        passport: {
+          ...base.passport,
+          ...(stored.passport ?? {}),
+          stamps: { ...(stored.passport?.stamps ?? {}) },
+          placeOrders: { ...(stored.passport?.placeOrders ?? {}) },
+        },
+        restDays: Number(stored.restDays) || 0,
+        restUsed: Array.isArray(stored.restUsed) ? stored.restUsed.filter((d): d is string => typeof d === 'string') : [],
+        demo: typeof stored.demo === 'string' ? stored.demo : '',
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

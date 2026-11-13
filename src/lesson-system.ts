@@ -151,11 +151,11 @@ export class LessonSystem extends createSystem({}) {
   /** "A demain" from Madame Lune: show today's recap (Reason to come back). */
   private showSummary(): void {
     const s = store.sessionSummary();
-    const lvl = store.level;
+    const hook = store.tomorrowHook(); // "Demain : deux baguettes à la boulangerie ? Encore 40 XP pour la terrasse."
     this.set('eyebrow', 'À DEMAIN !');
     this.set('word', `${store.profile.streakDays} jour${store.profile.streakDays === 1 ? '' : 's'} de suite`);
-    this.set('english', s.en);
-    this.set('tip', lvl.next ? `${lvl.xpToNext} XP to ${lvl.next}. Tomorrow: a new plat du jour.` : 'Top level reached. Bravo !');
+    this.set('english', `${s.en} ${hook.en}`);
+    this.set('tip', hook.fr);
     this.flashHeader('#2a9d8f');
   }
 

@@ -235,6 +235,31 @@
         "RayInteractable": {},
         "PokeInteractable": {}
       }
+    },
+    {
+      "id": "passport-panel",
+      "name": "Passport Panel",
+      "content": {
+        "type": "asset",
+        "asset": "passport-panel"
+      },
+      "transform": {
+        "position": [
+          -0.78,
+          1.56,
+          -1.32
+        ],
+        "rotationDeg": [
+          -4,
+          30,
+          0
+        ],
+        "scale": 0.14
+      },
+      "components": {
+        "RayInteractable": {},
+        "PokeInteractable": {}
+      }
     }
   ]
 }

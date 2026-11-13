@@ -1,0 +1,233 @@
+<!--
+  Passeport de Paris: one stamp per shop plus milestone stamps (streak, words,
+  exact change, level...). Earned stamps are colored and dated; locked ones show
+  their progress. Below: the closest stamp to earn and the rest days in reserve.
+  Swaps into the lesson panel's slot (src/ui/panels-system.ts, rendered by
+  src/ui/passport-view.ts).
+-->
+<style>
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Regular.ttf);
+    font-weight: normal;
+  }
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Bold.ttf);
+    font-weight: bold;
+  }
+
+  .root {
+    flex-direction: column;
+    width: 560px;
+    font-family: poppins;
+  }
+
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 22px;
+    padding-right: 22px;
+    background-color: #6d2e46;
+  }
+
+  .brand {
+    color: #f5d90a;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .sub {
+    color: #ffe3ea;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .owner {
+    color: #3a3b40;
+    font-size: 15px;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .owner:dark {
+    color: #c9ccd3;
+  }
+
+  .grid {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .row {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .stamp {
+    flex-direction: column;
+    justify-content: space-between;
+    width: 122px;
+    height: 86px;
+    flex-shrink: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 16px;
+    border-width: 2px;
+    border-color: #4a4c55;
+    background-color: #2b2d33;
+  }
+
+  .st-name {
+    color: #fafaf7;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .st-sub {
+    color: #b8bcc6;
+    font-size: 12px;
+  }
+
+  .next {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    margin-left: 20px;
+    margin-right: 20px;
+    padding-top: 10px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 14px;
+    background-color: #e9e2cf;
+  }
+
+  .next:dark {
+    background-color: #2b2d33;
+  }
+
+  .next-title {
+    color: #8a3a12;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .next-title:dark {
+    color: #f4a261;
+  }
+
+  .next-line {
+    color: #1c1d20;
+    font-size: 17px;
+  }
+
+  .next-line:dark {
+    color: #fafaf7;
+  }
+
+  .track {
+    width: 480px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #4a4c55;
+  }
+
+  .fill {
+    width: 6px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #f5d90a;
+  }
+
+  .rest {
+    color: #3a3b40;
+    font-size: 15px;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .rest:dark {
+    color: #9fd3c7;
+  }
+
+  .actions {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 10px;
+    padding-bottom: 18px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .action {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 22px;
+    padding-right: 22px;
+    border-radius: 18px;
+    background-color: #6c757d;
+    cursor: pointer;
+  }
+
+  .action:hover {
+    background-color: #868e96;
+  }
+
+  .action-text {
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: bold;
+  }
+</style>
+<Panel class="root">
+  <div class="header" id="passport-header">
+    <span class="brand">PASSEPORT DE PARIS</span>
+    <span class="sub" id="passport-count">0 / 12 tampons</span>
+  </div>
+  <span class="owner" id="passport-owner">Your stamps from the shops of Paris.</span>
+  <div class="grid">
+    <div class="row">
+      <div class="stamp" id="st-0"><span class="st-name" id="st-0-name">?</span><span class="st-sub" id="st-0-sub">?</span></div>
+      <div class="stamp" id="st-1"><span class="st-name" id="st-1-name">?</span><span class="st-sub" id="st-1-sub">?</span></div>
+      <div class="stamp" id="st-2"><span class="st-name" id="st-2-name">?</span><span class="st-sub" id="st-2-sub">?</span></div>
+      <div class="stamp" id="st-3"><span class="st-name" id="st-3-name">?</span><span class="st-sub" id="st-3-sub">?</span></div>
+    </div>
+    <div class="row">
+      <div class="stamp" id="st-4"><span class="st-name" id="st-4-name">?</span><span class="st-sub" id="st-4-sub">?</span></div>
+      <div class="stamp" id="st-5"><span class="st-name" id="st-5-name">?</span><span class="st-sub" id="st-5-sub">?</span></div>
+      <div class="stamp" id="st-6"><span class="st-name" id="st-6-name">?</span><span class="st-sub" id="st-6-sub">?</span></div>
+      <div class="stamp" id="st-7"><span class="st-name" id="st-7-name">?</span><span class="st-sub" id="st-7-sub">?</span></div>
+    </div>
+    <div class="row">
+      <div class="stamp" id="st-8"><span class="st-name" id="st-8-name">?</span><span class="st-sub" id="st-8-sub">?</span></div>
+      <div class="stamp" id="st-9"><span class="st-name" id="st-9-name">?</span><span class="st-sub" id="st-9-sub">?</span></div>
+      <div class="stamp" id="st-10"><span class="st-name" id="st-10-name">?</span><span class="st-sub" id="st-10-sub">?</span></div>
+      <div class="stamp" id="st-11"><span class="st-name" id="st-11-name">?</span><span class="st-sub" id="st-11-sub">?</span></div>
+    </div>
+  </div>
+  <div class="next">
+    <span class="next-title">PROCHAIN TAMPON · NEXT STAMP</span>
+    <span class="next-line" id="passport-next">Pay for an order at the café</span>
+    <div class="track"><div class="fill" id="passport-next-fill"></div></div>
+  </div>
+  <span class="rest" id="passport-rest">Jours de repos : 0 · one every 7 days in a row.</span>
+  <div class="actions">
+    <div class="action" id="passport-back">
+      <span class="action-text">Retour</span>
+    </div>
+  </div>
+</Panel>
