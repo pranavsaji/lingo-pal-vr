@@ -314,7 +314,8 @@ export class AgentDirector {
       if (intent.kind === 'command' && intent.command === 'slower') this.store.setSetting('slowSpeech', true);
     }
     const req = this.buildRequest(event);
-    this.offer = null; // an offer stands for one learner answer
+    // An offer stands for one learner answer; her own hints in between do not use it up.
+    if (event.kind !== 'hint') this.offer = null;
     const turn = this.localTurn(req) ?? (await this.transport(req, () => this.onSlow()));
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
     if (rejected.length) {

@@ -255,12 +255,15 @@ export class CoinSystem extends createSystem({
     const aimed = cos > Math.cos((TRAY_AIM_DEG * Math.PI) / 180);
     const onTray = landed || aimed;
     const tapped = this.clock - m.grabStart < TAP_MS / 1000 && this.tmp.distanceTo(m.grabPos) < TAP_MOVE;
-    const paying = store.order.phase === 'paying';
+    // Putting money on the tray is how a learner asks for the bill: while ordering it closes
+    // the order and pays (the shopkeeper may have said the price without formally totalling).
+    const o = store.order;
+    const paying = o.phase === 'paying' || (o.phase === 'ordering' && o.lines.length > 0);
     if (paying && (onTray || tapped)) {
       this.toTray(m, tapped ? 0.12 : 0.03);
       return;
     }
-    if (!paying && (onTray || tapped)) this.register.setText(store.order.lines.length ? "Demandez l'addition" : "Commandez d'abord");
+    if (!paying && (onTray || tapped)) this.register.setText("Commandez d'abord");
     this.fly(m, m.home, 0.4, 0.08, State.Dish);
   }
 

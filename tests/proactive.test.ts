@@ -263,6 +263,19 @@ describe('agency in the world', () => {
     c.off();
   });
 
+  it('keeps the offer when a hesitation hint comes before the learner answers', async () => {
+    const { store, director } = regular();
+    const low = Object.keys(director.stock() ?? {})[0];
+    const item = menuItem(low)!;
+    const c = collect();
+    await director.handle({ kind: 'say', text: `deux ${item.plural}`, fingers: 0 });
+    const offer = c.effects.find((e) => e.kind === 'offer') as { itemId: string };
+    await director.handle({ kind: 'hint', reason: 'hesitate', nth: 0 });
+    await director.handle({ kind: 'say', text: 'Oui, s\'il vous plaît.', fingers: 0 });
+    expect(store.order.lines).toEqual([{ itemId: low, qty: 1 }, { itemId: offer.itemId, qty: 1 }]);
+    c.off();
+  });
+
   it('upsells a related item once per visit, served only if accepted', async () => {
     const { store, director } = regular();
     const low = Object.keys(director.stock() ?? {})[0];

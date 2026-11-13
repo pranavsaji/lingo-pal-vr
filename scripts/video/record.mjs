@@ -10,6 +10,7 @@ export default async function run({ page, frame }) {
   const secs = Number(process.env.SECS || 30);
   const dir = `.tmp/video/${name}`;
   fs.mkdirSync(dir, { recursive: true });
+  for (const f of fs.readdirSync(dir)) if (/^f-\d+\.jpg$|^audio\.webm$/.test(f)) fs.unlinkSync(`${dir}/${f}`); // a retake replaces the clip
   const app = frame ?? page;
   const cdp = await page.context().newCDPSession(page);
   let frames = 0;
