@@ -11,9 +11,26 @@ export interface DwellTarget {
   fn: () => void;
   /** Half-angle of the selection cone, degrees. */
   coneDeg: number;
+  /** Optional: only selectable while this returns true (e.g. coins only while paying). */
+  when?: () => boolean;
 }
 
 export const dwellTargets = new Set<DwellTarget>();
+
+/**
+ * Temporary eyes-only scope: while `only` is set, dwell runs even when the
+ * setting is off, but only these objects can be selected (the first-launch
+ * "hands, eyes or voice?" choice must be pickable by looking alone).
+ */
+export const dwellFocus: { only: Set<Object3D> | null } = { only: null };
+
+/** Run every action registered for this element, as a pinch would (voice alternative to pinching it). */
+export function activateTarget(obj: Object3D): boolean {
+  const fns: (() => void)[] = [];
+  for (const t of dwellTargets) if (t.obj === obj) fns.push(t.fn);
+  for (const fn of fns) fn();
+  return fns.length > 0;
+}
 
 type Clickable = {
   addEventListener(type: 'click', fn: () => void): void;
@@ -35,8 +52,8 @@ export function onActivate(el: Clickable & Object3D, fn: () => void, coneDeg = 2
 }
 
 /** Register a 3D object (not a UI element) as a dwell target. */
-export function addDwellTarget(obj: Object3D, fn: () => void, coneDeg = 3.5): () => void {
-  const t: DwellTarget = { obj, fn, coneDeg };
+export function addDwellTarget(obj: Object3D, fn: () => void, coneDeg = 3.5, when?: () => boolean): () => void {
+  const t: DwellTarget = { obj, fn, coneDeg, when };
   dwellTargets.add(t);
   return () => dwellTargets.delete(t);
 }

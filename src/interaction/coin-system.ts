@@ -9,7 +9,9 @@
  * from the tray into the learner's dish.
  *
  * Accessible alternatives (same state machine): payment chips on the chat
- * panel and voice ("voila cinq euros").
+ * panel, voice ("voila cinq euros"; "je paie" places the exact coins), and
+ * eyes-only: looking at a coin for a second while paying sends it to the tray.
+ * High contrast gives coins a black-on-white face so value never relies on colour.
  */
 
 import { createSystem, DistanceGrabbable, type Entity, Grabbed, Group, MovementMode, RayInteractable, Vector3 } from '@iwsdk/core';
@@ -19,7 +21,9 @@ import { director } from '../agent/runtime.js';
 import { Coin } from '../components.js';
 import { events } from '../game-state.js';
 import { dishPos, LUNE_HAND, REGISTER, TRAY, TRAY_RADIUS, type V3 } from '../layout.js';
-import { buildMoney, buildMoneyDish, buildRegisterDisplay, buildTray } from '../models/cafe-models.js';
+import { buildMoney, buildMoneyDish, buildRegisterDisplay, buildTray, moneyStyle, styleMoney } from '../models/cafe-models.js';
+import { addDwellTarget } from '../ui/dwell.js';
+import { pickCoins } from './pick-coins.js';
 import { store } from '../state/store.js';
 
 /** The learner's purse for each new order: 22 euros in useful denominations. */
@@ -56,6 +60,7 @@ interface Money {
   after: State; // state on landing
   grabStart: number;
   grabPos: Vector3;
+  undwell: () => void;
 }
 
 export class CoinSystem extends createSystem({
@@ -90,6 +95,7 @@ export class CoinSystem extends createSystem({
     this.register.root.position.set(...REGISTER);
     this.register.root.name = 'Cash Register';
     this.world.createTransformEntity(this.register.root);
+    moneyStyle.highContrast = store.profile.settings.highContrast;
     this.register.setText('Bonjour');
 
     this.placeDish();
@@ -131,7 +137,15 @@ export class CoinSystem extends createSystem({
           if (e.kind === 'return_change') this.giveChange(e.coins);
         }
       }),
-      events.settings.on(() => this.placeDish()),
+      events.settings.on((s) => {
+        this.placeDish();
+        if (s.highContrast !== moneyStyle.highContrast) {
+          moneyStyle.highContrast = s.highContrast;
+          for (const m of this.money) styleMoney(m.root, m.cents, s.highContrast);
+          this.register.setText(String(this.register.root.userData.text ?? ''));
+        }
+      }),
+      events.payExact.on(() => this.payExact()),
     );
   }
 
@@ -189,13 +203,24 @@ export class CoinSystem extends createSystem({
       from: new Vector3(), to: new Vector3(),
       t0: 0, dur: 0, arc: 0, after: state,
       grabStart: 0, grabPos: new Vector3(),
+      undwell: () => undefined,
     };
+    // Eyes-only: a one-second look at a coin in the dish sends it to the tray (only while paying).
+    m.undwell = addDwellTarget(
+      root,
+      () => this.toTray(m, 0.12),
+      2.6,
+      () => m.state === State.Dish && store.order.phase === 'paying',
+    );
     this.money.push(m);
     return m;
   }
 
   private refillWallet(): void {
-    for (const m of this.money) m.entity.dispose();
+    for (const m of this.money) {
+      m.undwell();
+      m.entity.dispose();
+    }
     this.money = [];
     this.unreported = 0;
     this.nextCoinSlot = 0;
@@ -232,12 +257,34 @@ export class CoinSystem extends createSystem({
     const tapped = this.clock - m.grabStart < TAP_MS / 1000 && this.tmp.distanceTo(m.grabPos) < TAP_MOVE;
     const paying = store.order.phase === 'paying';
     if (paying && (onTray || tapped)) {
-      const n = this.money.filter((x) => x.state === State.Tray).length;
-      this.fly(m, [TRAY[0] + ((n % 3) - 1) * 0.04, TRAY[1] + 0.012 + n * 0.003, TRAY[2] + (Math.floor(n / 3) - 0.5) * 0.04], 0.35, tapped ? 0.12 : 0.03, State.Tray);
+      this.toTray(m, tapped ? 0.12 : 0.03);
       return;
     }
     if (!paying && (onTray || tapped)) this.register.setText(store.order.lines.length ? "Demandez l'addition" : "Commandez d'abord");
     this.fly(m, m.home, 0.4, 0.08, State.Dish);
+  }
+
+  /** Send a piece to the next free spot on the tray (counted when it lands). */
+  private toTray(m: Money, arc: number, delay = 0): void {
+    let n = 0;
+    for (const x of this.money) if (x.state === State.Tray || (x.state === State.Flying && x.after === State.Tray)) n++;
+    this.fly(m, [TRAY[0] + ((n % 3) - 1) * 0.04, TRAY[1] + 0.012 + n * 0.003, TRAY[2] + (Math.floor(n / 3) - 0.5) * 0.04], 0.35, arc, State.Tray, delay);
+  }
+
+  /** "Je paie": the exact coins (or the smallest overpayment) fly from the dish to the tray. */
+  private payExact(): void {
+    if (store.order.phase !== 'paying') return;
+    let pending = 0;
+    for (const m of this.money) if (m.state === State.Flying && m.after === State.Tray) pending += m.cents;
+    const due = orderTotal(store.order.lines) - store.order.trayCents - this.unreported - pending;
+    if (due <= 0) return;
+    const dish = this.money.filter((m) => m.state === State.Dish);
+    const pick = pickCoins(dish.map((m) => m.cents), due);
+    if (pick.length === 0) {
+      void director.pay(due); // purse cannot cover it (should not happen): pay through the order state
+      return;
+    }
+    pick.forEach((i, k) => this.toTray(dish[i], 0.12, k * 0.18));
   }
 
   private landedOnTray(m: Money): void {

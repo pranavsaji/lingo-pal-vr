@@ -6,6 +6,7 @@
 import type { AgentTurn, ReplyOption } from './agent/protocol.js';
 import type { Effect, OrderState } from './agent/tools.js';
 import type { Profile, Settings } from './state/profile.js';
+import type { InputMode, VoiceCommand } from './voice/voice-commands.js';
 
 type Listener<T> = (value: T) => void;
 
@@ -75,6 +76,14 @@ export const events = {
   placeCafe: new Emitter<'start' | 'here' | 'cancel'>(),
   /** The shopkeeper's visible reasoning, one short line ("Lune note : deux ≠ douze"); '' clears it. */
   agentNote: new Emitter<string>(),
+  /** A global voice command was recognized (AccessibilitySystem runs it). */
+  voiceCommand: new Emitter<VoiceCommand>(),
+  /** "Je paie": put exact coins from the dish on the tray (CoinSystem). */
+  payExact: new Emitter<void>(),
+  /** Start listening now (hands-free voice), if the microphone is available. */
+  listenNow: new Emitter<void>(),
+  /** The learner chose how to interact (first launch, settings or voice). */
+  inputMode: new Emitter<InputMode>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
@@ -92,4 +101,8 @@ export const appState = {
   place: 'cafe' as PlaceId,
   /** Mixed reality: the "placer le café ici" reticle is showing (a pinch or "ici" commits). */
   placingCafe: false,
+  /** The first-launch "hands, eyes or voice?" choice is on screen. */
+  choosingInput: false,
+  /** When set, a pinched chat reply is offered here first; returning true consumes it (no agent turn). */
+  interceptReply: null as ((fr: string) => boolean) | null,
 };

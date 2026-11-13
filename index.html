@@ -1,15 +1,170 @@
 <!doctype html>
-<html>
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
+    <meta name="theme-color" content="#14213d" />
+    <meta name="description" content="Order a croissant in Paris: speak French with a real shopkeeper, seated, hands-first, in Meta Quest." />
     <link rel="icon" href="data:," />
-    <title>lingo-pal-vr</title>
+    <title>Lingo Pal · Café Lune</title>
+    <!--
+      Landing page: paints instantly (inline CSS, no fonts, no images), shows real
+      loading progress (src/ui/boot.ts + src/ui/landing.ts feed it), and enables
+      "Entrer au café" once the shop and Madame Lune are ready.
+    -->
+    <style>
+      :root {
+        --ink: #fdf8ec;
+        --muted: #c9cfdc;
+        --night: #14213d;
+        --night-2: #1d3557;
+        --cream: #f7efdc;
+        --gold: #f5d90a;
+        --red: #e63946;
+        --red-hi: #ff5a67;
+        --teal: #9fd3c7;
+      }
+      html, body { margin: 0; height: 100%; background: var(--night); }
+      body.landing-open { overflow: hidden; }
+      #landing {
+        position: fixed; inset: 0; z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px; box-sizing: border-box; overflow-y: auto;
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background:
+          radial-gradient(ellipse at 50% -10%, rgba(245, 217, 10, 0.18), transparent 55%),
+          radial-gradient(ellipse at 80% 110%, rgba(230, 57, 70, 0.22), transparent 50%),
+          linear-gradient(180deg, var(--night-2), var(--night));
+      }
+      #landing[hidden] { display: none; }
+      .card { width: 100%; max-width: 640px; text-align: center; margin: auto; }
+      .awning {
+        height: 22px; margin: 0 auto 22px; max-width: 360px; border-radius: 0 0 14px 14px;
+        background: repeating-linear-gradient(90deg, var(--red) 0 30px, var(--cream) 30px 60px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      }
+      .brand { font-size: 15px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+      h1 {
+        font-family: Georgia, "Times New Roman", serif; font-weight: 700;
+        font-size: clamp(30px, 6vw, 48px); line-height: 1.1; margin: 10px 0 8px;
+      }
+      .promise { font-size: clamp(16px, 2.6vw, 20px); color: var(--muted); margin: 0 auto 26px; max-width: 30em; line-height: 1.4; }
+      .steps { list-style: none; display: flex; justify-content: center; gap: clamp(12px, 4vw, 34px); padding: 0; margin: 0 0 28px; }
+      .steps li { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 88px; }
+      .pict {
+        width: 76px; height: 76px; border-radius: 50%;
+        display: grid; place-items: center;
+        background: rgba(253, 248, 236, 0.08); border: 2px solid rgba(245, 217, 10, 0.55);
+      }
+      .pict svg { width: 44px; height: 44px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .steps b { font-size: 17px; }
+      .steps span { font-size: 13px; color: var(--muted); }
+      .progress {
+        height: 10px; max-width: 420px; margin: 0 auto; border-radius: 6px; overflow: hidden;
+        background: rgba(253, 248, 236, 0.14);
+      }
+      .bar { height: 100%; width: 100%; transform-origin: left; transform: scaleX(0.04); background: linear-gradient(90deg, var(--gold), #ffb703); border-radius: 6px; }
+      .status { min-height: 1.4em; margin: 10px 0 18px; font-size: 15px; color: var(--teal); }
+      .enter-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+      .enter {
+        font: inherit; font-size: 22px; font-weight: 800; letter-spacing: 0.01em;
+        min-height: 64px; min-width: 260px; padding: 0 34px; border-radius: 32px; cursor: pointer;
+        color: #fff; background: var(--red); border: 3px solid transparent;
+        box-shadow: 0 10px 26px rgba(230, 57, 70, 0.35);
+        transition: background 0.2s, transform 0.2s, opacity 0.3s;
+      }
+      .enter:hover:not(:disabled), .enter:focus-visible { background: var(--red-hi); border-color: var(--ink); outline: none; transform: translateY(-1px); }
+      .enter:disabled { opacity: 0.45; cursor: progress; box-shadow: none; }
+      .enter.secondary { background: transparent; border-color: var(--teal); color: var(--ink); box-shadow: none; }
+      body.landing-ready .enter:not(:disabled):not(.secondary) { animation: glow 1.8s ease-in-out 2; }
+      @keyframes glow { 50% { box-shadow: 0 0 0 10px rgba(245, 217, 10, 0.25), 0 10px 26px rgba(230, 57, 70, 0.35); } }
+      .a11y { margin: 22px 0 4px; font-size: 14px; color: var(--muted); }
+      .a11y strong { color: var(--ink); font-weight: 600; }
+      .link { font: inherit; font-size: 14px; background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 8px; }
+      .link:hover, .link:focus-visible { color: var(--ink); outline: none; }
+      @media (max-width: 420px) {
+        .steps li { min-width: 76px; }
+        .pict { width: 64px; height: 64px; }
+        .enter { min-width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .enter, .bar { transition: none; }
+        body.landing-ready .enter { animation: none !important; }
+      }
+    </style>
   </head>
-  <body style="margin: 0">
+  <body class="landing-open">
+    <div id="landing" role="dialog" aria-modal="true" aria-labelledby="landing-title">
+      <main class="card">
+        <div class="awning" aria-hidden="true"></div>
+        <div class="brand">Lingo Pal · Café Lune</div>
+        <h1 id="landing-title">Commandez votre croissant à Paris.</h1>
+        <p class="promise">Speak French with a Parisian shopkeeper who answers back. Seated, hands only, first order in about a minute.</p>
+        <ul class="steps" aria-label="How it works">
+          <li>
+            <div class="pict" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/><path d="M2.5 5.5 4 4M1 9h2M20.5 2.5 19 4"/></svg>
+            </div>
+            <b>Coucou</b><span>Wave hello</span>
+          </li>
+          <li>
+            <div class="pict" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 21c-1-3 0-6 3-7.5l3.2-1.6"/><path d="M4 21c4 1.5 9 .5 11.5-3l1.5-2.5"/><path d="M17 15.5 20.5 5a1.6 1.6 0 0 0-3-1L13 12"/><path d="M10.2 11.9c.9-1.6 2.5-1.8 2.8.1"/><path d="M8.5 6.5 10 8.5M12.5 3.5v2.5M5 9l2.2 1"/></svg>
+            </div>
+            <b>Pincez</b><span>Pinch to pick</span>
+          </li>
+          <li>
+            <div class="pict" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+            </div>
+            <b>Parlez</b><span>Speak French</span>
+          </li>
+        </ul>
+        <div class="progress" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4">
+          <div class="bar" id="boot-bar"></div>
+        </div>
+        <p class="status" id="boot-status" aria-live="polite">Chargement…</p>
+        <!-- Enter options. A second option (e.g. "Réalité mixte") goes inside #enter-row as a
+             <button class="enter secondary">, next to the main button. -->
+        <div class="enter-row" id="enter-row">
+          <button id="enter-cafe" class="enter" disabled>Entrer au café</button>
+          <button id="enter-mr" class="enter secondary" disabled hidden>Dans ma pièce</button>
+        </div>
+        <p class="a11y"><strong>Mains, regard ou voix</strong> · sous-titres · assis</p>
+        <button id="enter-2d" class="link">Voir sans casque</button>
+      </main>
+    </div>
+    <script>
+      // Progress animation: eases toward the real progress and creeps (never past
+      // the next milestone) so the page never looks frozen. src/ui/landing.ts calls set().
+      (function () {
+        var bar = document.getElementById('boot-bar');
+        var status = document.getElementById('boot-status');
+        var meter = bar && bar.parentNode;
+        var shown = 0.04, real = 0.05, cap = 0.28;
+        function tick() {
+          var goal = Math.max(real, Math.min(cap, shown + (cap - shown) * 0.008 + 0.0004));
+          shown += (goal - shown) * 0.12;
+          if (bar) bar.style.transform = 'scaleX(' + shown.toFixed(4) + ')';
+          if (meter) meter.setAttribute('aria-valuenow', String(Math.round(shown * 100)));
+          var landing = document.getElementById('landing');
+          if (!landing || !landing.hidden) requestAnimationFrame(tick);
+          else setTimeout(function () { requestAnimationFrame(tick); }, 500);
+        }
+        window.__lingoBoot = {
+          set: function (progress, nextCap, label) {
+            real = progress;
+            cap = Math.max(progress, nextCap);
+            if (status && label && status.textContent !== label) status.textContent = label;
+          },
+        };
+        requestAnimationFrame(tick);
+      })();
+    </script>
     <div id="scene-container"></div>
     <script type="module" src="/src/index.ts"></script>
   </body>

@@ -146,6 +146,7 @@ export class ChatSystem extends createSystem({}) {
   private choose(i: number): void {
     const c = this.choices[i];
     if (!c || this.pending > 0) return;
+    if (appState.interceptReply?.(c.fr)) return; // e.g. the first-launch input choice
     speakFrench(c.fr, undefined, 'learner'); // the learner's own reply, in the learner's voice
     if (c.payCents !== undefined) {
       this.track(director.pay(c.payCents, true));

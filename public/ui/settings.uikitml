@@ -125,12 +125,22 @@
     font-size: 19px;
     font-weight: bold;
   }
+
+  .summary {
+    color: #f5d90a;
+    font-size: 14px;
+    font-weight: bold;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
 </style>
 <Panel class="root">
   <div class="header">
     <span class="brand">RÉGLAGES</span>
     <span class="sub">Say "réglages" anytime</span>
   </div>
+  <span class="summary" id="a11y-summary">Accessibilité : mains · sous-titres · texte M</span>
   <div class="rows">
     <div class="row" id="set-highContrast"><div class="labels"><span class="label">Contraste élevé</span><span class="help">High contrast text and outlines</span></div><span class="value" id="set-highContrast-val">OFF</span></div>
     <div class="row" id="set-textSize"><div class="labels"><span class="label">Taille du texte</span><span class="help">Text size: small, medium, large</span></div><span class="value" id="set-textSize-val">M</span></div>
@@ -140,6 +150,7 @@
     <div class="row" id="set-leftHanded"><div class="labels"><span class="label">Gaucher</span><span class="help">Left-hand mode: coins and mic on the left</span></div><span class="value" id="set-leftHanded-val">OFF</span></div>
     <div class="row" id="set-reduceMotion"><div class="labels"><span class="label">Moins d'animations</span><span class="help">Reduce motion and confetti</span></div><span class="value" id="set-reduceMotion-val">OFF</span></div>
     <div class="row" id="set-mixedReality"><div class="labels"><span class="label">Réalité mixte</span><span class="help">The cafe on your real table (passthrough)</span></div><span class="value" id="set-mixedReality-val">OFF</span></div>
+    <div class="row" id="set-voiceFirst"><div class="labels"><span class="label">Mains libres (voix)</span><span class="help">Lune listens after she speaks: no pinch needed</span></div><span class="value" id="set-voiceFirst-val">OFF</span></div>
     <div class="row" id="set-tutorial"><div class="labels"><span class="label">Revoir le tutoriel</span><span class="help">Replay the hand tutorial</span></div><span class="value" id="set-tutorial-val">GO</span></div>
   </div>
   <div class="actions">
