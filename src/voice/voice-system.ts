@@ -176,9 +176,11 @@ export class VoiceSystem extends createSystem({}) {
       return;
     }
     if (intent.kind === 'pay' && intent.cents && store.order.phase === 'paying') {
-      void director.pay(intent.cents);
+      void director.pay(intent.cents, true);
       return;
     }
-    void director.handle({ kind: 'say', text, fingers, pronunciation: scored?.score });
+    // Mistake memory: number confusions ("douze" for "deux") and low-scored words.
+    const misheard = director.observeSpeech({ text, target: scored?.target ?? null, score: scored?.score ?? null, missed: scored?.missed ?? [] });
+    void director.handle({ kind: 'say', text, fingers, pronunciation: scored?.score, ...(misheard ? { misheard } : {}) });
   }
 }

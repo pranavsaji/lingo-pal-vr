@@ -70,6 +70,17 @@
     color: #c9ccd3;
   }
 
+  .agent-note {
+    color: #8a3b12;
+    font-size: 14px;
+    font-weight: bold;
+    padding-top: 4px;
+  }
+
+  .agent-note:dark {
+    color: #f4a261;
+  }
+
   .label {
     color: #6b5a00;
     font-size: 14px;
@@ -183,6 +194,7 @@
   <div class="content">
     <span class="npc" id="npc-line">Bonjour ! Bienvenue au café.</span>
     <span class="npc-en" id="npc-en">Hello! Welcome to the cafe.</span>
+    <span class="agent-note" id="agent-note" style="display: none"></span>
     <span class="label" id="label">PINCEZ UNE RÉPONSE / PINCH A REPLY</span>
   </div>
   <div class="options">

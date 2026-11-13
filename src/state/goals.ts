@@ -49,6 +49,8 @@ export interface HookInputs {
   unlocks: string[];
   passport: PassportProgress;
   today: Day;
+  /** Words the shopkeeper planned for tomorrow (so the teaser matches tomorrow's real list). */
+  focusWords?: readonly string[];
 }
 
 export interface Line {
@@ -109,10 +111,10 @@ export function nextGoal(h: HookInputs): Line | null {
 }
 
 /** One item from tomorrow's shopping list ("Demain : deux baguettes à la boulangerie ?"). */
-export function tomorrowList(today: Day): Line {
+export function tomorrowList(today: Day, focusWords?: readonly string[]): Line {
   const tomorrow = addDays(today, 1);
-  const q = dailyQuest(tomorrow);
-  const t = q.tasks[daySeed(tomorrow) % q.tasks.length];
+  const q = dailyQuest(tomorrow, focusWords);
+  const t = q.tasks.find((task) => focusWords?.includes(task.itemId)) ?? q.tasks[daySeed(tomorrow) % q.tasks.length];
   const item = PLACES[t.place]?.menu.find((m) => m.id === t.itemId);
   const at = AT[t.place] ?? AT.cafe;
   if (!item) return { fr: 'Demain : une nouvelle liste', en: 'Tomorrow: a new list' };
@@ -121,7 +123,7 @@ export function tomorrowList(today: Day): Line {
 
 /** Short teaser for tomorrow: tomorrow's list item plus the nearest goal. */
 export function tomorrowHook(h: HookInputs): Line {
-  const list = tomorrowList(h.today);
+  const list = tomorrowList(h.today, h.focusWords);
   const goal = nextGoal(h);
   return goal ? { fr: `${list.fr} ${goal.fr}.`, en: `${list.en} ${goal.en}.` } : list;
 }

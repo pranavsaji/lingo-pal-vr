@@ -24,6 +24,7 @@ import { QualitySystem } from './world/quality-system.js';
 import { PlaceSystem } from './world/place-system.js';
 import { QuestSystem } from './world/quest-system.js';
 import { PassportSystem } from './world/passport-system.js';
+import { CoachSystem } from './world/coach-system.js';
 
 import { localVoice } from './voice/local-voice.js';
 import { SpeechInput } from './voice/speech-input.js';
@@ -80,4 +81,5 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(CelebrationSystem);
   world.registerSystem(OnboardingSystem);
   world.registerSystem(PassportSystem); // Bon retour, passport stamps, tomorrow's teaser
+  world.registerSystem(CoachSystem); // proactive shopkeeper: hints on hesitation / gaze (local, rate-limited)
 });

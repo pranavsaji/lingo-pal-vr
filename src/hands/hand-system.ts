@@ -162,6 +162,7 @@ export class HandSystem extends createSystem({}) {
       this.headQ.set(o.x, o.y, o.z, o.w).premultiply(this.player.quaternion);
       this.headFwd.set(0, 0, -1).applyQuaternion(this.headQ);
       this.gazeItem = this.itemInView();
+      handState.gazeItem = this.gazeItem;
     }
 
     for (const source of session.inputSources) {

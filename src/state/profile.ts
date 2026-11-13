@@ -6,6 +6,8 @@
 
 import type { History } from './history.js';
 import { emptyPassport, type PassportProgress } from './passport.js';
+import type { Mistake } from './mistakes.js';
+import type { TomorrowPlan } from './plan.js';
 import type { Quest } from './quest.js';
 import type { SrsCard } from './srs.js';
 
@@ -48,6 +50,22 @@ export interface Profile {
   restUsed: string[];
   /** Set when the profile was seeded by ?demo=week (labelled in the UI). */
   demo: string;
+  /** The shopkeepers' notes on this learner: mistakes to reuse, tomorrow's plan, change tests. */
+  coach: CoachMemory;
+}
+
+export interface CoachMemory {
+  /** Bounded list of concrete mistakes (state/mistakes.ts). */
+  mistakes: Mistake[];
+  /** Planned at goodbye for the next day (state/plan.ts). */
+  plan: TomorrowPlan | null;
+  /** Wrong-change tests given and caught (all time). */
+  tricks: number;
+  caught: number;
+}
+
+export function defaultCoach(): CoachMemory {
+  return { mistakes: [], plan: null, tricks: 0, caught: 0 };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -84,6 +102,7 @@ export function defaultProfile(): Profile {
     restDays: 0,
     restUsed: [],
     demo: '',
+    coach: defaultCoach(),
   };
 }
 
@@ -151,6 +170,7 @@ export function loadProfile(kv: KV | null): Profile {
         restDays: Number(stored.restDays) || 0,
         restUsed: Array.isArray(stored.restUsed) ? stored.restUsed.filter((d): d is string => typeof d === 'string') : [],
         demo: typeof stored.demo === 'string' ? stored.demo : '',
+        coach: { ...defaultCoach(), ...(stored.coach ?? {}) },
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

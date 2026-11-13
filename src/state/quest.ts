@@ -28,12 +28,18 @@ export const QUEST_XP = 60;
 const ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche'];
 const menus = placesData.places as unknown as Record<PlaceId, { menu: { id: string }[] }>;
 
-export function dailyQuest(day: Day): Quest {
+/**
+ * @param focusWords optional words the shopkeeper planned for today (weakest
+ * SRS words and mistakes, see state/plan.ts): a shop whose menu has one buys
+ * it instead of the seeded pick. Without it the list is purely date-seeded.
+ */
+export function dailyQuest(day: Day, focusWords?: readonly string[]): Quest {
   const seed = daySeed(day);
   const tasks = ORDER.map((place, i) => {
     const menu = menus[place].menu;
     const s = (seed >>> (i * 7)) ^ (seed * (i + 3));
-    const item = menu[Math.abs(s) % menu.length];
+    const focus = focusWords?.find((w) => menu.some((m) => m.id === w));
+    const item = (focus && menu.find((m) => m.id === focus)) || menu[Math.abs(s) % menu.length];
     return { place, itemId: item.id, qty: 1 + (Math.abs(s >>> 3) % 3), done: false };
   });
   return { day, tasks, rewarded: false };

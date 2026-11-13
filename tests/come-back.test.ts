@@ -189,3 +189,15 @@ describe('voice: open the passport', () => {
     expect(parseIntent('mes tampons')).toEqual({ kind: 'command', command: 'passport' });
   });
 });
+
+describe('tomorrow teaser follows the shopkeeper plan', () => {
+  it('names a planned focus word when tomorrow\'s list contains it', async () => {
+    const { tomorrowList } = await import('../src/state/goals.js');
+    const { dailyQuest } = await import('../src/state/quest.js');
+    const { addDays } = await import('../src/state/dates.js');
+    const today = '2026-11-13';
+    const q = dailyQuest(addDays(today, 1), ['croissant']);
+    const line = tomorrowList(today, ['croissant']);
+    if (q.tasks.some((t) => t.itemId === 'croissant')) expect(line.fr).toMatch(/croissant/);
+  });
+});

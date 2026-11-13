@@ -73,6 +73,8 @@ export const events = {
   stamp: new Emitter<string>(),
   /** Mixed reality: move the cafe in the learner's room (show the reticle, commit "ici", cancel). */
   placeCafe: new Emitter<'start' | 'here' | 'cancel'>(),
+  /** The shopkeeper's visible reasoning, one short line ("Lune note : deux ≠ douze"); '' clears it. */
+  agentNote: new Emitter<string>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
