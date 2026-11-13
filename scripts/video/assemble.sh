@@ -18,5 +18,5 @@ PY
 cd - >/dev/null
 if [ -f "$dir/audio.webm" ]; then A="-i $dir/audio.webm -c:a aac -b:a 192k -shortest"; else A=""; fi
 ffmpeg -v error -y -f concat -safe 0 -i "$dir/concat.txt" $A \
-  -vf "scale=1920:-2:flags=lanczos,crop=1920:1080:0:46,fps=30,format=yuv420p" -c:v libx264 -crf 17 -preset slow "$out"
+  -vf "scale=1920:-2:flags=lanczos,crop=1920:1080:0:58,fps=30,format=yuv420p" -c:v libx264 -crf 17 -preset slow "$out"
 echo "$out"
