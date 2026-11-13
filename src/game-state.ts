@@ -84,6 +84,8 @@ export const events = {
   listenNow: new Emitter<void>(),
   /** The learner chose how to interact (first launch, settings or voice). */
   inputMode: new Emitter<InputMode>(),
+  /** Café à deux: open (or show) the invite card (map panel button, voice "inviter"). */
+  invite: new Emitter<void>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

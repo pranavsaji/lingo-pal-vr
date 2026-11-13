@@ -193,6 +193,9 @@ export class VoiceSystem extends createSystem({}) {
         case 'place':
           events.placeCafe.emit('start');
           return;
+        case 'invite':
+          events.invite.emit();
+          return;
       }
     }
     if (intent.kind === 'travel') {
