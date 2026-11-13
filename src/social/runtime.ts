@@ -32,7 +32,13 @@ const bridge: GameBridge = {
 
 export const social = new SocialSession(bridge, (invite, on) => new PeerLink(invite, on));
 
+let friendShown = false;
 social.changed.on(() => {
+  const here = social.state === 'connected';
+  if (here !== friendShown) {
+    friendShown = here;
+    events.friendPresent.emit(here);
+  }
   if (social.active && !watching) {
     watching = true;
     luneSpeaking.on((v) => (speaking = v));

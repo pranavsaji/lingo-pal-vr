@@ -86,6 +86,8 @@ export const events = {
   inputMode: new Emitter<InputMode>(),
   /** Café à deux: open (or show) the invite card (map panel button, voice "inviter"). */
   invite: new Emitter<void>(),
+  /** Café à deux: a friend is (true) or is no longer (false) at a counter-end seat. */
+  friendPresent: new Emitter<boolean>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

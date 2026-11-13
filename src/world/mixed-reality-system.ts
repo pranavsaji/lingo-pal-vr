@@ -78,6 +78,10 @@ const SEARCH_SECONDS = 5;
 const PLANE_REFRESH_S = 0.5;
 const ANCHOR_RESTORE_TIMEOUT_MS = 4000;
 const TOAST_SECONDS = 5;
+/** Hit-test surfaces accepted for the counter (reference-space metres): tables and desks, not the floor. */
+const SURFACE_MIN_Y = 0.3;
+const SURFACE_MAX_Y = 1.4;
+
 /** Ignore the pinch that opened the reticle (from the map button). */
 const PLACING_GRACE_S = 0.6;
 const PERF_CHECK_S = 1.5;
@@ -211,6 +215,8 @@ export class MixedRealitySystem extends createSystem({
   private placing = false;
   private placingSince = 0;
   private commitNext = false;
+  /** Where the reticle was last drawn (committed on pinch / "ici"). */
+  private shown: P3 = { x: 0, y: 0, z: 0 };
   private reticle!: Group;
   private reticleLabel!: Label;
   private hit: SurfaceHit = { x: 0, y: 0, z: 0, kind: 'height' };
@@ -543,6 +549,14 @@ export class MixedRealitySystem extends createSystem({
     }
     if (!pose) return;
     const { position: p, orientation: o } = pose.transform;
+    if (p.y < SURFACE_MIN_Y || p.y > SURFACE_MAX_Y) {
+      // A saved spot that is not at table height (e.g. the room was re-scanned): drop it
+      // and let table detection place the cafe again.
+      this.forgetAnchor();
+      writeStorage(null);
+      if (this.source === 'anchor') this.source = 'fixed';
+      return;
+    }
     const yaw = yawOfQuaternion(o.x, o.y, o.z, o.w);
     if (
       Math.abs(p.x - this.lastAnchorX) < 0.002 &&
@@ -679,8 +693,8 @@ export class MixedRealitySystem extends createSystem({
         const results = frame.getHitTestResults(this.hitSource);
         const pose = results.length ? results[0].getPose(ref) : undefined;
         const m = pose?.transform.matrix;
-        if (m && m[5] > 0.85) {
-          // Up-facing surface (the pose's +Y is the surface normal).
+        // Up-facing surface (the pose's +Y is the surface normal) at table height: never the floor.
+        if (m && m[5] > 0.85 && m[13] >= SURFACE_MIN_Y && m[13] <= SURFACE_MAX_Y) {
           this.hit.x = m[12];
           this.hit.y = m[13];
           this.hit.z = m[14];
@@ -690,15 +704,21 @@ export class MixedRealitySystem extends createSystem({
       }
     }
 
+    if (this.commitNext) {
+      // Commit where the learner saw the reticle: the pinch itself moves the hand ray.
+      this.commitNext = false;
+      if (this.hitValid) this.commit(this.shown);
+      else if (hit) this.commit(hit);
+      return;
+    }
     this.hitValid = hit !== null;
     this.reticle.visible = this.hitValid;
     if (hit) {
+      this.shown.x = hit.x;
+      this.shown.y = hit.y;
+      this.shown.z = hit.z;
       this.reticle.position.set(hit.x, hit.y + 0.003, hit.z);
       this.reticle.rotation.set(0, Math.atan2(this.head.x - hit.x, this.head.z - hit.z), 0);
-    }
-    if (this.commitNext) {
-      this.commitNext = false;
-      if (hit) this.commit(hit);
     }
   }
 

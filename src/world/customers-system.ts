@@ -37,6 +37,7 @@ import {
   customerEyeHeight,
   customerRootY,
   TABLE_TOP,
+  nearFriendSeat,
 } from './characters/customers.js';
 import { HumanRig, prepareAvatar } from './characters/human-rig.js';
 import { SHOPKEEPER_POS, SHOPKEEPERS } from './characters/shopkeepers.js';
@@ -77,6 +78,7 @@ export class CustomersSystem extends createSystem({}) {
   private readonly gaze: GazeTargets = { learnerYaw: 0, learnerPitch: 0, counterYaw: 0, counterPitch: 0 };
   private readonly rel = { yaw: 0, pitch: 0 };
   private disposed = false;
+  private friendHere = false;
 
   init(): void {
     this.anchor = new Group();
@@ -85,6 +87,12 @@ export class CustomersSystem extends createSystem({}) {
     this.show(appState.place);
     this.cleanupFuncs.push(
       events.place.on((place) => this.show(place)),
+      // Café à deux: free the counter-end seats for the friend's avatar.
+      events.friendPresent.on((here) => {
+        if (here === this.friendHere) return;
+        this.friendHere = here;
+        this.show(this.place);
+      }),
       () => {
         this.disposed = true;
       },
@@ -108,6 +116,7 @@ export class CustomersSystem extends createSystem({}) {
   }
 
   private attach(c: Customer): void {
+    if (this.friendHere && nearFriendSeat(c.spec.pos[0], c.spec.pos[1])) return;
     this.active.push(c);
     this.anchor.add(c.root);
     for (const x of c.extras) this.anchor.add(x);

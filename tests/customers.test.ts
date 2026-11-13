@@ -366,3 +366,13 @@ describe('customer placement and assets', () => {
     });
   }
 });
+
+describe('Café à deux frees the counter-end seats', () => {
+  it('hides only the customers sitting where the friend appears', async () => {
+    const { nearFriendSeat } = await import('../src/world/characters/customers');
+    const hidden = Object.values(CUSTOMERS).flat().filter((c) => nearFriendSeat(c.pos[0], c.pos[1]));
+    expect(hidden.map((c) => c.posture)).toEqual(['seated', 'seated']);
+    expect(nearFriendSeat(0.95, -0.62)).toBe(true);
+    expect(nearFriendSeat(-0.95, -0.62)).toBe(true);
+  });
+});

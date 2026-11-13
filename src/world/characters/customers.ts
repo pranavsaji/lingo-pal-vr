@@ -99,3 +99,8 @@ export const CUSTOMERS: Record<PlaceId, CustomerSpec[]> = {
     },
   ],
 };
+
+/** Café à deux seats (src/social/protocol.ts SEAT_LEFT / SEAT_RIGHT: x ±0.95, z -0.62). */
+export function nearFriendSeat(x: number, z: number): boolean {
+  return Math.hypot(Math.abs(x) - 0.95, z + 0.62) < 1.0;
+}
