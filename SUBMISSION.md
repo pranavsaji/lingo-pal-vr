@@ -7,79 +7,80 @@ Re-read it after the Quest device pass and remove anything that did not hold up 
 ## Form fields
 
 - **Project name:** Lingo Pal VR: Cafe Lune
-- **Tagline (≤140 chars):** Your daily French cafe. Order with your voice and fingers, pay in euros, and Madame Lune remembers you. Hands-only.
+- **Tagline (≤140 chars):** A daily French café on your real table. Order with fingers and voice, pay in euros; proactive AI shopkeepers remember you.
 - **Track / division:** Productivity, New Experience
 - **Playable link:** https://lingo-pal-vr.vercel.app
 - **Target launch:** December 2026, public web (Quest Browser)
 - **Team:** Pranav Saji (Pranav Innovates), solo developer
 
-## Description (about 500 words)
+## Description (about 600 words)
 
 **Inspiration.** The hardest part of learning a language is speaking it in a real moment,
 like ordering a coffee, with someone waiting for your answer. Apps teach words; they rarely
 make you use them. Lingo Pal VR turns that moment into a ten-minute daily habit you can do
-seated, with only your hands and your voice.
+seated, with only your hands, your eyes and your voice.
 
-**What it does.** You sit at Madame Lune's cafe counter in Paris. Look at the croissants,
+**What it does.** You sit at Madame Lune's café counter in Paris. Look at the croissants,
 hold up two fingers and say "Deux croissants, s'il vous plaît": she serves two croissants
 and tells you the price in French. Pick up a 5 € note, drop it on her tray, and she counts
-your change back coin by coin, out loud. Every reply you speak gets a pronunciation score
-with the words to practise. Each visit adds to your streak, XP and level (A1.1 to A2.2),
-new words go into your Carnet with spaced-repetition review, and the cafe changes as you
-progress: string lights, plants, a daily-special chalkboard, a gramophone.
+your change back out loud. Every reply you speak gets a pronunciation score. Three shops
+(café, boulangerie, marché), each with its own shopkeeper, menu and words, and a daily
+shopping list across Paris.
 
-**A small Paris to explore.** Three shops on a Paris map, each with its own realistic
-shopkeeper, menu, prices and words: Café Lune (Madame Lune), La Boulangerie (Monsieur
-Paul, croissants and éclairs) and Le Marché (Madame Rose, fruit and vegetables in a
-covered market). The bakery opens after the tutorial and the market after your first paid
-order, so a first visit sees all three within minutes. Say "allons au marché" or pinch
-"Paris" to travel.
+**An agent, not a chatbot.** The shopkeepers are spatial AI agents built on Claude with
+strict tool use. A deterministic game core owns the menu, prices and every calculation;
+the model proposes actions (serve, quote, give change, offer a substitute, remember a fact)
+and the client validates each one before it happens in 3D. They are proactive: they notice
+when you hesitate or keep looking at an item and offer a hint scaled to your level; they
+remember your mistakes ("Lune note : deux ≠ douze") and reuse those words on purpose; when
+an item runs out they propose a substitute; once you are doing well they sometimes give
+you the wrong change on purpose to see if you catch it; and at goodbye they plan
+tomorrow's shopping list around your weakest words. Hints run locally with no extra AI call.
 
-**A daily habit with measurable progress.** Every day brings a new shopping list across
-Paris: one thing to buy in each shop ("deux croissants" at the bakery, "trois pommes" at the
-market), ticked off when you pay for it there; the shopkeepers know what is on your list.
-"Ma semaine" shows your week: XP per day, minutes, new words, orders, pronunciation and
-streak, compared with the week before.
+**Your real table.** In mixed reality the café comes to your room: plane detection finds
+your real table or desk and the counter snaps onto it; you can move it with a pinch or by
+saying "ici", and a persistent spatial anchor brings it back to the same spot tomorrow.
+With Quest 3 depth sensing your real hands pass in front of the virtual croissants.
 
-**How the agent works.** Madame Lune is a spatial AI agent built on Claude with strict
-tool use. A deterministic game core owns the menu, the prices, the money and every
-calculation. The model proposes actions (serve items, quote the total, give change,
-start a quiz, remember a fact about you, emote, point at an item) and the client
-validates each one before it happens in 3D, so she can never charge the wrong price or
-invent change. She knows what you are looking at and holding, remembers your name and
-details between visits, and every day brings a different "plat du jour" challenge. If
-the network drops, a built-in offline script keeps the cafe working.
+**Come back tomorrow.** Streaks with earned rest days, XP and levels from A1 to A2, a
+Passeport de Paris with twelve stamps, spaced-repetition word review, a café that visibly
+changes as you progress, a "Bon retour !" summary of what changed since your last visit,
+a teaser for tomorrow, and "Ma semaine", a weekly report.
 
-**Hands-first design.** Finger counting from WebXR hand joints, pinch to select, grab and
-release coins, palm up to talk, wave to say hello. Every hand action has a voice
-alternative ("répéter", "plus lentement", "réglages", "voilà cinq euros") and a gaze
-alternative (look at a button for one second), so the app also works eyes-only and
-voice-only.
+**First five minutes.** A branded page appears instantly with a real loading bar. Madame
+Lune asks how you want to play: hands, eyes or voice. A ghost hand and her voice teach
+four moves (wave, pinch, count, pay) with one pictogram each and almost no text; the
+first order and confetti arrive in about a minute.
 
-**Accessibility.** Subtitles in French and English are always on. Settings for high
-contrast, text size, slow speech, left-handed layout, reduced motion and eyes-only dwell
-selection. Seated by default.
+**Accessible by default.** Every hand action has a voice alternative and an eyes-only
+alternative (look for one second), including paying ("je paie"). Global voice commands
+open every panel. Subtitles on, high contrast that also reaches 3D labels and coins, text
+size, slow speech, left-handed layout, reduced motion, hands-free voice. Seated, and it
+also fits the narrower view of Meta VR Glasses with gaze and pinch.
 
-**How we built it.** Meta's Immersive Web SDK (three.js plus an entity-component system),
-WebXR hand tracking, UIKitML spatial panels and synthesized spatial audio. Realistic
-shopkeepers are Microsoft Rocketbox avatars (MIT) animated procedurally (look-at, lip
-movement, blinks, gestures, pointing); food, props, surfaces and 360° photo environments
-with image-based lighting are Poly Haven scans (CC0), optimized to stay within a Quest
-frame budget. Each shop's menu and prices live in one data file shared by the app and the
-AI server. Claude runs on a Vercel serverless route; the key
-never reaches the headset. Speech recognition (Whisper) and, when the browser has no
-French voice, Madame Lune's voice run on the headset itself in a Web Worker, so voice works
-in Quest Browser with no extra service. Optional mixed reality mode puts the counter in
-your room with passthrough.
+**Café à deux.** Invite a friend with a private link or QR code: they join from a second
+headset or simply a laptop or phone browser, appear across the counter with head and hands,
+talk over spatial voice chat, and take turns ordering on one shared tray. Peer to peer, no
+accounts.
 
-**Challenges.** Counting fingers reliably without false orders (we require a raised,
-upright hand and a gaze target). Paying with physical coins while seated (aim-and-release
-onto the tray). Keeping the AI fast (about 2 seconds per turn) and keeping all money
-arithmetic out of the model. Getting voice into Quest Browser, which has no speech
-recognition, without blocking the 72 fps frame loop.
+**How we built it.** Meta's Immersive Web SDK (three.js and an entity-component system),
+WebXR hand tracking, gaze, plane detection, anchors, depth sensing, UIKitML spatial panels.
+Shopkeepers and customers are Microsoft Rocketbox avatars (MIT) animated procedurally;
+food and rooms are photo scans (CC0 and CC-BY). Claude and natural French voices (Inworld)
+run on Vercel serverless routes behind rate limits and daily budgets; keys never reach the
+headset. On-device Whisper is the speech fallback. Per-frame work is measured and kept low
+(about 2 ms of app logic per frame).
 
-**What's next.** Spanish and Italian cafes, a market and a bakery scene, Meta VR Glasses
-support tuned for gaze and pinch, and "Café à deux" for practising with a friend.
+**What's next.** More cities (Madrid, Rome), a teacher mode, and launch on the Meta
+Horizon Store as a PWA.
+
+## Judge quick start
+
+- Fresh first launch: https://lingo-pal-vr.vercel.app/?reset
+- A week of progress in one click (labelled DEMO): https://lingo-pal-vr.vercel.app/?demo=week
+  (your own progress is backed up first; `?restore` brings it back)
+- Mixed reality: press "Dans ma pièce" on the start page (Quest 3: set up your room first)
+- Café à deux: Paris map → "Inviter un ami", then open the shown link on a laptop or phone
 
 ## Hand interactions (optional field)
 
@@ -87,7 +88,8 @@ support tuned for gaze and pinch, and "Café à deux" for practising with a frie
 | --- | --- | --- |
 | Look at an item + hold up 1 to 5 fingers | Orders that many | Say it, or pinch a suggested reply |
 | Pinch | Select a reply, button or item | Look at it for 1 second (eyes-only mode) |
-| Pinch-grab a coin or note, release over the tray | Pay | Say "voilà cinq euros" |
+| Pinch-grab a coin or note, release over the tray | Pay | Say "je paie" or "voilà cinq euros", or look at a coin for 1 second |
+| Point at your real table and pinch (mixed reality) | Place the café there | Say "ici" |
 | Palm up / lower palm | Start / stop talking | Pinch "Parler" |
 | Wave | Say hello (tutorial step 1) | Say "bonjour" |
 | Thumbs up | Agree | Say "oui" |
