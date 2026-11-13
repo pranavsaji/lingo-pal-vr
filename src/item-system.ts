@@ -4,6 +4,7 @@
  */
 
 import {
+  AssetManager,
   createSystem,
   type Entity,
   Group,
@@ -17,13 +18,32 @@ import {
   DoubleSide,
 } from '@iwsdk/core';
 import { director } from './agent/runtime.js';
-import type { OrderState } from './agent/tools.js';
-import { buildCafeSet, buildHitArea, buildItem } from './cafe-builder.js';
+import { emptyOrder, type OrderState } from './agent/tools.js';
+import { buildHitArea, buildItem } from './cafe-builder.js';
 import { VocabItem } from './components.js';
 import { events } from './game-state.js';
 import { SERVE } from './layout.js';
 import { addDwellTarget } from './ui/dwell.js';
-import { VOCAB, vocabById } from './vocab.js';
+import { VOCAB, vocabById, type VocabEntry } from './vocab.js';
+
+/** The realistic model when it has loaded, otherwise the procedural stand-in. */
+function itemModel(entry: VocabEntry): Group {
+  const gltf = entry.model ? AssetManager.getGLTF(entry.model) : null;
+  if (!gltf) return buildItem(entry.shape, entry.color);
+  const g = new Group();
+  const scene = gltf.scene;
+  scene.scale.setScalar(entry.modelScale ?? 1);
+  scene.position.y = entry.modelY ?? 0;
+  scene.rotation.y = entry.rotY ?? 0;
+  scene.traverse((o) => {
+    if (o instanceof Mesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    }
+  });
+  g.add(scene);
+  return g;
+}
 
 interface ItemVisual {
   root: Group;
@@ -55,13 +75,39 @@ export class ItemSystem extends createSystem({
   private ring!: Mesh;
   private served: ServedVisual[] = [];
 
-  init(): void {
-    this.world.createTransformEntity(buildCafeSet());
+  private itemEntities: Entity[] = [];
+  private itemCleanups: (() => void)[] = [];
 
+  init(): void {
+    this.buildItems();
+    this.setupShared();
+    // A new shop: new words on the counter (models are loaded by PlaceSystem before this fires).
+    this.cleanupFuncs.push(
+      events.place.on(() => {
+        this.targetIndex = -1;
+        this.ring.visible = false;
+        this.buildItems();
+        this.reconcileServed(emptyOrder());
+      }),
+      () => {
+        for (const off of this.itemCleanups) off();
+      },
+    );
+  }
+
+  /** (Re)create the pinchable words of the current shop. */
+  private buildItems(): void {
+    for (const off of this.itemCleanups) off();
+    this.itemCleanups = [];
+    for (const e of this.itemEntities) e.dispose();
+    this.itemEntities = [];
+    this.visuals = [];
     VOCAB.forEach((entry, index) => {
       const root = new Group();
       root.name = `Item ${entry.fr}`;
-      const model = buildItem(entry.shape, entry.color);
+      const model = itemModel(entry);
+      // Only counter items cast shadows (each caster is an extra draw call per frame).
+      if (entry.position[1] < 0.9) model.traverse((o) => (o.castShadow = false));
       root.add(model);
       root.add(buildHitArea(0.11, 0.07));
       root.position.set(...entry.position);
@@ -78,7 +124,7 @@ export class ItemSystem extends createSystem({
       const entity = this.world.createTransformEntity(root);
       entity.addComponent(VocabItem, { index });
       // Eyes-only: looking at an object for 1 s picks it, like a pinch.
-      this.cleanupFuncs.push(
+      this.itemCleanups.push(
         addDwellTarget(root, () => {
           const v = this.visuals[index];
           if (v) v.bounceStart = this.clock;
@@ -86,8 +132,12 @@ export class ItemSystem extends createSystem({
         }),
       );
       entity.addComponent(RayInteractable);
+      this.itemEntities.push(entity);
       this.visuals[index] = { root, baseY: entry.position[1], glowMaterials, bounceStart: -1 };
     });
+  }
+
+  private setupShared(): void {
 
     // Mission marker: a soft ring that pulses under the current target.
     this.ring = new Mesh(
@@ -169,7 +219,7 @@ export class ItemSystem extends createSystem({
       if (!entry) continue;
       const root = new Group();
       root.name = `Served ${entry.fr} ${i + 1}`;
-      root.add(buildItem(entry.shape, entry.color));
+      root.add(itemModel(entry));
       root.position.set(SERVE.x0 + (i % SERVE.perRow) * SERVE.dx, SERVE.y, SERVE.z[Math.floor(i / SERVE.perRow)]);
       root.scale.setScalar(0.001);
       const entity = this.world.createTransformEntity(root);

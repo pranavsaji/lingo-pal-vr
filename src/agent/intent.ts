@@ -20,48 +20,53 @@ export type Intent =
   | { kind: 'recommend' }
   | { kind: 'name'; name: string }
   | { kind: 'command'; command: VoiceCommand }
+  | { kind: 'travel'; place: 'cafe' | 'boulangerie' | 'marche' }
   | { kind: 'unknown' };
 
-export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower';
+export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map';
 
 const NUMBER_WORDS: Record<string, number> = {
   un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5,
   '1': 1, '2': 2, '3': 3, '4': 4, '5': 5,
 };
 
-/** Extra spoken forms that should map to a menu id (normalized). */
-const ALIASES: Record<string, string[]> = {
-  croissant: ['croissant', 'croissants', 'croissan'],
-  cafe: ['cafe', 'cafes', 'expresso', 'espresso', 'cafe creme'],
-  baguette: ['baguette', 'baguettes', 'pain'],
-  pomme: ['pomme', 'pommes'],
-  orange: ['orange', 'oranges', 'jus d orange'],
-  fromage: ['fromage', 'fromages', 'comte', 'brie'],
-  eau: ['eau', 'bouteille d eau', 'bouteilles d eau', 'bouteille'],
-  gateau: ['gateau', 'gateaux', 'gateau au chocolat'],
-};
-
+/**
+ * Menu items named in the sentence, with quantities. Aliases come from the
+ * shop data; the longest alias wins and words are used once, so
+ * "pain au chocolat" is not also read as "pain" (a baguette or a bread roll).
+ */
 function findItems(norm: string, fingers: number): { itemId: string; qty: number }[] {
   const toks = norm.split(' ');
-  const found: { itemId: string; qty: number; at: number }[] = [];
+  const matches: { itemId: string; at: number; len: number }[] = [];
   for (const item of MENU) {
-    for (const alias of ALIASES[item.id] ?? [item.id]) {
+    for (const alias of item.aliases.length ? item.aliases : [item.id]) {
       const aliasToks = alias.split(' ');
       for (let i = 0; i + aliasToks.length <= toks.length; i++) {
-        if (aliasToks.every((t, k) => toks[i + k] === t)) {
-          if (found.some((f) => f.itemId === item.id)) continue;
-          // Quantity = number word right before (skipping "de", "des"); else fingers; else 1.
-          let qty = 0;
-          for (let back = 1; back <= 2 && i - back >= 0; back++) {
-            const w = toks[i - back];
-            if (NUMBER_WORDS[w] !== undefined) { qty = NUMBER_WORDS[w]; break; }
-            if (w !== 'de' && w !== 'des' && w !== 'petit' && w !== 'petits' && w !== 'grand') break;
-          }
-          if (qty === 0) qty = fingers > 0 ? fingers : 1;
-          found.push({ itemId: item.id, qty: Math.min(MAX_QUANTITY, qty), at: i });
-        }
+        if (aliasToks.every((t, k) => toks[i + k] === t)) matches.push({ itemId: item.id, at: i, len: aliasToks.length });
       }
     }
+  }
+  matches.sort((a, b) => b.len - a.len || a.at - b.at);
+  const used = new Array<boolean>(toks.length).fill(false);
+  const found: { itemId: string; qty: number; at: number }[] = [];
+  for (const m of matches) {
+    if (found.some((f) => f.itemId === m.itemId)) continue;
+    let free = true;
+    for (let k = m.at; k < m.at + m.len; k++) if (used[k]) free = false;
+    if (!free) continue;
+    for (let k = m.at; k < m.at + m.len; k++) used[k] = true;
+    // Quantity = number word right before (skipping "de", "des"); else fingers; else 1.
+    let qty = 0;
+    for (let back = 1; back <= 2 && m.at - back >= 0; back++) {
+      const w = toks[m.at - back];
+      if (NUMBER_WORDS[w] !== undefined) {
+        qty = NUMBER_WORDS[w];
+        break;
+      }
+      if (w !== 'de' && w !== 'des' && w !== 'petit' && w !== 'petits' && w !== 'grand') break;
+    }
+    if (qty === 0) qty = fingers > 0 ? fingers : 1;
+    found.push({ itemId: m.itemId, qty: Math.min(MAX_QUANTITY, qty), at: m.at });
   }
   return found.sort((a, b) => a.at - b.at).map(({ itemId, qty }) => ({ itemId, qty }));
 }
@@ -124,6 +129,10 @@ export function parseIntent(text: string, fingers = 0): Intent {
   if (has(n, /\b(passer|skip)\b/)) return { kind: 'command', command: 'skip' };
   if (has(n, /\b(carnet|mes mots)\b/)) return { kind: 'command', command: 'carnet' };
   if (has(n, /\b(plus lentement|moins vite|lentement)\b/)) return { kind: 'command', command: 'slower' };
+  // Travel: "allons à la boulangerie", "je vais au marché", "retour au café".
+  const go = n.match(/\b(?:allons|aller|allez|vais|va|retour|retourner|direction)\b.*\b(boulangerie|marche|cafe)\b/);
+  if (go) return { kind: 'travel', place: go[1] as 'cafe' | 'boulangerie' | 'marche' };
+  if (has(n, /\b(plan de paris|le plan|la carte de paris)\b/)) return { kind: 'command', command: 'map' };
 
   const nameMatch = n.match(/\b(?:je m appelle|mon nom est|moi c est)\s+([a-z]+)/);
   if (nameMatch) return { kind: 'name', name: nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) };

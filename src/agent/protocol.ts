@@ -6,6 +6,8 @@
 
 import type { OrderLine, OrderPhase } from './tools.js';
 
+import type { PlaceId } from '../game-state.js';
+
 export interface ReplyOption {
   fr: string;
   en: string;
@@ -41,6 +43,8 @@ export interface AgentScene {
   holding: string | null; // vocab id in the learner's hand
   scenario: string;
   special: { itemId: string; challenge: string };
+  /** The shop (menu, shopkeeper and prices on the server come from shared/places.json). */
+  place: PlaceId;
 }
 
 export interface AgentRequest {

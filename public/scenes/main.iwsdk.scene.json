@@ -2,76 +2,34 @@
   "version": "iwsdk.scene.v1",
   "units": "meters",
   "components": {
-    "com.iwsdk.components.DomeGradient": {
-      "sky": [
-        0.98,
-        0.86,
-        0.72,
-        1
-      ],
-      "equator": [
-        0.99,
-        0.93,
-        0.85,
-        1
-      ],
-      "ground": [
-        0.9,
-        0.84,
-        0.78,
-        1
-      ],
-      "elevationDeg": 24,
-      "azimuthDeg": -31,
-      "dither": true
+    "com.iwsdk.components.DomeTexture": {
+      "src": "hdri/comfy_cafe_bg.jpg",
+      "blurriness": 0,
+      "intensity": 1,
+      "rotation": [
+        0,
+        0,
+        0
+      ]
     },
-    "com.iwsdk.components.IBLGradient": {
-      "sky": [
-        0.72,
-        0.7,
-        0.8,
-        1
-      ],
-      "equator": [
-        0.78,
-        0.78,
-        0.84,
-        1
-      ],
-      "ground": [
-        0.5,
-        0.52,
-        0.58,
-        1
-      ],
-      "intensity": 0.2025
+    "com.iwsdk.components.IBLTexture": {
+      "src": "hdri/comfy_cafe_1k.hdr",
+      "intensity": 0.9,
+      "rotation": [
+        0,
+        0,
+        0
+      ]
     }
   },
   "environment": {
     "toneMapping": "aces",
-    "exposure": 1.2,
+    "exposure": 1.0,
     "shadows": true,
     "shadowMapType": "pcf"
   },
   "resources": {},
   "nodes": [
-    {
-      "id": "studio-floor",
-      "name": "Studio Floor",
-      "framingRole": "support",
-      "content": {
-        "type": "asset",
-        "asset": "studio-floor",
-        "receiveShadow": true
-      },
-      "components": {
-        "LocomotionEnvironment": {},
-        "DomeFade": {
-          "start": 4,
-          "end": 10
-        }
-      }
-    },
     {
       "id": "key-light",
       "name": "Key Light",
@@ -91,11 +49,11 @@
         "DirectionalLight": {
           "color": [
             1,
-            0.945,
-            0.87,
+            0.93,
+            0.82,
             1
           ],
-          "intensity": 2.3,
+          "intensity": 1.6,
           "castShadow": true,
           "shadowMapSize": "2048",
           "shadowCameraSize": 8,
@@ -124,7 +82,7 @@
             0.651,
             1
           ],
-          "intensity": 1.15
+          "intensity": 0.35
         }
       }
     },
@@ -209,6 +167,31 @@
       "content": {
         "type": "asset",
         "asset": "settings-panel"
+      },
+      "transform": {
+        "position": [
+          -0.78,
+          1.56,
+          -1.32
+        ],
+        "rotationDeg": [
+          -4,
+          30,
+          0
+        ],
+        "scale": 0.14
+      },
+      "components": {
+        "RayInteractable": {},
+        "PokeInteractable": {}
+      }
+    },
+    {
+      "id": "map-panel",
+      "name": "Map Panel",
+      "content": {
+        "type": "asset",
+        "asset": "map-panel"
       },
       "transform": {
         "position": [

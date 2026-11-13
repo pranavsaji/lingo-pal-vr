@@ -185,6 +185,9 @@
     <div class="action" id="settings-button" style="background-color: #6c4ab6">
       <span class="action-text">Réglages</span>
     </div>
+    <div class="action" id="map-button" style="background-color: #d1495b">
+      <span class="action-text" id="map-label">Paris</span>
+    </div>
   </div>
   <div class="actions" id="xr-row">
     <div class="action" id="xr-button" style="background-color: #2a9d8f">

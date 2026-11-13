@@ -177,7 +177,7 @@
 </style>
 <Panel class="root">
   <div class="header">
-    <span class="name">Madame Lune, la serveuse</span>
+    <span class="name" id="keeper-name">Madame Lune, la serveuse</span>
     <span class="status" id="status">en ligne</span>
   </div>
   <div class="content">

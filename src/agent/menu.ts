@@ -4,6 +4,9 @@
  * integer cents. The AI never does arithmetic that the learner relies on.
  */
 
+import placesData from '../../shared/places.json';
+import type { PlaceId } from '../game-state.js';
+
 export type Gender = 'm' | 'f';
 
 export interface MenuItem {
@@ -14,18 +17,35 @@ export interface MenuItem {
   en: string;
   enPlural: string;
   priceCents: number;
+  /** Normalized spoken forms (no accents) that mean this item. */
+  aliases: string[];
 }
 
-export const MENU: MenuItem[] = [
-  { id: 'croissant', noun: 'croissant', plural: 'croissants', gender: 'm', en: 'croissant', enPlural: 'croissants', priceCents: 170 },
-  { id: 'cafe', noun: 'café', plural: 'cafés', gender: 'm', en: 'coffee', enPlural: 'coffees', priceCents: 180 },
-  { id: 'baguette', noun: 'baguette', plural: 'baguettes', gender: 'f', en: 'baguette', enPlural: 'baguettes', priceCents: 110 },
-  { id: 'pomme', noun: 'pomme', plural: 'pommes', gender: 'f', en: 'apple', enPlural: 'apples', priceCents: 60 },
-  { id: 'orange', noun: 'orange', plural: 'oranges', gender: 'f', en: 'orange', enPlural: 'oranges', priceCents: 70 },
-  { id: 'fromage', noun: 'fromage', plural: 'fromages', gender: 'm', en: 'cheese', enPlural: 'cheeses', priceCents: 450 },
-  { id: 'eau', noun: "bouteille d'eau", plural: "bouteilles d'eau", gender: 'f', en: 'bottle of water', enPlural: 'bottles of water', priceCents: 150 },
-  { id: 'gateau', noun: 'gâteau', plural: 'gâteaux', gender: 'm', en: 'cake', enPlural: 'cakes', priceCents: 380 },
-];
+export interface PlaceData {
+  fr: string;
+  en: string;
+  shopkeeper: { name: string; gender: Gender; role: string };
+  menu: MenuItem[];
+  /** Non-menu words (pinchable objects) in this shop. */
+  words: string[];
+}
+
+/** Shop data shared with the AI server (shared/places.json). */
+export const PLACES = placesData.places as unknown as Record<PlaceId, PlaceData>;
+
+export function menuFor(place: PlaceId): MenuItem[] {
+  return PLACES[place].menu;
+}
+
+/**
+ * The menu of the shop the learner is in. Mutated in place by setMenuPlace,
+ * so every module that imported MENU sees the current shop.
+ */
+export const MENU: MenuItem[] = [...menuFor('cafe')];
+
+export function setMenuPlace(place: PlaceId): void {
+  MENU.splice(0, MENU.length, ...menuFor(place));
+}
 
 export const MAX_QUANTITY = 5;
 

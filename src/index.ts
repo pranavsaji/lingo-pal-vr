@@ -20,6 +20,7 @@ import { MixedRealitySystem } from './world/mixed-reality-system.js';
 import { OnboardingSystem } from './world/onboarding-system.js';
 import { NpcSystem } from './world/npc-system.js';
 import { QualitySystem } from './world/quality-system.js';
+import { PlaceSystem } from './world/place-system.js';
 
 import { localVoice } from './voice/local-voice.js';
 import { SpeechInput } from './voice/speech-input.js';
@@ -57,6 +58,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   if (import.meta.env.DEV) ((window as unknown as Record<string, Record<string, unknown>>).__lingo ??= {}).world = world;
   world.registerSystem(QualitySystem); // resolution + foveation, before any XR session starts
   world.registerSystem(ItemSystem);
+  world.registerSystem(PlaceSystem); // builds the shop set, backdrop and lighting; switches shops
   world.registerSystem(LessonSystem); // starts the session (streak, XP) before the agent greets
   world.registerSystem(PanelsSystem);
   world.registerSystem(ChatSystem);

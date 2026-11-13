@@ -35,6 +35,11 @@ export class MixedRealitySystem extends createSystem({}) {
           this.world.exitXR();
         }
       }),
+      events.place.on(() => {
+        // A new shop set: forget the old parts and re-apply the current mode to the new ones.
+        this.roomParts = [];
+        this.apply(this.ar);
+      }),
       this.world.visibilityState.subscribe((state) => {
         if (state === VisibilityState.NonImmersive && this.relaunch) {
           this.relaunch = false;

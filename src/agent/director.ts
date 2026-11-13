@@ -6,7 +6,7 @@
  * "The game owns the truth; the AI proposes." This is the only bridge.
  */
 
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
 import { priceToFrench } from './menu.js';
 import { dailySpecial } from './scenarios.js';
 import type { Store } from '../state/store.js';
@@ -42,7 +42,7 @@ export class AgentDirector {
   buildRequest(event: AgentEvent): AgentRequest {
     const p = this.store.profile;
     const o = this.store.order;
-    const special = dailySpecial(this.store.today, p.unlocks);
+    const special = dailySpecial(this.store.today, p.unlocks, appState.place);
     return {
       profile: {
         name: p.name,
@@ -63,10 +63,16 @@ export class AgentDirector {
         holding: this.perception.holding,
         scenario: special.scenarioId,
         special: { itemId: special.item.id, challenge: special.challenge.en },
+        place: appState.place,
       },
       event,
       history: this.history.slice(-10),
     };
+  }
+
+  /** A new shop: a new shopkeeper does not know the previous conversation. */
+  resetConversation(): void {
+    this.history = [];
   }
 
   /** Serialized: one turn at a time, in order. */

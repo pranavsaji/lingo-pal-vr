@@ -1,6 +1,7 @@
 /**
- * Procedural cafe geometry built from simple primitives (no downloads needed).
- * Every builder returns an object whose base sits at local y = 0.
+ * Procedural stand-ins for items without a realistic model (and while models
+ * load). Every builder returns an object whose base sits at local y = 0.
+ * The shop sets themselves are built in src/world/shop-set.ts.
  */
 
 import {
@@ -117,6 +118,61 @@ export function buildItem(shape: ItemShape, color: number): Group {
       g.add(mesh(new BoxGeometry(0.12, 0.03, 0.002), mat(0xf5d90a), 0, 0.17, 0.004));
       break;
     }
+    case 'pain_chocolat': {
+      // Laminated rectangle with two chocolate batons peeking out of the ends.
+      const dough = mat(color, { roughness: 0.55 });
+      const body = mesh(new CapsuleGeometry(0.03, 0.06, 6, 14), dough, 0, 0.026, 0);
+      body.rotation.z = Math.PI / 2;
+      body.scale.set(0.8, 1, 1.25);
+      g.add(body);
+      for (const z of [-0.012, 0.012]) {
+        const choc = mesh(new CylinderGeometry(0.006, 0.006, 0.13, 8), mat(0x3b2416, { roughness: 0.4 }), 0, 0.03, z);
+        choc.rotation.z = Math.PI / 2;
+        g.add(choc);
+      }
+      break;
+    }
+    case 'eclair': {
+      const shell = mesh(new CapsuleGeometry(0.02, 0.1, 6, 14), mat(color, { roughness: 0.6 }), 0, 0.02, 0);
+      shell.rotation.z = Math.PI / 2;
+      g.add(shell);
+      const icing = mesh(new CapsuleGeometry(0.0205, 0.1, 6, 14), mat(0x3b2416, { roughness: 0.25 }), 0, 0.027, 0);
+      icing.rotation.z = Math.PI / 2;
+      icing.scale.set(1, 0.55, 0.9);
+      g.add(icing);
+      break;
+    }
+    case 'macaron': {
+      // A little stack: pink, pistachio, chocolate.
+      const colors = [color, 0xa8c97f, 0x6b3e26];
+      colors.forEach((c, i) => {
+        const y = 0.012 + i * 0.03;
+        for (const dy of [-0.006, 0.006]) {
+          const shell = mesh(new SphereGeometry(0.022, 16, 10), mat(c, { roughness: 0.7 }), 0, y + dy, 0);
+          shell.scale.y = 0.4;
+          g.add(shell);
+        }
+        g.add(mesh(new CylinderGeometry(0.018, 0.018, 0.006, 16), mat(0xfaf3e0, { roughness: 0.5 }), 0, y, 0));
+      });
+      break;
+    }
+    case 'tart': {
+      g.add(mesh(new CylinderGeometry(0.075, 0.07, 0.022, 32), mat(color, { roughness: 0.6 }), 0, 0.011, 0)); // crust
+      g.add(mesh(new CylinderGeometry(0.066, 0.066, 0.006, 32), mat(0xf6e7b0, { roughness: 0.5 }), 0, 0.022, 0)); // cream
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const r = i === 0 ? 0 : 0.042;
+        const berry = mesh(new SphereGeometry(0.012, 10, 8), mat(0xc8102e, { roughness: 0.3 }), Math.cos(a) * r, 0.03, Math.sin(a) * r);
+        berry.scale.y = 1.25;
+        g.add(berry);
+      }
+      break;
+    }
+    case 'model': {
+      // Stand-in while the realistic model loads.
+      g.add(mesh(new SphereGeometry(0.04, 16, 12), mat(color, { roughness: 0.6 }), 0, 0.04, 0));
+      break;
+    }
     case 'flower': {
       g.add(mesh(new CylinderGeometry(0.035, 0.028, 0.12, 16), mat(0x2a9d8f, { roughness: 0.2 }), 0, 0.06, 0));
       g.add(mesh(new CylinderGeometry(0.003, 0.003, 0.14, 6), mat(0x3a7d2c), 0, 0.17, 0));
@@ -136,113 +192,4 @@ export function buildHitArea(radius: number, y: number): Mesh {
   const m = new Mesh(new SphereGeometry(radius, 12, 10), new MeshStandardMaterial({ transparent: true, opacity: 0, depthWrite: false }));
   m.position.y = y;
   return m;
-}
-
-function bistroTable(): Group {
-  const g = new Group();
-  g.add(mesh(new CylinderGeometry(0.36, 0.36, 0.03, 36), mat(0xf3efe7, { roughness: 0.3 }), 0, 0.75, 0));
-  g.add(mesh(new CylinderGeometry(0.025, 0.025, 0.74, 12), mat(0x2b2d33, { metalness: 0.6, roughness: 0.4 }), 0, 0.37, 0));
-  g.add(mesh(new CylinderGeometry(0.2, 0.22, 0.03, 24), mat(0x2b2d33, { metalness: 0.6, roughness: 0.4 }), 0, 0.015, 0));
-  return g;
-}
-
-function chair(): Group {
-  const g = new Group();
-  const wood = mat(0x8a5a35, { roughness: 0.6 });
-  g.add(mesh(new CylinderGeometry(0.2, 0.2, 0.03, 24), wood, 0, 0.46, 0));
-  for (const [x, z] of [[0.13, 0.13], [-0.13, 0.13], [0.13, -0.13], [-0.13, -0.13]] as const) {
-    g.add(mesh(new CylinderGeometry(0.012, 0.012, 0.46, 8), wood, x, 0.23, z));
-  }
-  const back = mesh(new TorusGeometry(0.18, 0.012, 8, 24, Math.PI), wood, 0, 0.62, -0.17);
-  g.add(back);
-  return g;
-}
-
-/** Static cafe set: counter, back wall, awning, tables, chairs, shopkeeper. */
-export function buildCafeSet(): Object3D {
-  const g = new Group();
-  g.name = 'Cafe Set';
-
-  // Parts tagged mrHide disappear in mixed reality, so only the counter top,
-  // Madame Lune and the furniture appear in the learner's real room.
-  const room = (o: Object3D): Object3D => {
-    o.userData.mrHide = true;
-    return o;
-  };
-
-  // Counter (top at y = 1.0, front face at z = -0.7).
-  g.add(room(mesh(new BoxGeometry(2.2, 0.96, 0.5), mat(0x7a4b2a, { roughness: 0.5 }), 0, 0.48, -0.95)));
-  g.add(mesh(new BoxGeometry(2.3, 0.04, 0.58), mat(0x2b2d33, { roughness: 0.25, metalness: 0.2 }), 0, 0.98, -0.95));
-  g.add(room(mesh(new BoxGeometry(2.2, 0.08, 0.01), mat(0xf5d90a, { roughness: 0.4 }), 0, 0.8, -0.695)));
-
-  // Back wall with shelves and bottles (bottles: one instanced draw call).
-  g.add(room(mesh(new BoxGeometry(5, 3, 0.1), mat(0xe8dcc8, { roughness: 0.9 }), 0, 1.5, -2.6)));
-  const bottleColors = [0x2a9d8f, 0xe63946, 0xf4a261, 0x457b9d];
-  const bottles = new InstancedMesh(new CylinderGeometry(0.035, 0.035, 0.24, 12), mat(0xffffff, { roughness: 0.15 }), 16);
-  const tint = new Color();
-  const m4b = new Matrix4();
-  let b = 0;
-  for (const y of [1.3, 1.75]) {
-    g.add(room(mesh(new BoxGeometry(2.4, 0.03, 0.25), mat(0x7a4b2a), 0, y, -2.45)));
-    for (let i = 0; i < 8; i++) {
-      m4b.makeTranslation(-1.05 + i * 0.3, y + 0.135, -2.45);
-      bottles.setMatrixAt(b, m4b);
-      bottles.setColorAt(b, tint.setHex(bottleColors[i % 4]));
-      b++;
-    }
-  }
-  bottles.castShadow = true;
-  g.add(room(bottles));
-
-  // Striped awning above the counter (two instanced draw calls: red and white).
-  const stripeGeo = new BoxGeometry(0.26, 0.02, 0.9);
-  const stripes = [new InstancedMesh(stripeGeo, mat(0xc8262c, { roughness: 0.8 }), 5), new InstancedMesh(stripeGeo, mat(0xfafaf7, { roughness: 0.8 }), 5)];
-  const m4s = new Matrix4();
-  const rot = new Matrix4().makeRotationX(0.35);
-  for (let i = 0; i < 10; i++) {
-    m4s.makeTranslation(-1.17 + i * 0.26, 2.45, -2.1).multiply(rot);
-    stripes[i % 2].setMatrixAt(Math.floor(i / 2), m4s);
-  }
-  for (const st of stripes) {
-    st.castShadow = true;
-    g.add(room(st));
-  }
-
-  // Madame Lune is built and animated by NpcSystem (src/world/npc-system.ts).
-
-  // Side tables with chairs.
-  const right = bistroTable();
-  right.position.set(1.2, 0, -0.6);
-  g.add(right);
-  const left = bistroTable();
-  left.position.set(-1.25, 0, -0.62);
-  g.add(left);
-  for (const [x, z, ry] of [[1.75, -0.45, -1.9], [-1.8, -0.45, 1.9]] as const) {
-    const c = chair();
-    c.position.set(x, 0, z);
-    c.rotation.y = ry;
-    g.add(c);
-  }
-
-  // Checkerboard floor: two instanced meshes keep it to two draw calls on Quest.
-  const tileGeo = new BoxGeometry(0.4, 0.01, 0.4);
-  const tiles = [
-    new InstancedMesh(tileGeo, mat(0xf3efe7, { roughness: 0.5 }), 60),
-    new InstancedMesh(tileGeo, mat(0x2b2d33, { roughness: 0.5 }), 60),
-  ];
-  const counts = [0, 0];
-  const m4 = new Matrix4();
-  for (let ix = -6; ix < 6; ix++) {
-    for (let iz = -7; iz < 3; iz++) {
-      const k = Math.abs(ix + iz) % 2;
-      m4.makeTranslation(ix * 0.4 + 0.2, 0.005, iz * 0.4 + 0.2);
-      tiles[k].setMatrixAt(counts[k]++, m4);
-    }
-  }
-  for (const t of tiles) {
-    t.receiveShadow = true;
-    t.instanceMatrix.needsUpdate = true;
-    g.add(room(t));
-  }
-  return g;
 }

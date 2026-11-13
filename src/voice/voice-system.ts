@@ -151,7 +151,14 @@ export class VoiceSystem extends createSystem({}) {
         case 'help':
           void director.handle({ kind: 'idle' });
           return;
+        case 'map':
+          events.openPanel.emit('map');
+          return;
       }
+    }
+    if (intent.kind === 'travel') {
+      events.travel.emit(intent.place);
+      return;
     }
     if (intent.kind === 'pay' && intent.cents && store.order.phase === 'paying') {
       void director.pay(intent.cents);

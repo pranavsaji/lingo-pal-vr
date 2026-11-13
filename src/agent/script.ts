@@ -5,7 +5,7 @@
  */
 
 import { parseIntent } from './intent.js';
-import { menuItem, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn, type MenuItem } from './menu.js';
+import { menuItem, PLACES, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn, type MenuItem } from './menu.js';
 import type { AgentRequest, AgentTurn, ReplyOption } from './protocol.js';
 import type { AgentAction, OrderLine } from './tools.js';
 
@@ -72,6 +72,13 @@ const turn = (fr: string, en: string, actions: AgentAction[], points: number, re
   source: 'script',
 });
 
+/** How each shopkeeper says "welcome to ...". */
+const WELCOME: Record<string, { fr: string; en: string }> = {
+  cafe: { fr: 'au Café Lune', en: 'to Café Lune' },
+  boulangerie: { fr: 'à la boulangerie', en: 'to the bakery' },
+  marche: { fr: 'au marché', en: 'to the market' },
+};
+
 export function scriptedTurn(req: AgentRequest): AgentTurn {
   const { profile, scene, event } = req;
   const name = profile.name;
@@ -79,25 +86,42 @@ export function scriptedTurn(req: AgentRequest): AgentTurn {
 
   switch (event.kind) {
     case 'arrive': {
+      const place = PLACES[scene.place] ?? PLACES.cafe;
+      const keeper = place.shopkeeper;
+      const welcome = WELCOME[scene.place] ?? WELCOME.cafe;
+      const sir = keeper.gender === 'm' ? 'monsieur' : 'madame';
       if (!name) {
+        const intro = scene.place === 'cafe' ? '' : ` Je suis ${keeper.name}.`;
+        const introEn = scene.place === 'cafe' ? '' : ` I'm ${keeper.name}.`;
         return turn(
-          'Bonjour ! Bienvenue au Café Lune. Comment vous appelez-vous ?',
-          'Hello! Welcome to Cafe Lune. What is your name?',
+          `Bonjour ! Bienvenue ${welcome.fr}.${intro} Comment vous appelez-vous ?`,
+          `Hello! Welcome ${welcome.en}.${introEn} What is your name?`,
           [{ type: 'emote', kind: 'wave' }],
           0,
           [
             { fr: "Je m'appelle Alex.", en: 'My name is Alex.' },
             { fr: "Je m'appelle Sam.", en: 'My name is Sam.' },
-            { fr: 'Bonjour, madame !', en: "Hello, ma'am!" },
+            { fr: `Bonjour, ${sir} !`, en: `Hello, ${keeper.gender === 'm' ? 'sir' : "ma'am"}!` },
           ],
+        );
+      }
+      const sp = special ? ` Aujourd'hui, je vous conseille ${definite(special)}.` : '';
+      const spEn = special ? ` Today I recommend the ${special.en}.` : '';
+      if (scene.place !== 'cafe') {
+        return turn(
+          `Bonjour, ${name} ! Bienvenue ${welcome.fr}. Je suis ${keeper.name}.${sp}`,
+          `Hello, ${name}! Welcome ${welcome.en}. I'm ${keeper.name}.${spEn}`,
+          [{ type: 'emote', kind: 'wave' }],
+          0,
+          replies(req),
         );
       }
       const fav = profile.memories.favorite_order;
       const recall = fav ? ` Comme hier, ${fav} ?` : '';
       const recallEn = fav ? ` Same as yesterday, ${fav}?` : '';
-      const sp = special ? ` Le plat du jour : ${definite(special)}.` : '';
-      const spEn = special ? ` Today's special: the ${special.en}.` : '';
-      return turn(`Re-bonjour, ${name} !${recall}${sp}`, `Hello again, ${name}!${recallEn}${spEn}`, [{ type: 'emote', kind: 'wave' }], 0, replies(req));
+      const plat = special ? ` Le plat du jour : ${definite(special)}.` : '';
+      const platEn = special ? ` Today's special: the ${special.en}.` : '';
+      return turn(`Re-bonjour, ${name} !${recall}${plat}`, `Hello again, ${name}!${recallEn}${platEn}`, [{ type: 'emote', kind: 'wave' }], 0, replies(req));
     }
 
     case 'show': {

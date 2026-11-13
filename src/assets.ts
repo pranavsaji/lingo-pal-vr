@@ -9,6 +9,38 @@ import { createStudioFloor } from './scene-assets/studio.scene-asset.js';
 const publicAssetUrl = (filePath: string): string =>
   `${import.meta.env.BASE_URL}${filePath.replace(/^\/+/u, '')}`;
 
+/** Realistic CC0 props from Poly Haven (scripts/fetch-assets.mjs). Loaded per shop, on demand. */
+const PROP_IDS = [
+  'croissant', 'food_apple_01', 'strawberry_chocolate_cake', 'wine_bottles_01', 'potted_plant_01',
+  'ceramic_vase_01', 'round_wooden_table_01', 'painted_wooden_chair_01', 'standing_chalkboard_01',
+  'hanging_industrial_lamp', 'carrot_cake', 'hamburger_buns', 'wooden_cutting_board', 'wicker_basket_01',
+  'wooden_crate_01', 'bananas', 'food_pears_asian_01', 'lemon', 'yellow_onion', 'sweet_potato',
+  'food_kiwi_01', 'food_avocado_01', 'food_pomegranate_01',
+] as const;
+
+const props = Object.fromEntries(
+  PROP_IDS.map((id) => [`prop-${id}`, { url: publicAssetUrl(`models/props/${id}.glb`), type: AssetType.GLTF, priority: 'lazy' as const, name: id }]),
+);
+
+// --- BEGIN shopkeeper characters (owned by src/world/npc-system.ts) ---
+/**
+ * Rigged Microsoft Rocketbox avatars (MIT, public/models/characters/LICENSE-Rocketbox.txt),
+ * one per shop. Madame Lune streams in at startup without blocking it; the others load
+ * when the learner first visits their shop (NpcSystem also prefetches them once Lune is up).
+ */
+const shopkeeper = (fileName: string, name: string, priority: 'background' | 'lazy') => ({
+  url: publicAssetUrl(`models/characters/${fileName}`),
+  type: AssetType.GLTF,
+  priority,
+  name,
+});
+const shopkeepers = {
+  'shopkeeper-lune': shopkeeper('lune.glb', 'Madame Lune', 'background'),
+  'shopkeeper-paul': shopkeeper('paul.glb', 'Monsieur Paul', 'lazy'),
+  'shopkeeper-rose': shopkeeper('rose.glb', 'Madame Rose', 'lazy'),
+};
+// --- END shopkeeper characters ---
+
 const uikitml = (fileName: string, name: string) => ({
   url: publicAssetUrl(`ui/${fileName}`),
   type: AssetType.UIKitML,
@@ -21,4 +53,7 @@ export default defineAssets({
   'chat-panel': uikitml('chat.uikitml', 'Chat Panel'),
   'carnet-panel': uikitml('carnet.uikitml', 'Carnet Panel'),
   'settings-panel': uikitml('settings.uikitml', 'Settings Panel'),
+  'map-panel': uikitml('map.uikitml', 'Map Panel'),
+  ...props,
+  ...shopkeepers, // shopkeeper characters (see block above)
 });

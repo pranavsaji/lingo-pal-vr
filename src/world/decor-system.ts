@@ -9,7 +9,7 @@ import { createSystem, type Group } from '@iwsdk/core';
 import { menuItem, priceToDigits } from '../agent/menu.js';
 import { dailySpecial } from '../agent/scenarios.js';
 import { definite } from '../agent/script.js';
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
 import { FLAME } from '../layout.js';
 import { buildChalkboard, buildGramophone, buildPlant, buildStreakFlame, buildStringLights } from '../models/cafe-models.js';
 import { store } from '../state/store.js';
@@ -66,12 +66,17 @@ export class DecorSystem extends createSystem({}) {
 
     this.cleanupFuncs.push(
       events.unlocked.on((id) => this.reveal(id)),
+      // Cafe decor belongs to the cafe: hidden in the other shops (the streak candle travels with you).
+      events.place.on((place) => {
+        for (const p of this.pieces) p.root.visible = place === 'cafe' && store.profile.unlocks.includes(p.unlock);
+      }),
       events.profile.on((p) => this.flame.setLevel(p.streakDays)),
     );
   }
 
   private add(unlock: string, root: Group, name: string): void {
     root.name = name;
+    root.traverse((o) => (o.castShadow = false)); // decor sits at the edges: no shadow-pass cost
     root.visible = store.profile.unlocks.includes(unlock);
     this.world.createTransformEntity(root);
     this.pieces.push({ unlock, root, baseScale: root.scale.x, popStart: -1 });
@@ -79,7 +84,7 @@ export class DecorSystem extends createSystem({}) {
 
   private reveal(id: string): void {
     for (const p of this.pieces) {
-      if (p.unlock !== id || p.root.visible) continue;
+      if (p.unlock !== id || p.root.visible || appState.place !== 'cafe') continue;
       p.root.visible = true;
       p.popStart = store.profile.settings.reduceMotion ? -1 : this.t;
       if (p.popStart >= 0) p.root.scale.multiplyScalar(0.01);
@@ -87,7 +92,7 @@ export class DecorSystem extends createSystem({}) {
   }
 
   private renderBoard(): void {
-    const sp = dailySpecial(store.today, store.profile.unlocks);
+    const sp = dailySpecial(store.today, store.profile.unlocks, 'cafe'); // the chalkboard hangs in the cafe
     const item = menuItem(sp.item.id);
     this.board.setLines([
       'Plat du jour',

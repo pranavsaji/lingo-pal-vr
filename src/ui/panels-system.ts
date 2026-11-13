@@ -7,7 +7,8 @@
  */
 
 import { createSystem, type Object3D, Quaternion, type UIKit, type UIKitMLAsset, Vector3, VisibilityState } from '@iwsdk/core';
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
+import { PLACE_ORDER, placeUnlocked, unlockHint } from '../places/places.js';
 import { applyFrenchFont } from '../fonts.js';
 import { speakFrench } from '../speech.js';
 import type { Settings } from '../state/profile.js';
@@ -16,9 +17,10 @@ import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
 import { onActivate } from './dwell.js';
 
-type Slot = 'home' | 'carnet' | 'settings';
-const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel' };
-const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel'];
+type Slot = 'home' | 'carnet' | 'settings' | 'map';
+const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel' };
+const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel'];
+const CARNET_ROWS = 12;
 const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
 const HIDDEN_OFFSET = 100; // hidden panels move far away so rays cannot hit them
@@ -56,6 +58,7 @@ export class PanelsSystem extends createSystem({}) {
   private objects = new Map<string, Object3D>();
   private homeY = new Map<string, number>();
   private slot: Slot = 'home';
+  private visited = new Set<string>(['cafe']);
   private basePos = new Map<string, Vector3>();
   private baseQuat = new Map<string, Quaternion>();
   private fitScale = 1;
@@ -75,7 +78,7 @@ export class PanelsSystem extends createSystem({}) {
       this.homeY.set(id, obj.position.y);
       this.basePos.set(id, obj.position.clone());
       this.baseQuat.set(id, obj.quaternion.clone());
-      if (id === 'carnet-panel' || id === 'settings-panel') applyFrenchFont(panel.document.rootElement);
+      if (id === 'carnet-panel' || id === 'settings-panel' || id === 'map-panel') applyFrenchFont(panel.document.rootElement);
     }
 
     this.click('lesson-panel', 'carnet-button', () => this.show('carnet'));
@@ -83,13 +86,32 @@ export class PanelsSystem extends createSystem({}) {
     this.click('carnet-panel', 'carnet-back', () => this.show('home'));
     this.click('settings-panel', 'settings-back', () => this.show('home'));
     this.click('carnet-panel', 'review-button', () => this.startReview());
-    VOCAB.forEach((v, i) =>
+    for (let i = 0; i < CARNET_ROWS; i++)
       this.click('carnet-panel', `w-${i}`, () => {
+        const v = VOCAB[i]; // the current shop's words (rows are reused per shop)
+        if (!v) return;
         speakFrench(v.fr, store.profile.settings.slowSpeech ? 0.7 : 0.9);
         store.hearWord(v.id);
         this.renderCarnet();
-      }),
-    );
+      });
+    // Paris map.
+    this.click('lesson-panel', 'map-button', () => this.show('map'));
+    this.click('map-panel', 'map-back', () => this.show('home'));
+    for (const place of PLACE_ORDER)
+      this.click('map-panel', `place-${place}`, () => {
+        if (place === appState.place) {
+          this.show('home');
+          return;
+        }
+        if (!placeUnlocked(place, store.profile)) {
+          const hint = unlockHint(place);
+          this.text('map-panel', 'map-hint', `${hint.fr}. ${hint.en}.`);
+          return;
+        }
+        this.visited.add(place);
+        this.show('home');
+        events.travel.emit(place);
+      });
     for (const key of TOGGLES) this.click('settings-panel', `set-${key}`, () => store.setSetting(key, !store.profile.settings[key] as never));
     this.click('settings-panel', 'set-textSize', () => {
       const order: Settings['textSize'][] = ['s', 'm', 'l'];
@@ -105,10 +127,16 @@ export class PanelsSystem extends createSystem({}) {
         if (v === VisibilityState.NonImmersive) this.fitChecked = false; // re-measure next session
       }),
       events.openPanel.on((s) => this.show(s)),
+      events.place.on(() => {
+        if (this.slot === 'carnet') this.renderCarnet();
+        if (this.slot === 'map') this.renderMap();
+        this.renderMapBadge();
+      }),
       events.settings.on((s) => this.applySettings(s)),
       events.profile.on(() => {
         this.renderXp();
         if (this.slot === 'carnet') this.renderCarnet();
+        this.renderMapBadge();
       }),
     );
 
@@ -141,17 +169,21 @@ export class PanelsSystem extends createSystem({}) {
       obj.position.y = (this.homeY.get(SLOT_NODE[s]) ?? 0) + (visible ? 0 : HIDDEN_OFFSET);
     }
     if (slot === 'carnet') this.renderCarnet();
+    if (slot === 'map') this.renderMap();
     if (slot === 'settings') this.renderSettings(store.profile.settings);
   }
 
   private renderCarnet(): void {
     const p = store.profile;
-    this.text('carnet-panel', 'carnet-count', `${p.wordsSeen.length} / ${VOCAB.length} mots`);
+    const seenHere = VOCAB.filter((v) => p.wordsSeen.includes(v.id)).length;
+    this.text('carnet-panel', 'carnet-count', `${seenHere} / ${VOCAB.length} mots`);
+    for (let i = VOCAB.length; i < CARNET_ROWS; i++) this.style('carnet-panel', `w-${i}`, { display: 'none' });
+    for (let i = 0; i < Math.min(VOCAB.length, CARNET_ROWS); i++) this.style('carnet-panel', `w-${i}`, { display: 'flex' });
     VOCAB.forEach((v, i) => {
       const seen = p.wordsSeen.includes(v.id);
       const m = mastery(p.srs[v.id]);
       this.text('carnet-panel', `w-${i}-fr`, seen ? v.fr : '? ? ?');
-      this.text('carnet-panel', `w-${i}-en`, seen ? v.en : 'find it in the cafe');
+      this.text('carnet-panel', `w-${i}-en`, seen ? v.en : 'find it in this shop');
       for (let d = 0; d < 4; d++) {
         // Shape + color: filled dots are larger, so mastery never relies on color alone.
         const filled = d < m;
@@ -164,6 +196,24 @@ export class PanelsSystem extends createSystem({}) {
     });
     const due = store.dueWords(5).length;
     this.text('carnet-panel', 'review-label', due ? `Révision (${due})` : 'Révision du jour');
+  }
+
+  /** Shop cards: where you are, what is open, what opens next. */
+  private renderMap(): void {
+    for (const place of PLACE_ORDER) {
+      const here = place === appState.place;
+      const open = placeUnlocked(place, store.profile);
+      this.text('map-panel', `place-${place}-status`, here ? 'Vous êtes ici' : open ? (this.visited.has(place) ? 'Ouvert' : 'Nouveau !') : 'Bientôt');
+      this.style('map-panel', `place-${place}-status`, { backgroundColor: here ? '#9fd3c7' : open ? '#f5d90a' : '#6c757d' });
+    }
+    this.text('map-panel', 'map-hint', 'Pinch a shop (or look at it) to go there.');
+  }
+
+  /** "Paris" button says so while a newly opened shop has not been visited (glyphs: see fonts.ts). */
+  private renderMapBadge(): void {
+    this.visited.add(appState.place);
+    const fresh = PLACE_ORDER.some((pl) => !this.visited.has(pl) && placeUnlocked(pl, store.profile));
+    this.text('lesson-panel', 'map-label', fresh ? 'Paris !' : 'Paris');
   }
 
   /** Today's due words; if none are due, the weakest words seen so far. */

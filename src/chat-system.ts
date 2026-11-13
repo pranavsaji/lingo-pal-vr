@@ -7,7 +7,7 @@
 
 import { createSystem, type UIKit, type UIKitMLAsset } from '@iwsdk/core';
 import { aiStatus } from './agent/agent-client.js';
-import { menuItem, priceToDigits, priceToFrench } from './agent/menu.js';
+import { menuItem, PLACES, priceToDigits, priceToFrench } from './agent/menu.js';
 import type { AgentTurn, ReplyOption } from './agent/protocol.js';
 import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
@@ -22,6 +22,9 @@ interface Choice extends ReplyOption {
   payCents?: number;
 }
 
+/** Job title under each shopkeeper's name on the chat panel. */
+const KEEPER_ROLE = { cafe: 'la serveuse', boulangerie: 'le boulanger', marche: 'la marchande' } as const;
+
 export class ChatSystem extends createSystem({}) {
   private choices: Choice[] = [];
   private pending = 0; // turns in flight
@@ -32,7 +35,7 @@ export class ChatSystem extends createSystem({}) {
     const panel = this.world.getSceneObject<UIKitMLAsset>('chat-panel');
     if (panel == null) return;
     applyFrenchFont(panel.document.rootElement);
-    for (const id of ['status', 'npc-line', 'npc-en', 'label', 'opt-0-fr', 'opt-0-en', 'opt-1-fr', 'opt-1-en', 'opt-2-fr', 'opt-2-en']) {
+    for (const id of ['keeper-name', 'status', 'npc-line', 'npc-en', 'label', 'opt-0-fr', 'opt-0-en', 'opt-1-fr', 'opt-1-en', 'opt-2-fr', 'opt-2-en']) {
       this.el[id] = panel.getElementById<UIKit.Text>(id) ?? undefined;
     }
 
@@ -53,6 +56,10 @@ export class ChatSystem extends createSystem({}) {
         if (this.pending === 0 && !appState.lessonActive && menuItem(id)) this.track(director.handle({ kind: 'show', itemId: id }));
       }),
       events.order.on(() => this.renderStatus()),
+      events.place.on((place) => {
+        const k = PLACES[place].shopkeeper;
+        this.set('keeper-name', `${k.name}, ${KEEPER_ROLE[place]}`);
+      }),
       events.settings.on(() => this.set('npc-en', store.profile.settings.subtitles ? this.lastEn : '')),
     );
 

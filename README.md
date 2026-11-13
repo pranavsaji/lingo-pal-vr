@@ -14,6 +14,10 @@ Immersive Web SDK (WebXR). Entry for the Meta VR Start Developer Competition 202
 - Zero-text first-run tutorial with a ghost hand; accessibility settings (eyes-only
   dwell, voice commands, high contrast, text size, slow speech, left-hand mode).
 - Optional mixed reality (passthrough) mode puts the counter in your room.
+- **Three shops on a Paris map**: Café Lune (Madame Lune), La Boulangerie (Monsieur
+  Paul) and Le Marché (Madame Rose), each with its own menu, prices, words, realistic
+  shopkeeper, 360° photo backdrop and lighting. The bakery opens after the tutorial,
+  the market after your first paid order. Pinch "Paris" or say "allons au marché".
 
 ## Run it on your Mac
 
@@ -41,6 +45,14 @@ Speech recognition picks the first engine available:
 Madame Lune speaks with the browser's French voice when there is one, otherwise with an
 on-device French voice model (114 MB, downloaded once in the background). Subtitles are
 always on. Test the on-device engines on desktop with `?stt=local&tts=local`.
+
+## Realistic look
+
+Shopkeepers are Microsoft Rocketbox avatars (MIT) driven by procedural bone animation
+(`src/world/characters/`). Props, surface textures and 360° environments come from
+Poly Haven (CC0) via `node scripts/fetch-assets.mjs` (re-runnable; budgets per model).
+Shop data (menus, prices, shopkeepers) lives in `shared/places.json`, read by both the
+app and the AI server so they cannot drift apart.
 
 ## Visual clarity
 

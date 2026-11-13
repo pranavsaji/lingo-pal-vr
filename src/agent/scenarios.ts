@@ -4,7 +4,8 @@
  */
 
 import { daySeed, type Day } from '../state/dates.js';
-import { MENU, type MenuItem } from './menu.js';
+import type { PlaceId } from '../game-state.js';
+import { PLACES, type MenuItem } from './menu.js';
 
 export interface Scenario {
   id: 'cafe' | 'boulangerie' | 'marche';
@@ -39,11 +40,17 @@ export function availableScenarios(unlocks: string[]): Scenario[] {
   return SCENARIOS.filter((s) => !s.unlock || unlocks.includes(s.unlock));
 }
 
-export function dailySpecial(day: Day, unlocks: string[]): DailySpecial {
+/**
+ * Today's special. With `place`, it is that shop's special (what its shopkeeper
+ * offers); without, a shop is picked for the day among the unlocked ones.
+ */
+export function dailySpecial(day: Day, unlocks: string[], place?: PlaceId): DailySpecial {
   const seed = daySeed(day);
   const scenarios = availableScenarios(unlocks);
-  const scenario = scenarios[seed % scenarios.length];
-  const items = MENU.filter((m) => scenario.sells.includes(m.id));
+  const scenario = (place && SCENARIOS.find((s) => s.id === place)) || scenarios[seed % scenarios.length];
+  const menu = PLACES[scenario.id].menu;
+  const preferred = menu.filter((m) => scenario.sells.includes(m.id));
+  const items = preferred.length ? preferred : menu;
   const item = items[(seed >>> 8) % items.length];
   const challenge = CHALLENGES[(seed >>> 16) % CHALLENGES.length];
   return { scenarioId: scenario.id, item, challenge };

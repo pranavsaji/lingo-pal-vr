@@ -1,0 +1,54 @@
+{
+  "$comment": "Shops on the Paris map. Shared by the app (src/places) and the AI server (server/agent-handler.mjs) so prices and menus never drift apart. Prices are euro cents and multiples of 10 (change is counted in 10c coins). Item ids are unique words: the same id in two shops is the same French word (shared spaced-repetition progress).",
+  "places": {
+    "cafe": {
+      "fr": "Le Café Lune",
+      "en": "Café Lune",
+      "shopkeeper": { "name": "Madame Lune", "gender": "f", "role": "the warm, witty owner of Café Lune, a Parisian café" },
+      "menu": [
+        { "id": "croissant", "noun": "croissant", "plural": "croissants", "gender": "m", "en": "croissant", "enPlural": "croissants", "priceCents": 170, "aliases": ["croissant", "croissants", "croissan"] },
+        { "id": "cafe", "noun": "café", "plural": "cafés", "gender": "m", "en": "coffee", "enPlural": "coffees", "priceCents": 180, "aliases": ["cafe", "cafes", "expresso", "espresso", "cafe creme"] },
+        { "id": "baguette", "noun": "baguette", "plural": "baguettes", "gender": "f", "en": "baguette", "enPlural": "baguettes", "priceCents": 110, "aliases": ["baguette", "baguettes", "pain"] },
+        { "id": "pomme", "noun": "pomme", "plural": "pommes", "gender": "f", "en": "apple", "enPlural": "apples", "priceCents": 60, "aliases": ["pomme", "pommes"] },
+        { "id": "orange", "noun": "orange", "plural": "oranges", "gender": "f", "en": "orange", "enPlural": "oranges", "priceCents": 70, "aliases": ["orange", "oranges", "jus d orange"] },
+        { "id": "fromage", "noun": "fromage", "plural": "fromages", "gender": "m", "en": "cheese", "enPlural": "cheeses", "priceCents": 450, "aliases": ["fromage", "fromages", "comte", "brie"] },
+        { "id": "eau", "noun": "bouteille d'eau", "plural": "bouteilles d'eau", "gender": "f", "en": "bottle of water", "enPlural": "bottles of water", "priceCents": 150, "aliases": ["eau", "bouteille d eau", "bouteilles d eau", "bouteille"] },
+        { "id": "gateau", "noun": "gâteau", "plural": "gâteaux", "gender": "m", "en": "cake", "enPlural": "cakes", "priceCents": 380, "aliases": ["gateau", "gateaux", "gateau au chocolat"] }
+      ],
+      "words": ["assiette", "verre", "menu", "fleur"]
+    },
+    "boulangerie": {
+      "fr": "La Boulangerie",
+      "en": "The Bakery",
+      "shopkeeper": { "name": "Monsieur Paul", "gender": "m", "role": "the proud, cheerful baker of La Boulangerie, a Parisian bakery, who bakes everything himself at dawn" },
+      "menu": [
+        { "id": "baguette", "noun": "baguette", "plural": "baguettes", "gender": "f", "en": "baguette", "enPlural": "baguettes", "priceCents": 120, "aliases": ["baguette", "baguettes", "tradition"] },
+        { "id": "croissant", "noun": "croissant", "plural": "croissants", "gender": "m", "en": "croissant", "enPlural": "croissants", "priceCents": 130, "aliases": ["croissant", "croissants", "croissan"] },
+        { "id": "pain_chocolat", "noun": "pain au chocolat", "plural": "pains au chocolat", "gender": "m", "en": "pain au chocolat", "enPlural": "pains au chocolat", "priceCents": 140, "aliases": ["pain au chocolat", "pains au chocolat", "chocolatine", "chocolatines"] },
+        { "id": "petit_pain", "noun": "petit pain", "plural": "petits pains", "gender": "m", "en": "bread roll", "enPlural": "bread rolls", "priceCents": 60, "aliases": ["petit pain", "petits pains", "pain"] },
+        { "id": "eclair", "noun": "éclair", "plural": "éclairs", "gender": "m", "en": "éclair", "enPlural": "éclairs", "priceCents": 290, "aliases": ["eclair", "eclairs", "eclair au chocolat"] },
+        { "id": "macaron", "noun": "macaron", "plural": "macarons", "gender": "m", "en": "macaron", "enPlural": "macarons", "priceCents": 90, "aliases": ["macaron", "macarons"] },
+        { "id": "tarte", "noun": "tarte aux fraises", "plural": "tartes aux fraises", "gender": "f", "en": "strawberry tart", "enPlural": "strawberry tarts", "priceCents": 350, "aliases": ["tarte", "tartes", "tarte aux fraises", "tartes aux fraises"] },
+        { "id": "gateau", "noun": "gâteau", "plural": "gâteaux", "gender": "m", "en": "cake", "enPlural": "cakes", "priceCents": 420, "aliases": ["gateau", "gateaux", "gateau au chocolat"] }
+      ],
+      "words": ["panier", "planche"]
+    },
+    "marche": {
+      "fr": "Le Marché",
+      "en": "The Market",
+      "shopkeeper": { "name": "Madame Rose", "gender": "f", "role": "the lively fruit-and-vegetable seller at a covered Paris market, who knows every grower by name" },
+      "menu": [
+        { "id": "pomme", "noun": "pomme", "plural": "pommes", "gender": "f", "en": "apple", "enPlural": "apples", "priceCents": 50, "aliases": ["pomme", "pommes"] },
+        { "id": "poire", "noun": "poire", "plural": "poires", "gender": "f", "en": "pear", "enPlural": "pears", "priceCents": 60, "aliases": ["poire", "poires"] },
+        { "id": "banane", "noun": "banane", "plural": "bananes", "gender": "f", "en": "banana", "enPlural": "bananas", "priceCents": 30, "aliases": ["banane", "bananes"] },
+        { "id": "citron", "noun": "citron", "plural": "citrons", "gender": "m", "en": "lemon", "enPlural": "lemons", "priceCents": 50, "aliases": ["citron", "citrons"] },
+        { "id": "kiwi", "noun": "kiwi", "plural": "kiwis", "gender": "m", "en": "kiwi", "enPlural": "kiwis", "priceCents": 40, "aliases": ["kiwi", "kiwis"] },
+        { "id": "avocat", "noun": "avocat", "plural": "avocats", "gender": "m", "en": "avocado", "enPlural": "avocados", "priceCents": 120, "aliases": ["avocat", "avocats"] },
+        { "id": "oignon", "noun": "oignon", "plural": "oignons", "gender": "m", "en": "onion", "enPlural": "onions", "priceCents": 40, "aliases": ["oignon", "oignons"] },
+        { "id": "patate_douce", "noun": "patate douce", "plural": "patates douces", "gender": "f", "en": "sweet potato", "enPlural": "sweet potatoes", "priceCents": 90, "aliases": ["patate douce", "patates douces", "patate", "patates"] },
+        { "id": "grenade", "noun": "grenade", "plural": "grenades", "gender": "f", "en": "pomegranate", "enPlural": "pomegranates", "priceCents": 150, "aliases": ["grenade", "grenades"] }
+      ],
+      "words": ["cageot", "panier"]
+    }
+  }
+}

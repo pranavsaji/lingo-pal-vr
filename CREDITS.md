@@ -1,9 +1,33 @@
 # Credits and licenses
 
-All 3D models (cafe, Madame Lune, money, decor, ghost hand) are procedural geometry
-written for this project in `src/models/` and `src/cafe-builder.ts`. All sound effects
-and the cafe ambience are synthesized at runtime with WebAudio (`src/audio/`). No
-third-party art or audio files are used.
+Sound effects and the café ambience are synthesized at runtime with WebAudio
+(`src/audio/`); no audio files are used. Money, the tray, register, decor, ghost hand,
+pastries without a scan (pain au chocolat, éclair, macarons, tart) and the cartoon
+fallback shopkeeper are procedural geometry written for this project.
+
+## Characters
+
+Madame Lune, Monsieur Paul and Madame Rose are Microsoft Rocketbox avatars
+Female_Adult_05, Male_Adult_05 and Female_Adult_02
+(https://github.com/microsoft/Microsoft-Rocketbox), © 2020 Microsoft, MIT License.
+Converted to glTF for this project; license text in
+`public/models/characters/LICENSE-Rocketbox.txt`.
+
+## Realistic props, surfaces and environments
+
+From Poly Haven (https://polyhaven.com), CC0 (public domain, no attribution required;
+credited with thanks). Downloaded and optimized by `scripts/fetch-assets.mjs`.
+- Models: croissant, food_apple_01, strawberry_chocolate_cake, carrot_cake,
+  hamburger_buns, wine_bottles_01, ceramic_vase_01, painted_wooden_chair_01,
+  hanging_industrial_lamp, wooden_cutting_board, wicker_basket_01, wooden_crate_01,
+  bananas, food_pears_asian_01, lemon, yellow_onion, sweet_potato, food_kiwi_01,
+  food_avocado_01, food_pomegranate_01 (plus potted_plant_01, round_wooden_table_01,
+  standing_chalkboard_01 prepared but unused).
+- Textures: checkered_pavement_tiles, marble_01, dark_wood, oak_veneer_01,
+  red_brick_plaster_patch_02, terracotta_floor_tiles, cobblestone_floor_04, wood_table_worn.
+- 360° environments (backdrop + lighting): comfy_cafe, decor_shop, leadenhall_market.
+  Shop names and brand lettering in the Leadenhall Market photo are blurred so no real
+  trademarks are shown.
 
 ## Libraries
 

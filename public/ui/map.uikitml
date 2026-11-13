@@ -1,0 +1,176 @@
+<!--
+  Plan de Paris: pick a shop. Each card shows the shop, its shopkeeper and
+  whether it is open yet (shops open as the learner progresses).
+  Swaps into the lesson panel's slot (see src/ui/panels-system.ts).
+-->
+<style>
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Regular.ttf);
+    font-weight: normal;
+  }
+  @font-face {
+    font-family: poppins;
+    src: url(fonts/Poppins-Bold.ttf);
+    font-weight: bold;
+  }
+
+  .root {
+    flex-direction: column;
+    width: 560px;
+    font-family: poppins;
+  }
+
+  .header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 22px;
+    padding-right: 22px;
+    background-color: #d1495b;
+  }
+
+  .brand {
+    color: #fafaf7;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .sub {
+    color: #ffe3e8;
+    font-size: 15px;
+  }
+
+  .list {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 14px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .shop {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-radius: 14px;
+    background-color: #2b2d33;
+    cursor: pointer;
+  }
+
+  .shop:hover {
+    background-color: #3d5a80;
+  }
+
+  .labels {
+    flex-direction: column;
+  }
+
+  .name {
+    color: #fafaf7;
+    font-size: 21px;
+    font-weight: bold;
+  }
+
+  .who {
+    color: #b8bcc6;
+    font-size: 13px;
+  }
+
+  .status {
+    color: #1b1c20;
+    font-size: 14px;
+    font-weight: bold;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 10px;
+    background-color: #f5d90a;
+  }
+
+  .hint {
+    color: #3a3b40;
+    font-size: 14px;
+    padding-top: 10px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .hint:dark {
+    color: #9fd3c7;
+  }
+
+  .actions {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 10px;
+    padding-bottom: 18px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .action {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 22px;
+    padding-right: 22px;
+    border-radius: 18px;
+    background-color: #6c757d;
+    cursor: pointer;
+  }
+
+  .action:hover {
+    background-color: #868e96;
+  }
+
+  .action-text {
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: bold;
+  }
+</style>
+<Panel class="root">
+  <div class="header">
+    <span class="brand">PLAN DE PARIS</span>
+    <span class="sub">Où allez-vous ?</span>
+  </div>
+  <div class="list">
+    <div class="shop" id="place-cafe">
+      <div class="labels">
+        <span class="name">Le Café Lune</span>
+        <span class="who" id="place-cafe-who">Madame Lune · café, croissants</span>
+      </div>
+      <span class="status" id="place-cafe-status">Vous êtes ici</span>
+    </div>
+    <div class="shop" id="place-boulangerie">
+      <div class="labels">
+        <span class="name">La Boulangerie</span>
+        <span class="who" id="place-boulangerie-who">Monsieur Paul · pain, pâtisseries</span>
+      </div>
+      <span class="status" id="place-boulangerie-status">Ouvert</span>
+    </div>
+    <div class="shop" id="place-marche">
+      <div class="labels">
+        <span class="name">Le Marché</span>
+        <span class="who" id="place-marche-who">Madame Rose · fruits, légumes</span>
+      </div>
+      <span class="status" id="place-marche-status">Ouvert</span>
+    </div>
+  </div>
+  <span class="hint" id="map-hint">Pinch a shop (or say its name) to go there.</span>
+  <div class="actions">
+    <div class="action" id="map-back">
+      <span class="action-text">Retour</span>
+    </div>
+  </div>
+</Panel>

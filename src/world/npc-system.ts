@@ -1,26 +1,57 @@
 /**
- * Madame Lune's body language. She is the spatial agent, so her tool calls
- * become visible behavior: point_at swings her arm toward the item, emote plays
- * a gesture, and she looks at the learner (or at what the learner looks at).
+ * The shopkeeper's body language. The shopkeeper is the spatial agent, so her tool
+ * calls become visible behaviour: point_at swings an arm toward the item, emote
+ * plays a gesture, and she looks at the learner (or at what the learner looks at).
  * Lip flap is driven by the speech engine; blinks and breathing keep her alive.
- * All animation is procedural and allocation-free per frame.
+ *
+ * Each shop has its own rigged human (Microsoft Rocketbox avatars, see
+ * ./characters/shopkeepers.ts): Madame Lune (cafe), Monsieur Paul (boulangerie),
+ * Madame Rose (marche). They stand on the same spot and share every behaviour;
+ * `events.place` swaps who is behind the counter. If an avatar cannot be loaded
+ * the procedural Madame Lune stands in, so the counter is never empty.
+ *
+ * All animation is procedural and allocation-free per frame: this system builds a
+ * CharacterPose, and the active driver (HumanRig or ProceduralLuneDriver) maps it
+ * onto bones or groups.
  */
 
-import { createSystem, MathUtils, Vector3 } from '@iwsdk/core';
+import { AssetManager, createSystem, Group, MathUtils, Vector3 } from '@iwsdk/core';
 import type { Emote } from '../agent/tools.js';
 import { director } from '../agent/runtime.js';
-import { events } from '../game-state.js';
-import { buildMadameLune, type LuneRig } from '../models/cafe-models.js';
+import { appState, events, type PlaceId } from '../game-state.js';
+import { buildMadameLune } from '../models/cafe-models.js';
 import { luneSpeaking } from '../speech.js';
 import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
+import { type CharacterDriver, type CharacterPose, createPose } from './characters/character-pose.js';
+import { aimArm, EMOTE_SECONDS, emoteEnvelope, lipFlap, poseEmote } from './characters/gestures.js';
+import { HumanRig, prepareAvatar } from './characters/human-rig.js';
+import { ProceduralLuneDriver } from './characters/procedural-driver.js';
+import { SHOPKEEPER_POS, SHOPKEEPERS } from './characters/shopkeepers.js';
 
-const LUNE_POS: [number, number, number] = [0.15, 0, -1.65];
-const EMOTE_SECONDS: Record<Emote, number> = { nod: 0.9, shrug: 1.2, wave: 1.6, laugh: 1.3, think: 1.8, clap: 1.4 };
 const POINT_SECONDS = 2.2;
+/** Show the procedural stand-in if an avatar has not arrived after this long. */
+const FALLBACK_AFTER_S = 6;
+const PLACES = Object.keys(SHOPKEEPERS) as PlaceId[];
+
+/** Closure-free lookup so update() stays allocation-free. */
+function findVocab(id: string): (typeof VOCAB)[number] | undefined {
+  for (let i = 0; i < VOCAB.length; i++) if (VOCAB[i].id === id) return VOCAB[i];
+  return undefined;
+}
 
 export class NpcSystem extends createSystem({}) {
-  private rig!: LuneRig;
+  private anchor!: Group;
+  private driver: CharacterDriver | null = null;
+  private human = false;
+  private fallback: ProceduralLuneDriver | null = null;
+  private readonly avatars = new Map<PlaceId, HumanRig>();
+  private readonly loading = new Set<PlaceId>();
+  private readonly failed = new Set<PlaceId>();
+  private place: PlaceId = 'cafe';
+  private waitingSince = 0;
+  private prefetched = false;
+
   private t = 0;
   private speaking = false;
   private emote: Emote | null = null;
@@ -32,7 +63,9 @@ export class NpcSystem extends createSystem({}) {
   private look!: Vector3;
   private shoulder!: Vector3;
   private dir!: Vector3;
-  // Smoothed joint targets.
+  /** Smoothed pose handed to the driver, and this frame's target. */
+  private pose!: CharacterPose;
+  private target!: CharacterPose;
   private headYaw = 0;
   private headPitch = 0;
 
@@ -42,14 +75,19 @@ export class NpcSystem extends createSystem({}) {
     this.shoulder = new Vector3();
     this.dir = new Vector3();
     this.pointTarget = new Vector3();
+    this.pose = createPose();
+    this.target = createPose();
 
-    this.rig = buildMadameLune();
-    this.rig.root.name = 'Madame Lune';
-    this.rig.root.position.set(...LUNE_POS);
-    this.world.createTransformEntity(this.rig.root);
+    // One anchor entity on the shopkeeper spot; the active character is its child.
+    this.anchor = new Group();
+    this.anchor.name = 'Shopkeeper';
+    this.anchor.position.set(...SHOPKEEPER_POS);
+    this.world.createTransformEntity(this.anchor);
+    this.showPlace(appState.place);
 
     this.cleanupFuncs.push(
       luneSpeaking.on((on) => (this.speaking = on)),
+      events.place.on((place) => this.showPlace(place)),
       events.effects.on((fx) => {
         for (const e of fx) {
           if (e.kind === 'emote') this.playEmote(e.emote);
@@ -67,6 +105,82 @@ export class NpcSystem extends createSystem({}) {
     );
   }
 
+  // --- Who is behind the counter -------------------------------------------------
+
+  private showPlace(place: PlaceId): void {
+    this.place = place;
+    const avatar = this.avatars.get(place);
+    if (avatar) {
+      this.activate(avatar, true);
+      return;
+    }
+    if (this.failed.has(place) || !SHOPKEEPERS[place]) {
+      this.activate(this.getFallback(), false);
+      return;
+    }
+    // The previous shop's shopkeeper does not belong here: clear the counter while loading.
+    this.activate(null, false);
+    this.waitingSince = this.t;
+    void this.loadAvatar(place);
+  }
+
+  private async loadAvatar(place: PlaceId): Promise<void> {
+    if (this.loading.has(place) || this.avatars.has(place) || this.failed.has(place)) return;
+    const spec = SHOPKEEPERS[place];
+    this.loading.add(place);
+    try {
+      await AssetManager.loadGLTFById(spec.assetId);
+      const gltf = AssetManager.getGLTF(spec.assetId); // a fresh skeleton-aware clone
+      if (!gltf) throw new Error(`glTF "${spec.assetId}" missing from the cache`);
+      prepareAvatar(gltf.scene, spec.name);
+      const rig = new HumanRig(gltf.scene, spec.rig);
+      rig.apply(this.pose);
+      this.avatars.set(place, rig);
+      if (this.place === place) this.activate(rig, true);
+      this.prefetchOthers();
+    } catch (err) {
+      console.warn(`[NpcSystem] ${spec.name} unavailable, using the procedural shopkeeper`, err);
+      this.failed.add(place);
+      if (this.place === place) this.activate(this.getFallback(), false);
+    } finally {
+      this.loading.delete(place);
+    }
+  }
+
+  /** Once the first avatar is up, warm the other shops' avatars so a shop switch is instant. */
+  private prefetchOthers(): void {
+    if (this.prefetched) return;
+    this.prefetched = true;
+    for (const p of PLACES) {
+      if (p === this.place) continue;
+      AssetManager.loadGLTFById(SHOPKEEPERS[p].assetId).catch(() => {
+        // Reported (and the fallback shown) if the learner actually visits that shop.
+      });
+    }
+  }
+
+  private getFallback(): ProceduralLuneDriver {
+    if (!this.fallback) {
+      const rig = buildMadameLune();
+      rig.root.name = 'Madame Lune (procedural)';
+      this.fallback = new ProceduralLuneDriver(rig);
+    }
+    return this.fallback;
+  }
+
+  private activate(driver: CharacterDriver | null, human: boolean): void {
+    if (this.driver === driver) return;
+    if (this.driver) this.anchor.remove(this.driver.root);
+    this.driver = driver;
+    this.human = human;
+    if (driver) {
+      driver.apply(this.pose);
+      this.anchor.add(driver.root);
+    }
+  }
+
+  // --- Behaviours --------------------------------------------------------------------
+
   private playEmote(e: Emote): void {
     if (store.profile.settings.reduceMotion && e !== 'nod') return;
     this.emote = e;
@@ -74,7 +188,7 @@ export class NpcSystem extends createSystem({}) {
   }
 
   private pointAt(itemId: string): void {
-    const v = VOCAB.find((x) => x.id === itemId);
+    const v = findVocab(itemId);
     if (!v) return;
     this.pointTarget.set(v.position[0], v.position[1] + 0.05, v.position[2]);
     this.pointUntil = this.t + POINT_SECONDS;
@@ -87,26 +201,32 @@ export class NpcSystem extends createSystem({}) {
 
   update(delta: number): void {
     this.t += delta;
-    const r = this.rig;
     const t = this.t;
-    const k = 1 - Math.exp(-delta * 8); // smoothing factor
+    const d = this.driver;
+    if (!d) {
+      if (t - this.waitingSince > FALLBACK_AFTER_S) this.activate(this.getFallback(), false);
+      return;
+    }
+    const pose = this.pose;
+    const target = this.target;
+    const k = 1 - Math.exp(-delta * 8); // gaze smoothing
 
     // --- Gaze: the item being pointed at, else what the learner looks at (briefly), else the learner.
-    r.head.getWorldPosition(this.headWorld);
+    d.head.getWorldPosition(this.headWorld);
     const pointing = t < this.pointUntil;
     const lookItem = director.perception.lookingAt;
     if (pointing) this.look.copy(this.pointTarget);
     else if (lookItem && Math.sin(t * 0.7) > 0.3) {
-      const v = VOCAB.find((x) => x.id === lookItem);
+      const v = findVocab(lookItem);
       if (v) this.look.set(v.position[0], v.position[1], v.position[2]);
       else this.player.head.getWorldPosition(this.look);
     } else this.player.head.getWorldPosition(this.look);
     this.dir.subVectors(this.look, this.headWorld);
     const horiz = Math.hypot(this.dir.x, this.dir.z);
-    const yawTarget = MathUtils.clamp(Math.atan2(this.dir.x, this.dir.z), -0.7, 0.7);
-    const pitchTarget = MathUtils.clamp(-Math.atan2(this.dir.y, horiz), -0.35, 0.45);
-    this.headYaw += (yawTarget - this.headYaw) * k;
-    this.headPitch += (pitchTarget - this.headPitch) * k;
+    const rawYaw = Math.atan2(this.dir.x, this.dir.z);
+    const rawPitch = -Math.atan2(this.dir.y, horiz);
+    this.headYaw += (MathUtils.clamp(rawYaw, -0.7, 0.7) - this.headYaw) * k;
+    this.headPitch += (MathUtils.clamp(rawPitch, -0.35, 0.45) - this.headPitch) * k;
 
     // --- Emote envelope (0..1..0) and phase.
     let emote: Emote | null = this.emote;
@@ -114,91 +234,55 @@ export class NpcSystem extends createSystem({}) {
     let env = 0;
     if (emote) {
       p = (t - this.emoteStart) / EMOTE_SECONDS[emote];
-      if (p >= 1) {
-        this.emote = emote = null;
-      } else {
-        env = Math.sin(Math.PI * Math.min(1, p * 1.15));
-      }
+      if (p >= 1) this.emote = emote = null;
+      else env = emoteEnvelope(p);
     }
+    poseEmote(target, emote, this.headPitch, p, env, t, this.human);
 
-    let headPitch = this.headPitch;
-    let headRoll = 0;
-    // Arms at rest: slightly forward, hands on the counter edge.
-    let lx = -0.35, lz = 0.12, lfx = -0.9;
-    let rx = -0.35, rz = -0.12, rfx = -0.9;
-
-    switch (emote) {
-      case 'nod':
-        headPitch += Math.sin(p * Math.PI * 4) * 0.22 * env;
-        break;
-      case 'shrug':
-        lz = 0.12 + 0.55 * env; rz = -0.12 - 0.55 * env;
-        lfx = -0.9 - 0.6 * env; rfx = -0.9 - 0.6 * env;
-        headRoll = 0.18 * env;
-        break;
-      case 'wave': // her right hand (at -X) waves
-        rx = -0.35 - 2.4 * env; rz = -0.12 - 0.35 * env;
-        rfx = -0.9 + 0.6 * env + Math.sin(t * 14) * 0.35 * env;
-        headRoll = -0.08 * env;
-        break;
-      case 'laugh':
-        headPitch -= 0.25 * env;
-        headPitch += Math.sin(t * 22) * 0.05 * env;
-        lfx = -1.3 * env - 0.9 * (1 - env); rfx = lfx;
-        break;
-      case 'think': // hand to chin, head tilted
-        rx = -0.35 - 0.9 * env; rz = -0.12 + 0.25 * env; rfx = -0.9 - 1.3 * env;
-        headRoll = 0.2 * env;
-        headPitch -= 0.12 * env;
-        break;
-      case 'clap': {
-        const c = Math.abs(Math.sin(t * 11));
-        lx = rx = -0.35 - 0.75 * env;
-        lz = 0.12 - (0.22 + 0.12 * c) * env;
-        rz = -0.12 + (0.22 + 0.12 * c) * env;
-        lfx = rfx = -0.9 - 0.4 * env;
-        break;
-      }
-    }
-
-    // --- Pointing (overrides her own-left arm, the one nearer most items at +X... choose by side).
+    // --- Pointing overrides the arm on the item's side.
     if (pointing) {
-      const useLeft = this.pointTarget.x > LUNE_POS[0];
-      const arm = useLeft ? r.leftArm : r.rightArm;
-      arm.getWorldPosition(this.shoulder);
+      const useLeft = this.pointTarget.x > SHOPKEEPER_POS[0];
+      (useLeft ? d.leftShoulder : d.rightShoulder).getWorldPosition(this.shoulder);
       this.dir.subVectors(this.pointTarget, this.shoulder).normalize();
       const blend = Math.min(1, (this.pointUntil - t) * 3, (t - (this.pointUntil - POINT_SECONDS)) * 4);
-      const theta = Math.atan2(-this.dir.z, -this.dir.y);
-      const phi = Math.asin(MathUtils.clamp(this.dir.x, -1, 1));
-      if (useLeft) {
-        lx = MathUtils.lerp(lx, theta, blend); lz = MathUtils.lerp(lz, phi, blend); lfx = MathUtils.lerp(lfx, -0.1, blend);
-      } else {
-        rx = MathUtils.lerp(rx, theta, blend); rz = MathUtils.lerp(rz, phi, blend); rfx = MathUtils.lerp(rfx, -0.1, blend);
-      }
+      aimArm(target, useLeft, this.dir.x, this.dir.y, this.dir.z, blend);
     }
 
-    r.head.rotation.set(headPitch, this.headYaw, headRoll);
-    const sk = 1 - Math.exp(-delta * 12);
-    r.leftArm.rotation.x += (lx - r.leftArm.rotation.x) * sk;
-    r.leftArm.rotation.z += (lz - r.leftArm.rotation.z) * sk;
-    r.rightArm.rotation.x += (rx - r.rightArm.rotation.x) * sk;
-    r.rightArm.rotation.z += (rz - r.rightArm.rotation.z) * sk;
-    r.leftForearm.rotation.x += (lfx - r.leftForearm.rotation.x) * sk;
-    r.rightForearm.rotation.x += (rfx - r.rightForearm.rotation.x) * sk;
+    // --- Head follows directly; eyes lead the head and hold the target through nods.
+    pose.headPitch = target.headPitch;
+    pose.headYaw = this.headYaw;
+    pose.headRoll = target.headRoll;
+    const ke = 1 - Math.exp(-delta * 20);
+    pose.eyeYaw += (MathUtils.clamp(rawYaw - this.headYaw, -0.35, 0.35) - pose.eyeYaw) * ke;
+    pose.eyePitch += (MathUtils.clamp(rawPitch - target.headPitch, -0.25, 0.25) - pose.eyePitch) * ke;
 
-    // --- Lip flap: two incommensurate sines read as syllables.
-    const open = this.speaking ? 0.25 + Math.abs(Math.sin(t * 13.7) * Math.sin(t * 4.9)) * 1.3 : 0.2;
-    r.mouth.scale.y += (open - r.mouth.scale.y) * (1 - Math.exp(-delta * 25));
+    // --- Arms ease toward their targets.
+    const sk = 1 - Math.exp(-delta * 12);
+    pose.lArmX += (target.lArmX - pose.lArmX) * sk;
+    pose.lArmZ += (target.lArmZ - pose.lArmZ) * sk;
+    pose.lForearmX += (target.lForearmX - pose.lForearmX) * sk;
+    pose.rArmX += (target.rArmX - pose.rArmX) * sk;
+    pose.rArmZ += (target.rArmZ - pose.rArmZ) * sk;
+    pose.rForearmX += (target.rForearmX - pose.rForearmX) * sk;
+    pose.lTwist += (target.lTwist - pose.lTwist) * sk;
+    pose.rTwist += (target.rTwist - pose.rTwist) * sk;
+    pose.shoulderRaise += (target.shoulderRaise - pose.shoulderRaise) * sk;
+    pose.lPoint += (target.lPoint - pose.lPoint) * sk;
+    pose.rPoint += (target.rPoint - pose.rPoint) * sk;
+
+    // --- Lip flap from the speech engine.
+    pose.mouthOpen += (lipFlap(this.speaking, t) - pose.mouthOpen) * (1 - Math.exp(-delta * 25));
 
     // --- Blink every 2.5 to 5 s.
     if (t >= this.nextBlink) {
       const b = (t - this.nextBlink) / 0.14;
-      const s = b < 1 ? Math.max(0.1, Math.abs(1 - 2 * b)) : 1;
-      for (const eye of r.eyes) eye.scale.y = s;
+      pose.blink = b < 1 ? 1 - Math.abs(1 - 2 * b) : 0;
       if (b >= 1) this.nextBlink = t + 2.5 + ((t * 7.31) % 2.5);
     }
 
     // --- Breathing.
-    r.root.scale.y = 1 + Math.sin(t * 1.6) * 0.006;
+    pose.breath = Math.sin(t * 1.6);
+
+    d.apply(pose);
   }
 }
