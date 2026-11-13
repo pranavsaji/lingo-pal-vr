@@ -20,6 +20,8 @@ const PROP_IDS = [
   'cafe_cup', 'cafe_plate', 'cafe_teapot',
   '3DBread011', '3DBread007', '3DBread004', '3DBread006', '3DBread003', '3DBread010',
   '3DPastry001', '3DPastry002', '3DPastry003',
+  // Objaverse / Sketchfab, CC-BY 4.0 (scripts/fetch-objaverse.mjs; credits in CREDITS.md).
+  'orange', 'eclair', 'cherry_tart', 'water_bottle', 'wine_glass', 'orchid',
 ] as const;
 
 const props = Object.fromEntries(

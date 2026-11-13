@@ -28,7 +28,7 @@
         { "id": "petit_pain", "noun": "petit pain", "plural": "petits pains", "gender": "m", "en": "bread roll", "enPlural": "bread rolls", "priceCents": 60, "aliases": ["petit pain", "petits pains", "pain"] },
         { "id": "eclair", "noun": "éclair", "plural": "éclairs", "gender": "m", "en": "éclair", "enPlural": "éclairs", "priceCents": 290, "aliases": ["eclair", "eclairs", "eclair au chocolat"] },
         { "id": "macaron", "noun": "macaron", "plural": "macarons", "gender": "m", "en": "macaron", "enPlural": "macarons", "priceCents": 90, "aliases": ["macaron", "macarons"] },
-        { "id": "tarte", "noun": "tarte aux fraises", "plural": "tartes aux fraises", "gender": "f", "en": "strawberry tart", "enPlural": "strawberry tarts", "priceCents": 350, "aliases": ["tarte", "tartes", "tarte aux fraises", "tartes aux fraises"] },
+        { "id": "tarte", "noun": "tarte aux cerises", "plural": "tartes aux cerises", "gender": "f", "en": "cherry tart", "enPlural": "cherry tarts", "priceCents": 350, "aliases": ["tarte", "tartes", "tarte aux cerises", "tartes aux cerises"] },
         { "id": "gateau", "noun": "gâteau", "plural": "gâteaux", "gender": "m", "en": "cake", "enPlural": "cakes", "priceCents": 420, "aliases": ["gateau", "gateaux", "gateau au chocolat"] }
       ],
       "words": ["panier", "planche"]

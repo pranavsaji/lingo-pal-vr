@@ -81,6 +81,9 @@ export const SCANS = ['3DBread011', '3DBread007', '3DBread004', '3DBread006', '3
  * brand lettering in the photos, so the app shows no real-world trademarks.
  */
 const REDACT = {
+  decor_shop: [
+    [0.425, 0.51, 0.47, 0.556], // shop sign above the sofa
+  ],
   leadenhall_market: [
     [0, 0.272, 1, 0.358], // fascia boards with shop names, all around
     [0.45, 0.25, 0.55, 0.278], // red LED sign over the arcade

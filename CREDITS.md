@@ -2,8 +2,8 @@
 
 Sound effects and the café ambience are synthesized at runtime with WebAudio
 (`src/audio/`); no audio files are used. Money, the tray, register, decor, ghost hand,
-pastries without a scan (pain au chocolat, éclair, macarons, tart) and the cartoon
-fallback shopkeeper are procedural geometry written for this project.
+the cheese, the macarons, the menu card and the cartoon fallback shopkeeper are
+procedural geometry written for this project.
 
 ## Characters
 
@@ -59,6 +59,24 @@ a licensed cloud voice through a server route) before any paid release.
 From ambientCG (https://ambientcg.com), CC0: 3DBread003, 3DBread004, 3DBread006,
 3DBread007, 3DBread010, 3DBread011, 3DPastry001, 3DPastry002, 3DPastry003. Converted from
 OBJ with their color, normal and ambient-occlusion maps by `scripts/fetch-assets.mjs`.
+
+## Sketchfab models via Objaverse (CC-BY 4.0)
+
+Mirrored by the Allen Institute's Objaverse dataset; normalized (size, texture
+resolution, glass without refraction) by `scripts/fetch-objaverse.mjs`.
+License: Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/).
+
+| Used as | Title | Author | Source |
+| --- | --- | --- | --- |
+| l'orange | Tangerine | maestronoov | https://sketchfab.com/3d-models/e5015b222a6949478d68bd6b38fc6ee0 |
+| l'éclair | Caramel Macchiato Donut | tsd1 | https://sketchfab.com/3d-models/7be5302628084c94a964cd703cbce9dd |
+| la tarte aux cerises | Cherry Pie - #3December2020 Day8 | LordDiego | https://sketchfab.com/3d-models/37e00109d5b04b859f7116742a9c3955 |
+| la bouteille d'eau | Plastic Water Bottle | JeremyGrayson | https://sketchfab.com/3d-models/efa1c4c1f2a947659ded2e61e20eff31 |
+| le verre | Wine Glass | RubberMan | https://sketchfab.com/3d-models/be365d4a32184764abc4634c1280e6da |
+| la fleur | Orchid from Poly by Google | ie-niels | https://sketchfab.com/3d-models/d2c1afc47ba54d4491ee7b55469d11c8 |
+
+Changes: rescaled, re-centered, simplified, textures resized to 512 px WebP, glass
+transmission replaced by alpha blending.
 
 ## Fonts
 

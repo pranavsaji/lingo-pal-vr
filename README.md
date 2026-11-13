@@ -50,7 +50,9 @@ always on. Test the on-device engines on desktop with `?stt=local&tts=local`.
 
 Shopkeepers are Microsoft Rocketbox avatars (MIT) driven by procedural bone animation
 (`src/world/characters/`). Props, surface textures and 360° environments come from
-Poly Haven (CC0) via `node scripts/fetch-assets.mjs` (re-runnable; budgets per model).
+Poly Haven (CC0) and ambientCG scans (CC0) via `node scripts/fetch-assets.mjs`, plus six
+CC-BY Sketchfab models via Objaverse with `node scripts/fetch-objaverse.mjs` (re-runnable;
+budgets per model; credits in `CREDITS.md`).
 Shop data (menus, prices, shopkeepers) lives in `shared/places.json`, read by both the
 app and the AI server so they cannot drift apart.
 
