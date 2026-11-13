@@ -10,7 +10,7 @@ import { store } from './state/store.js';
 import { applyFrenchFont } from './fonts.js';
 import { speakFrench } from './speech.js';
 import { MISSIONS, vocabById } from './vocab.js';
-import { preferredSessionMode } from './world/mixed-reality-system.js';
+import { launchMode } from './world/mixed-reality-system.js';
 import { onActivate } from './ui/dwell.js';
 
 type Mode = 'explore' | 'mission' | 'review' | 'done';
@@ -52,7 +52,6 @@ export class LessonSystem extends createSystem({}) {
         if (levelUp) this.celebrate(`NIVEAU ${levelUp} !`, `Level up: ${levelUp}`);
       }),
       events.review.on((ids) => this.startMission(ids, 'review')),
-      events.settings.on((s) => this.set('xr-label', s.mixedReality ? 'Enter MR (passthrough)' : 'Enter VR')),
       events.effects.on((fx) => {
         if (fx.some((e) => e.kind === 'goodbye')) this.showSummary();
       }),
@@ -68,7 +67,8 @@ export class LessonSystem extends createSystem({}) {
         xrButton.setProperties({ display: 'none' });
         exitButton.setProperties({ display: 'none' });
       } else {
-        const launch = () => this.world.launchXR({ sessionMode: preferredSessionMode() });
+        // "Paris (VR)": the full virtual shop. "Ma pièce (MR)" (MixedRealitySystem) is the passthrough choice.
+        const launch = () => launchMode(this.world, false);
         const exit = () => this.world.exitXR();
         xrButton.addEventListener('click', launch);
         exitButton.addEventListener('click', exit);
@@ -92,7 +92,6 @@ export class LessonSystem extends createSystem({}) {
         (due ? ` ${due} word${due === 1 ? '' : 's'} to review today.` : ' Point your hand at an object, then pinch.'),
     );
     this.renderScore();
-    this.set('xr-label', store.profile.settings.mixedReality ? 'Enter MR (passthrough)' : 'Enter VR');
   }
 
   private set(id: string, text: string): void {

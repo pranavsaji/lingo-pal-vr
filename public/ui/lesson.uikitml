@@ -233,8 +233,11 @@
     </div>
   </div>
   <div class="actions" id="xr-row">
-    <div class="action" id="xr-button" style="background-color: #2a9d8f">
-      <span class="action-text" id="xr-label">Enter VR</span>
+    <div class="action" id="xr-button" style="background-color: #2a9d8f; padding-left: 14px; padding-right: 14px">
+      <span class="action-text" id="xr-label">Paris (VR)</span>
+    </div>
+    <div class="action" id="ar-button" style="background-color: #457b9d; padding-left: 14px; padding-right: 14px">
+      <span class="action-text" id="ar-label">Ma pièce (MR)</span>
     </div>
     <div class="action" id="exit-button" style="display: none; background-color: #6c757d">
       <span class="action-text">Exit VR</span>

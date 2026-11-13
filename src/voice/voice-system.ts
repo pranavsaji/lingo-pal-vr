@@ -17,7 +17,7 @@ import { handState } from '../hands/hand-state.js';
 import { speakFrench } from '../speech.js';
 import { store } from '../state/store.js';
 import { onActivate } from '../ui/dwell.js';
-import { scorePronunciation } from './pronunciation.js';
+import { normalizeFrench, scorePronunciation } from './pronunciation.js';
 import { fontsReady } from '../fonts.js';
 import { localVoice } from './local-voice.js';
 import { SpeechInput } from './speech-input.js';
@@ -117,6 +117,11 @@ export class VoiceSystem extends createSystem({}) {
       return;
     }
     const fingers = handState.fingers;
+    // Mixed reality: while the placement reticle shows, "ici" puts the cafe where the learner points.
+    if (appState.placingCafe && /\bici\b/.test(normalizeFrench(text))) {
+      events.placeCafe.emit('here');
+      return;
+    }
     const intent = parseIntent(text, fingers);
 
     // Pronunciation: score against the closest suggested reply.
@@ -157,6 +162,9 @@ export class VoiceSystem extends createSystem({}) {
           return;
         case 'map':
           events.openPanel.emit('map');
+          return;
+        case 'place':
+          events.placeCafe.emit('start');
           return;
       }
     }
