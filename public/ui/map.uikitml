@@ -175,5 +175,11 @@
     <div class="action" id="map-passport" style="background-color: #6d2e46">
       <span class="action-text" id="map-passport-label">Passeport</span>
     </div>
+    <div class="action" id="map-mode" style="background-color: #457b9d">
+      <span class="action-text" id="map-mode-label">Ma pièce (MR)</span>
+    </div>
+    <div class="action" id="map-place" style="display: none; background-color: #2a9d8f">
+      <span class="action-text">Placer le café</span>
+    </div>
   </div>
 </Panel>

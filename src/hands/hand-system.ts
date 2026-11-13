@@ -157,9 +157,9 @@ export class HandSystem extends createSystem({}) {
       const p = viewer.transform.position;
       const o = viewer.transform.orientation;
       this.headY = p.y;
-      // Reference space -> world: the player rig only translates (mixed reality lifts it).
-      this.headRef.set(p.x, p.y, p.z).add(this.player.position);
-      this.headQ.set(o.x, o.y, o.z, o.w);
+      // Reference space -> world: mixed reality moves and turns the player rig onto the real table.
+      this.headRef.set(p.x, p.y, p.z).applyMatrix4(this.player.matrixWorld);
+      this.headQ.set(o.x, o.y, o.z, o.w).premultiply(this.player.quaternion);
       this.headFwd.set(0, 0, -1).applyQuaternion(this.headQ);
       this.gazeItem = this.itemInView();
     }

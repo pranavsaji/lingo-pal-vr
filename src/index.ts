@@ -2,7 +2,7 @@
  * Lingo Pal VR: a hands-first French cafe for Meta Quest and Meta VR Glasses.
  */
 
-import { World } from '@iwsdk/core';
+import { DepthSensingSystem, World } from '@iwsdk/core';
 import projectOptions from 'virtual:iwsdk-project';
 import { AudioSystem } from './audio/audio-system.js';
 import { ChatSystem } from './chat-system.js';
@@ -74,6 +74,8 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(CoinSystem);
   world.registerSystem(DecorSystem);
   world.registerSystem(MixedRealitySystem);
+  // Real-world occlusion in passthrough (Quest 3 depth). Idle unless a session grants depth-sensing.
+  world.registerSystem(DepthSensingSystem, { configData: { enableDepthTexture: true, enableOcclusion: true, useFloat32: true, blurRadius: 20 } });
   world.registerSystem(DwellSystem);
   world.registerSystem(CelebrationSystem);
   world.registerSystem(OnboardingSystem);

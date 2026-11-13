@@ -41,7 +41,7 @@
       "locomotion": false,
       "grabbing": true,
       "physics": false,
-      "sceneUnderstanding": false,
+      "sceneUnderstanding": true,
       "environmentRaycast": false,
       "spatialUI": {
         "kit": "horizon",
@@ -51,7 +51,8 @@
   },
   "dev": {
     "emulator": {
-      "device": "metaQuest3"
+      "device": "metaQuest3",
+      "environment": "home_office"
     }
   }
 }

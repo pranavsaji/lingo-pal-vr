@@ -71,6 +71,8 @@ export const events = {
   travel: new Emitter<PlaceId>(),
   /** A passport stamp was just earned (stamp id, see src/state/passport.ts). */
   stamp: new Emitter<string>(),
+  /** Mixed reality: move the cafe in the learner's room (show the reticle, commit "ici", cancel). */
+  placeCafe: new Emitter<'start' | 'here' | 'cancel'>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
@@ -86,4 +88,6 @@ export const appState = {
   lastLuneLine: '',
   /** The shop the learner is in. */
   place: 'cafe' as PlaceId,
+  /** Mixed reality: the "placer le café ici" reticle is showing (a pinch or "ici" commits). */
+  placingCafe: false,
 };
