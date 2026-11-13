@@ -63,7 +63,12 @@ export const events = {
   coinDropped: new Emitter<number>(),
   /** A spoken line for subtitles: who, French, English. */
   subtitle: new Emitter<{ who: 'lune' | 'learner'; fr: string; en: string }>(),
+  /** The learner moved to another shop (the scene, menu and shopkeeper switch). */
+  place: new Emitter<PlaceId>(),
 };
+
+/** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
+export type PlaceId = 'cafe' | 'boulangerie' | 'marche';
 
 /** Small shared UI state read by several systems (no rendering here). */
 export const appState = {
@@ -73,4 +78,6 @@ export const appState = {
   replies: [] as ReplyOption[],
   /** Madame Lune's last line, for "repeter". */
   lastLuneLine: '',
+  /** The shop the learner is in. */
+  place: 'cafe' as PlaceId,
 };
