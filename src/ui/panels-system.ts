@@ -36,7 +36,7 @@ const NARROW_TAN = Math.tan((42 * Math.PI) / 180);
 const NARROW_SCALE = 0.85;
 const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'map-panel': -21, 'report-panel': -21, 'chat-panel': 24 };
 
-const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality'];
+const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst'];
 
 /** Text that must stay readable in high contrast: [panel, element id, normal color]. */
 const CONTRAST_TEXT: [string, string, string][] = [

@@ -31,6 +31,10 @@ import { appState, events } from './game-state.js';
 import { handState } from './hands/hand-state.js';
 import { store } from './state/store.js';
 import { dwellTargets } from './ui/dwell.js';
+import { attachLanding, markBoot } from './ui/landing.js';
+import { AccessibilitySystem } from './ui/accessibility-system.js';
+
+markBoot('code'); // landing page progress: the app bundle is running
 
 // Dev only: Shift+R starts a brand-new learner (first-launch tutorial). Not in production builds.
 if (import.meta.env.DEV) {
@@ -57,6 +61,7 @@ if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
 }
 
 World.create(document.getElementById('scene-container') as HTMLDivElement, projectOptions).then((world) => {
+  attachLanding(world); // before the systems, so the first shop-ready event is caught
   if (import.meta.env.DEV) ((window as unknown as Record<string, Record<string, unknown>>).__lingo ??= {}).world = world;
   world.registerSystem(QualitySystem); // resolution + foveation, before any XR session starts
   world.registerSystem(ItemSystem);
@@ -76,4 +81,5 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(DwellSystem);
   world.registerSystem(CelebrationSystem);
   world.registerSystem(OnboardingSystem);
+  world.registerSystem(AccessibilitySystem); // input-mode choice, global voice commands, high contrast in 3D
 });

@@ -21,6 +21,7 @@ import { scorePronunciation } from './pronunciation.js';
 import { fontsReady } from '../fonts.js';
 import { localVoice } from './local-voice.js';
 import { SpeechInput } from './speech-input.js';
+import { commandFeedback, parseVoiceCommand } from './voice-commands.js';
 
 const MIN_TARGET_SCORE = 45; // below this the learner said something else, not a try at a reply
 
@@ -29,6 +30,8 @@ export class VoiceSystem extends createSystem({}) {
   private el: Record<string, UIKit.Text | undefined> = {};
   private micButton: ReturnType<UIKitMLAsset['getElementById']> | undefined;
   private processing = false;
+  /** This recording was started hands-free: stay quiet if nothing was said. */
+  private autoListen = false;
 
   init(): void {
     const panel = this.world.getSceneObject<UIKitMLAsset>('chat-panel');
@@ -43,6 +46,11 @@ export class VoiceSystem extends createSystem({}) {
       events.gesture.on((g) => {
         if (g === 'palm_up_start') void this.begin();
         if (g === 'palm_up_end') void this.finish();
+      }),
+      // Hands-free voice (and the first-launch choice): listen without a pinch.
+      events.listenNow.on(() => {
+        if (this.processing || this.mic.listening || !this.mic.available) return;
+        void this.begin(true);
       }),
       events.voiceOrder.on((text) => this.set('heard', `Vous (doigts) : ${text}`)),
       localVoice.progress.on(({ task, pct }) => {
@@ -77,8 +85,9 @@ export class VoiceSystem extends createSystem({}) {
     else await this.begin();
   }
 
-  private async begin(): Promise<void> {
+  private async begin(auto = false): Promise<void> {
     if (this.processing || this.mic.listening || !this.mic.available) return;
+    this.autoListen = auto;
     const ok = await this.mic.start();
     if (!ok) {
       this.set('heard', 'Microphone blocked. Allow it in the browser, or pinch a reply.');
@@ -88,7 +97,7 @@ export class VoiceSystem extends createSystem({}) {
     this.micButton?.setProperties({ backgroundColor: '#2a9d8f' });
     this.set('mic-label', "J'écoute...");
     this.set('heard', 'Parlez maintenant ! Speak now.');
-    this.set('heard-detail', 'Pinch again (or lower your palm) when you are done.');
+    this.set('heard-detail', auto ? 'Hands-free: just speak.' : 'Pinch again (or lower your palm) when you are done.');
   }
 
   private async finish(): Promise<void> {
@@ -111,12 +120,27 @@ export class VoiceSystem extends createSystem({}) {
 
   /** Public for tests/automation: process a transcript as if spoken. */
   handle(text: string): void {
+    const auto = this.autoListen;
+    this.autoListen = false;
+    if (!text.trim() && auto) {
+      this.set('heard', 'Dites quelque chose quand vous voulez. Speak anytime.');
+      this.set('heard-detail', '');
+      return;
+    }
     if (!text.trim()) {
       this.set('heard', "Je n'ai rien entendu. I didn't hear anything.");
       this.set('heard-detail', 'Try again, a bit louder and closer.');
       return;
     }
     const fingers = handState.fingers;
+    // Global commands first (map, carnet, ma semaine, je paie, répète...): never sent to the agent.
+    const command = parseVoiceCommand(text, { paying: store.order.phase === 'paying', choosing: appState.choosingInput });
+    if (command) {
+      this.set('heard', `Vous : ${text}`);
+      this.set('heard-detail', commandFeedback(command));
+      events.voiceCommand.emit(command);
+      return;
+    }
     const intent = parseIntent(text, fingers);
 
     // Pronunciation: score against the closest suggested reply.

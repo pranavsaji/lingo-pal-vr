@@ -8,9 +8,10 @@
 import { createSystem, DoubleSide, Mesh, MeshBasicMaterial, RingGeometry, CircleGeometry, Vector3 } from '@iwsdk/core';
 import { events } from '../game-state.js';
 import { store } from '../state/store.js';
-import { dwellShown, dwellTargets, dwellWorldPosition, type DwellTarget } from './dwell.js';
+import { dwellFocus, dwellShown, dwellTargets, dwellWorldPosition, type DwellTarget } from './dwell.js';
 
 const DWELL_SECONDS = 1.0;
+const SCOPED_DWELL_SECONDS = 1.6;
 const COOLDOWN_SECONDS = 0.8;
 /**
  * After an activation the view must move this far before the next dwell can
@@ -48,17 +49,33 @@ export class DwellSystem extends createSystem({}) {
     this.ring.name = 'Dwell Reticle';
     this.world.createTransformEntity(this.ring);
     this.enabled = store.profile.settings.gazeDwell;
+    this.applyContrast(store.profile.settings.highContrast);
     this.cleanupFuncs.push(
       events.settings.on((s) => {
         this.enabled = s.gazeDwell;
         if (!s.gazeDwell) this.ring.visible = false;
+        this.applyContrast(s.highContrast);
       }),
     );
   }
 
+  /** High contrast: a solid white reticle (readable over any surface, no colour needed). */
+  private applyContrast(on: boolean): void {
+    const ring = this.ring.material as MeshBasicMaterial;
+    const fill = this.fill.material as MeshBasicMaterial;
+    ring.color.setHex(on ? 0xffffff : 0xf5d90a);
+    fill.color.setHex(on ? 0xffffff : 0xf5d90a);
+    ring.opacity = on ? 1 : 0.95;
+    fill.opacity = on ? 0.75 : 0.45;
+  }
+
   update(delta: number): void {
     this.t += delta;
-    if (!this.enabled) return;
+    const scope = dwellFocus.only;
+    if (!this.enabled && !scope) {
+      this.ring.visible = false;
+      return;
+    }
     const headObj = this.player.head;
     headObj.getWorldPosition(this.head);
     this.fwd.set(0, 0, -1).transformDirection(headObj.matrixWorld);
@@ -76,6 +93,8 @@ export class DwellSystem extends createSystem({}) {
     let best: DwellTarget | null = null;
     let bestAngle = Infinity;
     for (const target of dwellTargets) {
+      if (scope && !scope.has(target.obj)) continue;
+      if (target.when && !target.when()) continue;
       if (!dwellShown(target.obj)) continue;
       dwellWorldPosition(target.obj, this.to);
       this.to.sub(this.head);
@@ -97,7 +116,8 @@ export class DwellSystem extends createSystem({}) {
       return;
     }
 
-    const p = Math.min(1, (this.t - this.since) / DWELL_SECONDS);
+    // A scoped dwell (the first-launch choice, dwell setting off) takes a little longer, so reading is not choosing.
+    const p = Math.min(1, (this.t - this.since) / (this.enabled ? DWELL_SECONDS : SCOPED_DWELL_SECONDS));
     dwellWorldPosition(best.obj, this.to);
     // Reticle slightly in front of the target, facing the learner.
     this.ring.position.copy(this.to).lerp(this.head, 0.04);

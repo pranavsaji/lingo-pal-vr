@@ -191,6 +191,71 @@
   .xp-label:dark {
     color: #f5d90a;
   }
+
+  .tut {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding-top: 14px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .tut-badge {
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 42px;
+    background-color: #1d3557;
+    border-color: #f5d90a;
+    border-width: 3px;
+  }
+
+  .tut-icon {
+    width: 52px;
+    height: 52px;
+    color: #f5d90a;
+  }
+
+  .choices {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 12px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .choice {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 116px;
+    padding-top: 14px;
+    padding-bottom: 12px;
+    border-radius: 18px;
+    background-color: #2b2d33;
+    border-color: #4a4c55;
+    border-width: 2px;
+    cursor: pointer;
+  }
+
+  .choice:hover {
+    background-color: #3d5a80;
+    border-color: #f5d90a;
+  }
+
+  .choice-icon {
+    width: 46px;
+    height: 46px;
+    color: #f5d90a;
+  }
+
+  .choice-text {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: bold;
+  }
 </style>
 <Panel class="root">
   <div class="header" id="header">
@@ -201,11 +266,25 @@
     <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
     <span class="xp-label" id="xp-label">A1.2</span>
   </div>
+  <div class="tut" id="tut-row" style="display: none">
+    <div class="tut-badge" id="tut-badge">
+      <Hand class="tut-icon" id="tut-wave" />
+      <Grab class="tut-icon" id="tut-pinch" style="display: none" />
+      <Pointer class="tut-icon" id="tut-order" style="display: none" />
+      <Coins class="tut-icon" id="tut-pay" style="display: none" />
+    </div>
+  </div>
   <div class="content">
     <span class="eyebrow" id="eyebrow">BIENVENUE ! WELCOME !</span>
     <span class="word" id="word">Pincez un objet</span>
     <span class="english" id="english">Pinch any object on the counter to hear its French name.</span>
     <span class="tip" id="tip">Tip: point your hand at it, then touch thumb and index finger.</span>
+  </div>
+  <div class="choices" id="choice-row" style="display: none">
+    <div class="choice" id="choose-hands"><Hand class="choice-icon" /><span class="choice-text">Mains</span></div>
+    <div class="choice" id="choose-eyes"><Eye class="choice-icon" /><span class="choice-text">Yeux</span></div>
+    <div class="choice" id="choose-voice"><Mic class="choice-icon" /><span class="choice-text">Voix</span></div>
+    <div class="choice" id="choose-text"><ALargeSmall class="choice-icon" /><span class="choice-text" id="choose-text-label">Texte M</span></div>
   </div>
   <div class="quest" id="quest">
     <span class="quest-title" id="quest-title">LISTE DE COURSES · 0 / 3</span>

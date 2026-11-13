@@ -401,6 +401,13 @@ export function buildMadameLune(): LuneRig {
 /** All denominations in cents, largest first. */
 export const COIN_VALUES = [1000, 500, 200, 100, 50, 20, 10] as const;
 
+/**
+ * High-contrast money (Accessibility Forward). When on, new coins and the cash
+ * register use a black-on-white face with a large numeral, so every value reads
+ * without relying on gold/silver colour. CoinSystem flips it from the settings.
+ */
+export const moneyStyle = { highContrast: false };
+
 /** Coins are scaled up 2x (relative sizes kept) so they are graspable in VR. */
 const COIN_SCALE = 2;
 
@@ -473,6 +480,45 @@ function coinTexture(cents: number, spec: CoinSpec): Texture | null {
   tex.name = `coin-face:${cents}`;
   SHARED_TEXTURES.add(tex);
   return tex;
+}
+
+/** High-contrast face: white disc, thick black rim ring, large black numeral and unit. */
+function coinTextureHC(cents: number, spec: CoinSpec): Texture | null {
+  const ct = makeCanvasTexture(128, 128);
+  if (!ct) return null;
+  const { ctx, tex } = ct;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.arc(64, 64, 57, 0, TAU);
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold ${spec.label.length > 1 ? 54 : 72}px Arial, Helvetica, sans-serif`;
+  ctx.fillText(spec.label, 64, 56);
+  ctx.font = 'bold 17px Arial, Helvetica, sans-serif';
+  ctx.fillText(spec.sub === 'EURO' ? '€' : 'CENT', 64, 98);
+  tex.name = `coin-face-hc:${cents}`;
+  SHARED_TEXTURES.add(tex);
+  return tex;
+}
+
+function coinMaterialHC(cents: number, spec: CoinSpec): Material {
+  return sharedMat(`coin-hc:${cents}`, () => new MeshStandardMaterial({ color: 0xffffff, metalness: 0, roughness: 0.7, map: coinTextureHC(cents, spec) }));
+}
+
+/** Restyle an existing coin (from buildMoney) for the current contrast setting. Notes keep their printed value. */
+export function styleMoney(root: Object3D, cents: number, highContrast: boolean): void {
+  if (cents >= 500) return;
+  const key = COINS[cents] ? cents : 10;
+  const spec = COINS[key];
+  const mat = highContrast ? coinMaterialHC(key, spec) : coinMaterial(key, spec);
+  root.traverse((o) => {
+    if (o instanceof Mesh) o.material = mat;
+  });
 }
 
 function coinMaterial(cents: number, spec: CoinSpec): Material {
@@ -566,7 +612,7 @@ export function buildMoney(cents: number): Group {
   }
   const key = COINS[cents] ? cents : 10;
   const spec = COINS[key];
-  const coin = mk(`Coin_${key}c`, coinGeometry(key, spec), coinMaterial(key, spec), false);
+  const coin = mk(`Coin_${key}c`, coinGeometry(key, spec), moneyStyle.highContrast ? coinMaterialHC(key, spec) : coinMaterial(key, spec), false);
   root.add(coin);
   return root;
 }
@@ -628,6 +674,22 @@ export function buildMoneyDish(): Group {
 function drawRegister(ctx: CanvasRenderingContext2D, text: string): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
+  if (moneyStyle.highContrast) {
+    // High contrast: plain white digits on black, larger, no glow or scanlines.
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, w, h);
+    let s = 76;
+    ctx.font = `bold ${s}px Arial, Helvetica, sans-serif`;
+    while (ctx.measureText(text).width > w - 16 && s > 20) {
+      s -= 4;
+      ctx.font = `bold ${s}px Arial, Helvetica, sans-serif`;
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, w / 2, h / 2 + 2);
+    return;
+  }
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, '#0a140e');
   g.addColorStop(1, '#16251b');

@@ -17,6 +17,8 @@ export interface Settings {
   gazeDwell: boolean;
   reduceMotion: boolean;
   mixedReality: boolean;
+  /** Hands-free voice: Lune listens after each line she speaks (no pinch to talk). */
+  voiceFirst: boolean;
 }
 
 export interface Profile {
@@ -50,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
   gazeDwell: false,
   reduceMotion: false,
   mixedReality: false,
+  voiceFirst: false,
 };
 
 export function defaultProfile(): Profile {
