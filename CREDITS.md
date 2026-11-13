@@ -20,7 +20,7 @@ third-party art or audio files are used.
 
 | Model | Use | License |
 | --- | --- | --- |
-| OpenAI Whisper tiny (`onnx-community/whisper-tiny`, ONNX conversion of `openai/whisper-tiny`) | On-device French speech recognition | Apache-2.0 |
+| OpenAI Whisper base (`onnx-community/whisper-base`, ONNX conversion of `openai/whisper-base`; `?stt=tiny` uses whisper-tiny) | On-device French speech recognition | Apache-2.0 |
 | Meta MMS-TTS French (`Xenova/mms-tts-fra`, ONNX conversion of `facebook/mms-tts-fra`) | On-device French voice when the browser has none | **CC-BY-NC 4.0**: attribution, non-commercial use only |
 | Claude (Anthropic API) | Madame Lune's conversation and tool calls | Anthropic commercial terms |
 

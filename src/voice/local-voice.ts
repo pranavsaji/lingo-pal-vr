@@ -31,10 +31,10 @@ export class LocalVoice {
     } catch {
       return null;
     }
-    // whisper-tiny: measured ~0.8 s per phrase in browser WASM, as accurate as -base on
-    // short cafe phrases. ?stt=base opts into the larger model.
-    const base = new URLSearchParams(location.search).get('stt') === 'base';
-    this.send({ kind: 'config', sttModel: base ? 'onnx-community/whisper-base' : 'onnx-community/whisper-tiny' });
+    // whisper-base: heard "deux croissants" correctly where -tiny wrote "2-300" (tested with
+    // a French voice); ~1.5 s per phrase in desktop WASM. ?stt=tiny trades accuracy for speed.
+    const tiny = new URLSearchParams(location.search).get('stt') === 'tiny';
+    this.send({ kind: 'config', sttModel: tiny ? 'onnx-community/whisper-tiny' : 'onnx-community/whisper-base' });
     this.worker.onmessage = (e: MessageEvent<VoiceResponse>) => this.receive(e.data);
     this.worker.onerror = () => {
       for (const p of this.pending.values()) p.reject(new Error('voice worker crashed'));

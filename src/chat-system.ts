@@ -7,7 +7,7 @@
 
 import { createSystem, type UIKit, type UIKitMLAsset } from '@iwsdk/core';
 import { aiStatus } from './agent/agent-client.js';
-import { menuItem, priceToDigits } from './agent/menu.js';
+import { menuItem, priceToDigits, priceToFrench } from './agent/menu.js';
 import type { AgentTurn, ReplyOption } from './agent/protocol.js';
 import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
@@ -99,7 +99,7 @@ export class ChatSystem extends createSystem({}) {
     const due = orderTotal(store.order.lines) - store.order.trayCents;
     const note = due <= 500 ? 500 : 1000;
     return [
-      { fr: `Voilà ${note / 100} euros.`, en: `Hand over a ${note / 100} euro note.`, payCents: note },
+      { fr: `Voilà ${priceToFrench(note)}.`, en: `Hand over a ${note / 100} euro note.`, payCents: note },
       { fr: 'Voilà deux euros.', en: 'Hand over a 2 euro coin.', payCents: 200 },
       { fr: "Voilà, c'est juste.", en: `Pay the exact amount (${priceToDigits(due)}).`, payCents: due },
     ];

@@ -2,7 +2,7 @@
 /**
  * On-device French voice, in a Web Worker so model inference never blocks
  * the XR frame loop:
- *  - speech-to-text: Whisper (onnx-community/whisper-tiny or -base);
+ *  - speech-to-text: Whisper base (onnx-community/whisper-base, int8: ~74 MB once);
  *  - text-to-speech: MMS-TTS French (Xenova/mms-tts-fra, fp32: 114 MB once).
  * Runs on the CPU (WASM). WebGPU is avoided on purpose: on a headset the GPU
  * is busy rendering both eyes, and a big inference burst would drop frames.
@@ -37,7 +37,7 @@ function progressFor(task: VoiceTask) {
 
 let asr: Promise<AsrFn> | null = null;
 let tts: Promise<TtsFn> | null = null;
-let sttModel = 'onnx-community/whisper-tiny';
+let sttModel = 'onnx-community/whisper-base';
 // fp32 measured ~3x faster than int8 for this model under WASM, and clearer.
 let ttsDtype: 'q8' | 'fp32' | 'fp16' = 'fp32';
 
@@ -90,7 +90,9 @@ async function run(req: Extract<VoiceRequest, { id: number }>): Promise<void> {
   switch (req.kind) {
     case 'stt': {
       const fn = await loadAsr();
-      const out = await fn(req.audio, { language: 'french', task: 'transcribe' });
+      // Short cafe phrases: cap the output and block loops ("de plus de plus de plus..."),
+      // which Whisper falls into on noisy or unclear audio.
+      const out = await fn(req.audio, { language: 'french', task: 'transcribe', max_new_tokens: 64, no_repeat_ngram_size: 4 });
       const text = Array.isArray(out) ? out.map((o) => o.text).join(' ') : out.text;
       post({ kind: 'stt', id: req.id, text: text.trim() });
       return;

@@ -21,10 +21,24 @@ import { OnboardingSystem } from './world/onboarding-system.js';
 import { NpcSystem } from './world/npc-system.js';
 
 import { localVoice } from './voice/local-voice.js';
+import { SpeechInput } from './voice/speech-input.js';
 import { speakFrench, speechEngine } from './speech.js';
+import { appState, events } from './game-state.js';
+import { handState } from './hands/hand-state.js';
+import { store } from './state/store.js';
+import { dwellTargets } from './ui/dwell.js';
 
 // Dev only: Shift+R starts a brand-new learner (first-launch tutorial). Not in production builds.
 if (import.meta.env.DEV) {
+  // State handle for emulator test scripts (`iwsdk browser run`).
+  const log: string[] = [];
+  events.turn.on((t) => log.push(`turn[${t.source}]: ${t.fr}`));
+  events.voiceOrder.on((t) => log.push(`fingers: ${t}`));
+  events.gesture.on((g) => log.push(`gesture: ${g}`));
+  events.order.on((o) => log.push(`order: ${o.phase} ${o.lines.map((l) => `${l.qty}x${l.itemId}`).join(',')} tray=${o.trayCents}`));
+  events.effects.on((fx) => log.push(`effects: ${fx.map((e) => e.kind).join(',')}`));
+  events.coinDropped.on((c) => log.push(`coin: ${c}`));
+  (window as unknown as Record<string, unknown>).__lingo = { store, appState, handState, log, dwellTargets };
   window.addEventListener('keydown', (e) => {
     if (e.shiftKey && e.key === 'R') {
       window.localStorage.removeItem(PROFILE_KEY);
@@ -35,10 +49,11 @@ if (import.meta.env.DEV) {
 
 // ?debug exposes the voice engines for automated checks (no secrets involved).
 if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as Record<string, unknown>).__lingoVoice = { localVoice, speakFrench, speechEngine };
+  (window as unknown as Record<string, unknown>).__lingoVoice = { localVoice, speakFrench, speechEngine, SpeechInput };
 }
 
 World.create(document.getElementById('scene-container') as HTMLDivElement, projectOptions).then((world) => {
+  if (import.meta.env.DEV) ((window as unknown as Record<string, Record<string, unknown>>).__lingo ??= {}).world = world;
   world.registerSystem(ItemSystem);
   world.registerSystem(LessonSystem); // starts the session (streak, XP) before the agent greets
   world.registerSystem(PanelsSystem);

@@ -123,11 +123,11 @@ the IWER emulator with real hand/controller input:
    3,40 -> "un euro soixante" + 1 EUR/50c/10c coins.
 3. Voice (`src/voice/*`, `server/stt-handler.mjs`): push-to-talk (mic button or palm up),
    pronunciation score vs the nearest suggested reply, voice commands, "voila cinq euros" pays.
-   Engines: server key (optional) > desktop Web Speech > **on-device Whisper-tiny in a worker**
+   Engines: server key (optional) > desktop Web Speech > **on-device Whisper-base in a worker**
    (`src/voice/local-voice-worker.ts`, no key, used by Quest Browser). Madame Lune speaks with the
    browser's French voice, or an on-device MMS-TTS French voice (fp32, measured ~3x faster than
    int8 under WASM) when there is none. Verified in headless Chromium against production:
-   synthesized French -> Whisper round trip, ~0.8-1.5 s per phrase on a Mac.
+   synthesized French -> Whisper round trip; fake-mic test of the real MediaRecorder path. Base chosen over tiny: tiny heard "deux croissants" as "2-300".
 4. Madame Lune rig + NpcSystem: looks at you / what you look at, lip flap, blinks, emotes, points.
 5. Live AI verified with the key: feminine agreement, "vous", amounts copied from the engine,
    warm-up ping, instant scripted greeting, 1.8 to 2.5 s warm turns.

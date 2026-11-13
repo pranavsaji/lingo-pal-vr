@@ -36,7 +36,7 @@ Speech recognition picks the first engine available:
 1. A server provider, if `OPENAI_API_KEY` or `DEEPGRAM_API_KEY` is set (`/api/stt`).
 2. The browser's own recognition (desktop Chrome and Edge).
 3. **On-device Whisper** (`src/voice/local-voice-worker.ts`): no key needed. This is
-   what Quest Browser uses. About 40 MB, downloaded once on first use and cached.
+   what Quest Browser uses. About 74 MB (Whisper base), downloaded once in the background and cached.
 
 Madame Lune speaks with the browser's French voice when there is one, otherwise with an
 on-device French voice model (114 MB, downloaded once in the background). Subtitles are

@@ -24,6 +24,7 @@ export class AudioSystem extends createSystem({}) {
   private fwd!: Vector3;
   private up!: Vector3;
   private musicTimer: ReturnType<typeof setInterval> | null = null;
+  private panners = new Map<string, PannerNode>();
 
   init(): void {
     this.headPos = new Vector3();
@@ -78,9 +79,13 @@ export class AudioSystem extends createSystem({}) {
     this.master.gain.value = 0.8;
     this.master.connect(ctx.destination);
     // Her voice: positioned at her mouth, no distance fade at counter range.
-    const voice = this.at([LUNE[0], LUNE[1] + 0.15, LUNE[2]]) as PannerNode;
+    const voice = ctx.createPanner();
+    voice.panningModel = 'HRTF';
+    voice.distanceModel = 'inverse';
     voice.refDistance = 2.2;
-    voice.disconnect();
+    voice.positionX.value = LUNE[0];
+    voice.positionY.value = LUNE[1] + 0.15;
+    voice.positionZ.value = LUNE[2];
     const voiceGain = ctx.createGain();
     voiceGain.gain.value = 1.5;
     voice.connect(voiceGain).connect(ctx.destination);
@@ -88,8 +93,15 @@ export class AudioSystem extends createSystem({}) {
     this.startAmbience();
   }
 
-  /** A panner at a world position (meters). */
+  /**
+   * A panner at a world position (meters). Panners are cached per position:
+   * creating one per sound would leave hundreds of live nodes connected to the
+   * master bus over a session (measured: 461 after a few minutes).
+   */
   private at(pos: V3): AudioNode {
+    const key = `${pos[0]},${pos[1]},${pos[2]}`;
+    const cached = this.panners.get(key);
+    if (cached) return cached;
     const ctx = this.ctx!;
     const p = ctx.createPanner();
     p.panningModel = 'HRTF';
@@ -99,6 +111,7 @@ export class AudioSystem extends createSystem({}) {
     p.positionY.value = pos[1];
     p.positionZ.value = pos[2];
     p.connect(this.master);
+    this.panners.set(key, p);
     return p;
   }
 
@@ -115,6 +128,10 @@ export class AudioSystem extends createSystem({}) {
     g.gain.linearRampToValueAtTime(opts.gain ?? 0.2, t + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g).connect(opts.to ?? this.master);
+    o.onended = () => {
+      o.disconnect();
+      g.disconnect(); // release the nodes; otherwise they stay attached to the bus
+    };
     o.start(t);
     o.stop(t + dur + 0.05);
   }

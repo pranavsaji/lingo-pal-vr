@@ -13,7 +13,7 @@
 import { CanvasTexture, createSystem, DoubleSide, Mesh, MeshBasicMaterial, PlaneGeometry, Quaternion, Vector3 } from '@iwsdk/core';
 import { menuItem, quantityPhrase } from '../agent/menu.js';
 import { director } from '../agent/runtime.js';
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
 import { speakFrench } from '../speech.js';
 import { VOCAB } from '../vocab.js';
 import { store } from '../state/store.js';
@@ -282,7 +282,8 @@ export class HandSystem extends createSystem({}) {
       const gesture = stable === 1 ? 'thumbs_up' : 'thumbs_down';
       events.gesture.emit(gesture);
       // Thumbs up while looking at an item is "1" in French counting: the order path handles it.
-      if (!this.gazeItem) void director.handle({ kind: 'gesture', gesture, fingers: 1 });
+      // During the tutorial the gesture is an answer to the tutorial, not a conversation turn.
+      if (!this.gazeItem && !appState.lessonActive) void director.handle({ kind: 'gesture', gesture, fingers: 1 });
     }
   }
 
@@ -331,7 +332,7 @@ export class HandSystem extends createSystem({}) {
       this.lastWave = this.clockMs;
       this.waveFlips = 0;
       events.gesture.emit('wave');
-      void director.handle({ kind: 'gesture', gesture: 'wave', fingers: 0 });
+      if (!appState.lessonActive) void director.handle({ kind: 'gesture', gesture: 'wave', fingers: 0 });
     }
   }
 }

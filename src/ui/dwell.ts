@@ -4,7 +4,7 @@
  * can select it by looking at it for one second (Reglages > Selection du regard).
  */
 
-import type { Object3D } from '@iwsdk/core';
+import type { Matrix4, Object3D, Vector3 } from '@iwsdk/core';
 
 export interface DwellTarget {
   obj: Object3D;
@@ -39,4 +39,35 @@ export function addDwellTarget(obj: Object3D, fn: () => void, coneDeg = 3.5): ()
   const t: DwellTarget = { obj, fn, coneDeg };
   dwellTargets.add(t);
   return () => dwellTargets.delete(t);
+}
+
+type UIKitLike = Object3D & { globalMatrix?: { value?: Matrix4 }; isVisible?: { value?: boolean } };
+
+/**
+ * World-space center of a dwell target. UIKit elements render through shared
+ * instanced meshes: their own Object3D stays hidden with a stale matrixWorld,
+ * and `globalMatrix` places them relative to the document root (the first
+ * ancestor that still auto-updates its matrix). Zero allocations.
+ */
+export function dwellWorldPosition(obj: Object3D, out: Vector3): Vector3 {
+  const gm = (obj as UIKitLike).globalMatrix?.value;
+  if (!gm) return obj.getWorldPosition(out);
+  let a = obj.parent;
+  while (a && !a.matrixAutoUpdate) a = a.parent;
+  if (!a) return obj.getWorldPosition(out);
+  return out.set(0, 0, 0).applyMatrix4(gm).applyMatrix4(a.matrixWorld);
+}
+
+/** False when the target, or a scene-graph ancestor, is hidden (UIKit visibility included). */
+export function dwellShown(obj: Object3D): boolean {
+  const ui = (obj as UIKitLike).isVisible;
+  if (ui && ui.value === false) return false;
+  let cur: Object3D | null = obj;
+  // UIKit's own objects are always hidden meshes; judge from the document root up.
+  if (ui) while (cur && !cur.matrixAutoUpdate) cur = cur.parent;
+  while (cur) {
+    if (!cur.visible) return false;
+    cur = cur.parent;
+  }
+  return true;
 }

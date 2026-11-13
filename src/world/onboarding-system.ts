@@ -13,7 +13,7 @@
  * Skip by saying "passer" or pinching "Passer le tutoriel".
  */
 
-import { createSystem, type UIKit, type UIKitMLAsset, Vector3 } from '@iwsdk/core';
+import { createSystem, type UIKit, type UIKitMLAsset, Vector3, VisibilityState } from '@iwsdk/core';
 import type { AgentTurn, ReplyOption } from '../agent/protocol.js';
 import { director } from '../agent/runtime.js';
 import { appState, events } from '../game-state.js';
@@ -90,6 +90,9 @@ export class OnboardingSystem extends createSystem({}) {
   private a!: Vector3;
   private b!: Vector3;
   private startedAt = 0;
+  private wasImmersive = false;
+  private stepInXr = 0;
+  private advancing = false;
 
   init(): void {
     this.a = new Vector3();
@@ -117,13 +120,26 @@ export class OnboardingSystem extends createSystem({}) {
         if (this.step === 'wave' && this.t - this.stepStart > 1) this.advance();
       }),
       events.itemPicked.on(() => {
-        if (this.step === 'pinch') this.advance();
+        // Let the word ("le croissant") show on the panel first, then the next caption.
+        if (this.step === 'pinch' && !this.advancing) {
+          this.advancing = true;
+          setTimeout(() => {
+            this.advancing = false;
+            if (this.step === 'pinch') this.advance();
+          }, 1600);
+        }
       }),
       events.order.on((o) => {
         if (this.step === 'order' && o.lines.length > 0) this.advance();
         if (this.step === 'pay' && o.phase === 'paid') this.advance();
       }),
       events.tutorial.on(() => (this.running ? this.finish(true) : this.begin())),
+      // Entering VR: restart the current step so she says it in the headset, with fresh timers.
+      this.world.visibilityState.subscribe((v) => {
+        const immersive = v !== VisibilityState.NonImmersive;
+        if (immersive && !this.wasImmersive && this.running) this.go(this.step);
+        this.wasImmersive = immersive;
+      }),
     );
 
     if (!store.profile.onboarded) setTimeout(() => this.begin(), 1200);
@@ -147,6 +163,7 @@ export class OnboardingSystem extends createSystem({}) {
   private go(step: Step): void {
     this.step = step;
     this.stepStart = this.t;
+    this.stepInXr = 0;
     if (step === 'off' || step === 'done') return;
     const line = LINES[step];
     const n = STEPS.indexOf(step) + 1;
@@ -216,8 +233,11 @@ export class OnboardingSystem extends createSystem({}) {
   update(delta: number): void {
     this.t += delta;
     if (!this.running) return;
+    // Auto-advance only counts time spent in the headset: on the 2D page the learner may
+    // still be reading or putting the headset on.
+    if (this.world.visibilityState.peek() !== VisibilityState.NonImmersive) this.stepInXr += delta;
     const elapsed = this.t - this.stepStart;
-    if (elapsed > AUTO_ADVANCE[this.step]) this.advance();
+    if (this.stepInXr > AUTO_ADVANCE[this.step]) this.advance();
     this.animateGhost(elapsed);
   }
 
