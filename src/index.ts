@@ -23,6 +23,7 @@ import { CustomersSystem } from './world/customers-system.js';
 import { QualitySystem } from './world/quality-system.js';
 import { PlaceSystem } from './world/place-system.js';
 import { QuestSystem } from './world/quest-system.js';
+import { SocialSystem } from './social/social-system.js'; // Café à deux; also joins a ?room= link before the World starts
 
 import { localVoice } from './voice/local-voice.js';
 import { SpeechInput } from './voice/speech-input.js';
@@ -76,4 +77,5 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(DwellSystem);
   world.registerSystem(CelebrationSystem);
   world.registerSystem(OnboardingSystem);
+  world.registerSystem(SocialSystem); // two learners at one counter (idle until a room is opened)
 });

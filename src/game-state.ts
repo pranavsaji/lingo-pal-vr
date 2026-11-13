@@ -69,6 +69,8 @@ export const events = {
   questProgress: new Emitter<{ done: number; total: number; completed: boolean; label: string }>(),
   /** The learner asked to go to a shop (map panel, voice). PlaceSystem decides and travels. */
   travel: new Emitter<PlaceId>(),
+  /** Café à deux: open (or show) the invite card (map panel button, voice "inviter"). */
+  invite: new Emitter<void>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

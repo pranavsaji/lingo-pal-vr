@@ -23,7 +23,7 @@ export type Intent =
   | { kind: 'travel'; place: 'cafe' | 'boulangerie' | 'marche' }
   | { kind: 'unknown' };
 
-export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map';
+export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map' | 'invite';
 
 const NUMBER_WORDS: Record<string, number> = {
   un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5,
@@ -133,6 +133,7 @@ export function parseIntent(text: string, fingers = 0): Intent {
   const go = n.match(/\b(?:allons|aller|allez|vais|va|retour|retourner|direction)\b.*\b(boulangerie|marche|cafe)\b/);
   if (go) return { kind: 'travel', place: go[1] as 'cafe' | 'boulangerie' | 'marche' };
   if (has(n, /\b(plan de paris|le plan|la carte de paris)\b/)) return { kind: 'command', command: 'map' };
+  if (has(n, /\b(inviter|invitez|invite un ami|invite une amie)\b/)) return { kind: 'command', command: 'invite' };
 
   const nameMatch = n.match(/\b(?:je m appelle|mon nom est|moi c est)\s+([a-z]+)/);
   if (nameMatch) return { kind: 'name', name: nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) };

@@ -172,5 +172,8 @@
     <div class="action" id="map-back">
       <span class="action-text">Retour</span>
     </div>
+    <div class="action" id="invite-button" style="background-color: #2a9d8f">
+      <span class="action-text" id="invite-label">Inviter un ami</span>
+    </div>
   </div>
 </Panel>

@@ -158,6 +158,9 @@ export class VoiceSystem extends createSystem({}) {
         case 'map':
           events.openPanel.emit('map');
           return;
+        case 'invite':
+          events.invite.emit();
+          return;
       }
     }
     if (intent.kind === 'travel') {
