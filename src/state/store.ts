@@ -13,6 +13,8 @@ import { localDay, type Day } from './dates.js';
 import { browserKV, loadProfile, saveProfile, type KV, type Profile, type Settings } from './profile.js';
 import { levelFor, newlyUnlocked, touchStreak, unlockedIds, XP, type XpReason } from './progression.js';
 import { dueWords, newCard, review, type Grade } from './srs.js';
+import { easeMistake, recordMistake, topMistakes, type Mistake, type MistakeKind } from './mistakes.js';
+import { planTomorrow, type TomorrowPlan } from './plan.js';
 
 export interface SessionStats {
   xp: number;
@@ -159,7 +161,7 @@ export class Store {
   /** Today's shopping list (a new one each day). */
   questToday(): Quest {
     if (!this.profile.quest || this.profile.quest.day !== this.today) {
-      this.profile.quest = dailyQuest(this.today);
+      this.profile.quest = dailyQuest(this.today, this.plannedFocus());
       this.save();
     }
     return this.profile.quest;
@@ -210,6 +212,52 @@ export class Store {
     const s = this.sessionSummary();
     const fav = this.profile.memories.favorite_order;
     this.profile.lastVisit = `${this.today}: ${s.en}${fav ? ` Ordered ${fav}.` : ''}`;
+    this.save();
+  }
+
+  // ---- Coach memory: mistakes, tomorrow's plan, change tests --------------------
+
+  /** Mistakes recorded this session (the change test waits for a learner doing well). */
+  sessionMistakes = 0;
+
+  /** Focus words planned yesterday for today's shopping list (undefined when none). */
+  plannedFocus(): string[] | undefined {
+    const plan = this.profile.coach.plan;
+    return plan && plan.day === this.today && plan.focusWords.length ? plan.focusWords : undefined;
+  }
+
+  recordMistake(kind: MistakeKind, want: string, got: string): void {
+    this.sessionMistakes += 1;
+    recordMistake(this.profile.coach.mistakes, { kind, want, got }, this.today);
+    this.save();
+  }
+
+  /** The learner got `want` right: its mistakes fade. */
+  easeMistake(want: string): void {
+    if (!this.profile.coach.mistakes.some((m) => m.want === want)) return;
+    easeMistake(this.profile.coach.mistakes, want);
+    this.save();
+  }
+
+  topMistakes(n = 3): Mistake[] {
+    return topMistakes(this.profile.coach.mistakes, n);
+  }
+
+  /** Tomorrow's plan from the weakest words and mistakes (pure; saved by savePlan). */
+  planTomorrow(idForNoun?: (noun: string) => string | undefined, bought: Iterable<string> = []): TomorrowPlan | null {
+    const seenToday = [...this.session.words, ...bought];
+    return planTomorrow({ today: this.today, srs: this.profile.srs, mistakes: this.profile.coach.mistakes, seenToday, idForNoun });
+  }
+
+  savePlan(plan: TomorrowPlan | null): void {
+    if (!plan) return;
+    this.profile.coach.plan = plan;
+    this.save();
+  }
+
+  recordTrick(caught: boolean): void {
+    this.profile.coach.tricks += 1;
+    if (caught) this.profile.coach.caught += 1;
     this.save();
   }
 }

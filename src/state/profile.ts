@@ -5,6 +5,8 @@
  */
 
 import type { History } from './history.js';
+import type { Mistake } from './mistakes.js';
+import type { TomorrowPlan } from './plan.js';
 import type { Quest } from './quest.js';
 import type { SrsCard } from './srs.js';
 
@@ -39,6 +41,22 @@ export interface Profile {
   history: History;
   /** Today's shopping list across Paris (null until first created). */
   quest: Quest | null;
+  /** The shopkeepers' notes on this learner: mistakes to reuse, tomorrow's plan, change tests. */
+  coach: CoachMemory;
+}
+
+export interface CoachMemory {
+  /** Bounded list of concrete mistakes (state/mistakes.ts). */
+  mistakes: Mistake[];
+  /** Planned at goodbye for the next day (state/plan.ts). */
+  plan: TomorrowPlan | null;
+  /** Wrong-change tests given and caught (all time). */
+  tricks: number;
+  caught: number;
+}
+
+export function defaultCoach(): CoachMemory {
+  return { mistakes: [], plan: null, tricks: 0, caught: 0 };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -71,6 +89,7 @@ export function defaultProfile(): Profile {
     settings: { ...DEFAULT_SETTINGS },
     history: {},
     quest: null,
+    coach: defaultCoach(),
   };
 }
 
@@ -126,6 +145,7 @@ export function loadProfile(kv: KV | null): Profile {
         memories: { ...(stored.memories ?? {}) },
         history: { ...(stored.history ?? {}) },
         quest: stored.quest ?? null,
+        coach: { ...defaultCoach(), ...(stored.coach ?? {}) },
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

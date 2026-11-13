@@ -60,7 +60,10 @@ export type AgentAction =
   | { type: 'correct'; expected: string; heard: string; tip: string }
   | { type: 'emote'; kind: Emote }
   | { type: 'point_at'; itemId: string }
-  | { type: 'end_visit' };
+  | { type: 'end_visit' }
+  | { type: 'offer'; itemId: string; quantity: number; reason?: OfferReason };
+
+export type OfferReason = 'substitute' | 'upsell';
 
 export const ACTION_TYPES: AgentAction['type'][] = [
   'serve_items',
@@ -73,6 +76,7 @@ export const ACTION_TYPES: AgentAction['type'][] = [
   'emote',
   'point_at',
   'end_visit',
+  'offer',
 ];
 
 /** What the scene should do as a result of applied actions. */
@@ -86,7 +90,9 @@ export type Effect =
   | { kind: 'correction'; expected: string; heard: string; tip: string }
   | { kind: 'emote'; emote: Emote }
   | { kind: 'point'; itemId: string }
-  | { kind: 'goodbye' };
+  | { kind: 'goodbye' }
+  /** The shopkeeper proposed an item (not served until the learner accepts). */
+  | { kind: 'offer'; itemId: string; quantity: number; reason: OfferReason };
 
 export interface Rejection {
   action: unknown;
@@ -96,6 +102,8 @@ export interface Rejection {
 export interface ValidationContext {
   /** Known vocabulary ids (for quizzes and pointing). */
   vocabIds: ReadonlySet<string>;
+  /** Pieces left of low-stock items (id -> count); other items are unlimited. */
+  stock?: Readonly<Record<string, number>>;
 }
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
@@ -133,6 +141,8 @@ export function applyActions(
         const line = s.lines.find((l) => l.itemId === item.id);
         const already = line?.qty ?? 0;
         if (already + q > MAX_QUANTITY) { reject(a, 'too many of one item'); break; }
+        const left = ctx.stock?.[item.id];
+        if (left !== undefined && already + q > left) { reject(a, left <= 0 ? 'sold out' : `only ${left} left`); break; }
         if (line) line.qty += q;
         else s.lines.push({ itemId: item.id, qty: q });
         s.phase = 'ordering';
@@ -198,6 +208,18 @@ export function applyActions(
       }
       case 'end_visit': {
         effects.push({ kind: 'goodbye' });
+        break;
+      }
+      case 'offer': {
+        const item = typeof a.itemId === 'string' ? menuItem(a.itemId) : undefined;
+        const q = a.quantity;
+        if (!item) { reject(a, 'unknown menu item'); break; }
+        if (typeof q !== 'number' || !Number.isInteger(q) || q < 1 || q > MAX_QUANTITY) { reject(a, 'quantity must be 1 to 5'); break; }
+        if (s.phase === 'paying' || (s.phase === 'paid' && !s.changeGiven)) { reject(a, 'order closed'); break; }
+        const left = ctx.stock?.[item.id];
+        if (left !== undefined && q > left) { reject(a, 'not in stock'); break; }
+        const reason: OfferReason = a.reason === 'substitute' ? 'substitute' : 'upsell';
+        effects.push({ kind: 'offer', itemId: item.id, quantity: q, reason });
         break;
       }
       default:

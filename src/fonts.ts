@@ -9,7 +9,7 @@
 import { UIKit } from '@iwsdk/core';
 
 const ASCII = ' \tABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?.,;:\'"()-[]{}@#$%&*+=/\\<>_|~';
-const FRENCH = 'àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ«»’€°·';
+const FRENCH = 'àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ«»’€°·≠…';
 const CHARSET = ASCII + FRENCH;
 
 const base = import.meta.env.BASE_URL;

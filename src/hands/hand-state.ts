@@ -16,4 +16,6 @@ export const handState = {
   fingers: 0,
   /** Push-to-talk held (palm up). */
   talking: false,
+  /** Vocab id the head is pointed at (14 degree cone), null when none or outside XR. */
+  gazeItem: null as string | null,
 };

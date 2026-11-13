@@ -61,13 +61,27 @@ export class ChatSystem extends createSystem({}) {
         this.set('keeper-name', `${k.name}, ${KEEPER_ROLE[place]}`);
       }),
       events.settings.on(() => this.set('npc-en', store.profile.settings.subtitles ? this.lastEn : '')),
+      events.agentNote.on((note) => this.showNote(note)),
+      () => {
+        if (this.noteTimer) clearTimeout(this.noteTimer);
+      },
     );
+    this.noteEl = panel.getElementById<UIKit.Text>('agent-note') ?? undefined;
 
     // First launch: the tutorial speaks first and triggers the greeting when it ends.
     if (store.profile.onboarded) this.track(director.handle({ kind: 'arrive' }));
   }
 
   private lastEn = '';
+  private noteEl: UIKit.Text | undefined;
+  private noteTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** The shopkeeper's visible reasoning: one short line, gone after a few seconds. */
+  private showNote(note: string): void {
+    if (this.noteTimer) clearTimeout(this.noteTimer);
+    this.noteEl?.setProperties({ text: note, display: note ? 'flex' : 'none' });
+    this.noteTimer = note ? setTimeout(() => this.noteEl?.setProperties({ display: 'none' }), 12000) : null;
+  }
 
   private track(p: Promise<unknown> | null): void {
     if (!p) return;
@@ -134,7 +148,7 @@ export class ChatSystem extends createSystem({}) {
     if (!c || this.pending > 0) return;
     speakFrench(c.fr, undefined, 'learner'); // the learner's own reply, in the learner's voice
     if (c.payCents !== undefined) {
-      this.track(director.pay(c.payCents));
+      this.track(director.pay(c.payCents, true));
       return;
     }
     this.track(director.handle({ kind: 'say', text: c.fr, fingers: 0 }));

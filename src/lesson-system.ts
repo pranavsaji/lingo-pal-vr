@@ -155,7 +155,10 @@ export class LessonSystem extends createSystem({}) {
     this.set('eyebrow', 'À DEMAIN !');
     this.set('word', `${store.profile.streakDays} jour${store.profile.streakDays === 1 ? '' : 's'} de suite`);
     this.set('english', s.en);
-    this.set('tip', lvl.next ? `${lvl.xpToNext} XP to ${lvl.next}. Tomorrow: a new plat du jour.` : 'Top level reached. Bravo !');
+    // Tomorrow's plan (made by the shopkeeper from weak words and mistakes) when there is one.
+    const plan = store.profile.coach.plan;
+    const tomorrow = plan && plan.day > store.today ? `Demain : ${plan.themeFr} (tomorrow: ${plan.themeEn}).` : 'Tomorrow: a new plat du jour.';
+    this.set('tip', lvl.next ? `${lvl.xpToNext} XP to ${lvl.next}. ${tomorrow}` : `Top level reached. Bravo ! ${tomorrow}`);
     this.flashHeader('#2a9d8f');
   }
 

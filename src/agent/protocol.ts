@@ -15,12 +15,14 @@ export interface ReplyOption {
 
 export type AgentEvent =
   | { kind: 'arrive' } // session start: greet, recall last visit
-  | { kind: 'say'; text: string; fingers: number; pronunciation?: number }
+  | { kind: 'say'; text: string; fingers: number; pronunciation?: number; misheard?: string }
   | { kind: 'show'; itemId: string } // learner held up / handed over an item
   | { kind: 'paid'; paidCents: number; totalCents: number; changeCents: number; changeWords?: string }
   | { kind: 'short'; paidCents: number; shortByCents: number; shortWords?: string }
   | { kind: 'gesture'; gesture: 'thumbs_up' | 'thumbs_down' | 'wave' | 'count'; fingers: number }
-  | { kind: 'idle' }; // learner silent for a while: offer help
+  | { kind: 'idle' } // learner silent for a while: offer help
+  /** Proactive help (local, no model call): hesitation or gaze dwell on an item. nth = hints in a row. */
+  | { kind: 'hint'; reason: 'hesitate' | 'gaze'; itemId?: string; nth: number };
 
 export interface AgentProfile {
   name: string;
@@ -30,6 +32,8 @@ export interface AgentProfile {
   weakWords: string[];
   memories: Record<string, string>;
   lastVisit: string; // short summary of the previous session ('' if first)
+  /** Top recent confusions, e.g. "quantity:deux≠douze" (reuse those words on purpose). */
+  mistakes?: string[];
 }
 
 export interface AgentScene {
@@ -47,6 +51,14 @@ export interface AgentScene {
   place: PlaceId;
   /** Today's shopping-list item still to buy in this shop, e.g. "2 croissant" ('' if none). */
   shoppingList?: string;
+  /** What the shopkeeper just proposed (substitute or upsell); served if the learner accepts. */
+  offer?: { itemId: string; qty: number; reason: 'substitute' | 'upsell' } | null;
+  /** Items with few pieces left today (id -> pieces); the engine refuses more. */
+  lowStock?: Record<string, number>;
+  /** She may suggest one related item (once per visit) with the offer tool. */
+  canUpsell?: boolean;
+  /** Tomorrow's planned theme, said on goodbye ("les fruits"). */
+  tomorrow?: string;
 }
 
 export interface AgentRequest {
