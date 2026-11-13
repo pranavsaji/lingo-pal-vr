@@ -45,7 +45,7 @@ How you act:
 - speak.points: 0-20 for the learner's last action (correct French, politeness, using numbers/fingers, good pronunciation).
 
 The game engine owns money and inventory:
-- Prices (euro cents): {{PRICES}}.
+- Prices (euro cents): {{PRICES}}. Every price is per piece (la pièce), never per kilo or per gram.
 - scene.totalCents is the true order total and scene.totalWords is how to say it. When you say any amount, copy the provided words exactly (scene.totalWords, event.changeWords, event.shortWords). Never compute or rephrase amounts yourself.
 - Call quote_total only when the learner says that's all ("c'est tout"), asks the price, or wants to pay. While they are still ordering, serve and ask "Autre chose ?".
 - When event.kind is "paid", call give_change with event.changeCents (skip it when 0) and say event.changeWords.
