@@ -228,7 +228,10 @@ const GESTURES = ['thumbs_up', 'thumbs_down', 'wave', 'count'] as const;
 
 type Obj = Record<string, unknown>;
 const isObj = (x: unknown): x is Obj => typeof x === 'object' && x !== null && !Array.isArray(x);
-const str = (x: unknown, max: number): string | null => (typeof x === 'string' && x.length <= max ? x : null);
+/** Control, zero-width and bidi-override characters never reach the UI. */
+const UNSAFE = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g;
+export const cleanText = (x: string): string => x.replace(UNSAFE, '');
+const str = (x: unknown, max: number): string | null => (typeof x === 'string' && x.length <= max ? cleanText(x) : null);
 const int = (x: unknown, min: number, max: number): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= min && x <= max ? x : null);
 const role = (x: unknown): Role | null => (x === 'host' || x === 'guest' ? x : null);
 const place = (x: unknown): PlaceId | null => (PLACES.includes(x as PlaceId) ? (x as PlaceId) : null);
@@ -277,8 +280,8 @@ export function validOrder(x: unknown): OrderState | null {
 }
 
 /**
- * Effects the friend's game plays: scene effects, plus memories the shopkeeper
- * made about that friend (no quizzes, corrections or goodbyes).
+ * Effects the friend's game plays: scene effects only. Never memories (they
+ * would write the receiver's persistent profile), quizzes, corrections or goodbyes.
  */
 export function validEffects(x: unknown): Effect[] | null {
   if (!Array.isArray(x) || x.length > 16) return null;
@@ -312,12 +315,6 @@ export function validEffects(x: unknown): Effect[] | null {
       case 'emote':
         if ((EMOTES as readonly string[]).includes(e.emote as string)) out.push({ kind: 'emote', emote: e.emote as (typeof EMOTES)[number] });
         break;
-      case 'memory': {
-        const key = str(e.key, 20);
-        const value = str(e.value, 40);
-        if (key && value && ['name', 'favorite_order', 'goal', 'hometown', 'mood', 'last_topic'].includes(key)) out.push({ kind: 'memory', key: key as never, value });
-        break;
-      }
     }
   }
   return out;

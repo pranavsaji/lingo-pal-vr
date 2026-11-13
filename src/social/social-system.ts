@@ -33,8 +33,9 @@ import { addDwellTarget, onActivate } from '../ui/dwell.js';
 import { FriendAvatar } from './avatar.js';
 import { BUTTON_H, BUTTON_W, CARD_H, CARD_W, drawButton, drawCard, drawQr } from './card.js';
 import { PoseInterpolator } from './interp.js';
-import { decodePose, encodePose, F_LEFT, F_POINTER, F_RIGHT, F_XR, friendSeat, JOINTS, makeRoomCode, newPose, P_HEAD, P_LEFT, P_POINTER, P_RIGHT, POSE_FLOATS, shareUrl, shortUrl } from './protocol.js';
-import { social, socialEnv } from './runtime.js';
+import { decodePose, encodePose, F_LEFT, F_POINTER, F_RIGHT, F_XR, friendSeat, JOINTS, newPose, P_HEAD, P_LEFT, P_POINTER, P_RIGHT, POSE_FLOATS, shortUrl } from './protocol.js';
+import { inviteUrl } from './secret.js';
+import { brokenInvite, hostRoom, social, socialEnv } from './runtime.js';
 import { statusLine } from './session.js';
 
 const SEND_HZ = 15;
@@ -87,9 +88,10 @@ export class SocialSystem extends createSystem({
   private mic: MediaStream | null = null;
   private micStarting = false;
   private micBlocked = false;
-  private muted = false;
+  /** The microphone stays off until the learner turns it on (after connecting). */
+  private muted = true;
   private audio: { el: HTMLAudioElement; panner: PannerNode | null; analyser: AnalyserNode | null; buf: Float32Array<ArrayBuffer> } | null = null;
-  private dom: { root: HTMLDivElement; status: HTMLSpanElement; extra: HTMLDivElement; mic: HTMLButtonElement; sound: HTMLButtonElement } | null = null;
+  private dom: { root: HTMLDivElement; status: HTMLSpanElement; extra: HTMLDivElement; mic: HTMLButtonElement; sound: HTMLButtonElement; join: HTMLButtonElement; leave: HTMLButtonElement } | null = null;
   private inviteLabel: UIKit.Text | null = null;
 
   init(): void {
@@ -117,6 +119,17 @@ export class SocialSystem extends createSystem({
 
     // Opened from a ?room= link before the World existed.
     if (social.active) this.onSessionChange();
+    else if (brokenInvite) this.toast('Lien incomplet : ouvrez le lien complet (avec #k=…). · Incomplete link: open the full link (with #k=…).');
+  }
+
+  /** A short message for browser players (disappears on its own). */
+  private toast(text: string): void {
+    if (typeof document === 'undefined') return;
+    const el = document.createElement('div');
+    el.textContent = text;
+    el.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:20;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:14px;background:rgba(209,73,91,.95);color:#fff;font:600 15px/1.3 system-ui,sans-serif';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 12000);
   }
 
   // ---- Room lifecycle -------------------------------------------------------------
@@ -127,13 +140,12 @@ export class SocialSystem extends createSystem({
       this.showCard(!this.cardShown);
       return;
     }
-    social.host(makeRoomCode());
+    hostRoom();
   }
 
   private onSessionChange(): void {
     if (social.active) {
       this.build();
-      void this.startMic();
       if (!this.cardShown && social.state !== 'connected') this.showCard(true);
       if (social.state === 'connected' && this.cardShown && this.cardHideAt < 0) this.cardHideAt = this.clockMs + CARD_AUTOHIDE_MS;
       if (social.state !== 'connected') {
@@ -144,6 +156,8 @@ export class SocialSystem extends createSystem({
       this.inviteLabel?.setProperties({ text: social.state === 'connected' ? `Avec ${social.friendName}` : 'Café à deux' });
     } else {
       this.stopMic();
+      this.muted = true;
+      this.micBlocked = false;
       this.setFriendAudio(null);
       if (this.built) {
         this.showCard(false);
@@ -153,9 +167,10 @@ export class SocialSystem extends createSystem({
       this.inviteLabel?.setProperties({ text: 'Inviter un ami' });
       this.dom?.root.remove();
       this.dom = null;
-      if (typeof history !== 'undefined' && /[?&]room=/.test(location.search)) {
+      if (typeof history !== 'undefined' && (/[?&]room=/.test(location.search) || location.hash)) {
         const url = new URL(location.href);
         url.searchParams.delete('room');
+        url.hash = ''; // the room key leaves the address bar too
         history.replaceState(null, '', url.toString());
       }
     }
@@ -163,8 +178,9 @@ export class SocialSystem extends createSystem({
     this.renderDom();
   }
 
+  /** The full share link, with the room key in the fragment. */
   private get url(): string {
-    return shareUrl(location.origin, social.code);
+    return social.invite ? inviteUrl(location.origin, social.invite) : '';
   }
 
   // ---- Building (only once a room exists) -------------------------------------------
@@ -259,9 +275,19 @@ export class SocialSystem extends createSystem({
     const spec = BUTTONS.find((x) => x.id === b.id)!;
     const c = b.canvas.getContext('2d');
     if (!c) return;
+    if (social.state === 'invited') {
+      // "Rejoindre le café de votre ami ?": Join / No thanks (pinch, look, or say "oui").
+      b.mesh.visible = b.id !== 'hide';
+      if (b.id === 'mic') drawButton(c, 'Rejoindre', 'Join', '#2a9d8f', b.hover);
+      else if (b.id === 'leave') drawButton(c, 'Non merci', 'No thanks', '#6c757d', b.hover);
+      b.tex.needsUpdate = true;
+      return;
+    }
+    b.mesh.visible = true;
     const off = b.id === 'mic' && (this.muted || !this.mic);
-    const en = b.id !== 'mic' ? spec.en : this.micBlocked ? 'Mic blocked' : off ? 'Mic off' : 'Mic on';
-    drawButton(c, spec.fr, en, off ? '#6c757d' : spec.color, b.hover);
+    const fr = b.id === 'mic' ? (off ? 'Micro : non' : 'Micro : oui') : spec.fr;
+    const en = b.id !== 'mic' ? spec.en : this.micBlocked ? 'Mic blocked' : off ? 'Pinch to talk' : 'Mic on';
+    drawButton(c, fr, en, off ? '#6c757d' : spec.color, b.hover);
     b.tex.needsUpdate = true;
   }
 
@@ -278,6 +304,11 @@ export class SocialSystem extends createSystem({
   }
 
   private press(id: ButtonId): void {
+    if (social.state === 'invited') {
+      if (id === 'mic') social.accept();
+      else if (id === 'leave') social.decline();
+      return;
+    }
     if (id === 'mic') this.setMuted(!this.muted);
     else if (id === 'hide') this.showCard(false);
     else void social.leave();
@@ -317,6 +348,7 @@ export class SocialSystem extends createSystem({
 
   private setMuted(m: boolean): void {
     this.muted = m;
+    if (!m && !this.mic) void this.startMic(); // first "on": ask for the microphone now, not before
     if (this.mic) for (const t of this.mic.getAudioTracks()) t.enabled = !m;
     for (const b of this.buttons) if (b.id === 'mic') this.drawButton(b);
     this.renderDom();
@@ -385,19 +417,29 @@ export class SocialSystem extends createSystem({
       });
       const mic = btn('Micro', '#2a9d8f', () => this.setMuted(!this.muted));
       const leave = btn('Quitter', '#d1495b', () => void social.leave());
-      root.append(title, status, extra, sound, mic, leave);
+      const join = btn('Rejoindre', '#2a9d8f', () => social.accept());
+      root.append(title, status, extra, join, sound, mic, leave);
       document.body.appendChild(root);
-      this.dom = { root, status, extra, mic, sound };
+      this.dom = { root, status, extra, mic, sound, join, leave };
     }
     const d = this.dom;
     const s = statusLine(social);
     d.status.textContent = `${s.fr} · ${s.en}`;
+    const invited = social.state === 'invited';
+    d.join.style.display = invited ? '' : 'none';
+    d.mic.style.display = invited ? 'none' : '';
+    d.leave.textContent = invited ? 'Non merci' : 'Quitter';
     d.mic.textContent = this.micBlocked ? 'Micro bloqué' : this.muted || !this.mic ? 'Micro : non' : 'Micro : oui';
     d.mic.style.background = this.muted || !this.mic ? '#6c757d' : '#2a9d8f';
     const ctx = ensureAudioContextIfExists();
-    d.sound.style.display = ctx && ctx.state !== 'running' ? '' : 'none';
+    d.sound.style.display = !invited && ctx && ctx.state !== 'running' ? '' : 'none';
     d.extra.replaceChildren();
-    if (social.role === 'host' && social.state !== 'connected') {
+    if (invited) {
+      const t = document.createElement('span');
+      t.textContent = `Code ${social.code}`;
+      t.style.cssText = 'font:600 14px ui-monospace,monospace';
+      d.extra.append(t);
+    } else if (social.role === 'host' && social.state !== 'connected') {
       const q = document.createElement('canvas');
       q.width = q.height = 132;
       const c = q.getContext('2d');
@@ -405,8 +447,12 @@ export class SocialSystem extends createSystem({
       q.style.cssText = 'width:66px;height:66px;border-radius:6px;image-rendering:pixelated';
       const link = document.createElement('span');
       link.textContent = shortUrl(this.url);
-      link.style.cssText = 'font:600 14px ui-monospace,monospace;user-select:all';
-      d.extra.append(q, link);
+      link.style.cssText = 'font:600 13px ui-monospace,monospace;user-select:all;word-break:break-all;max-width:300px';
+      const copy = document.createElement('button');
+      copy.textContent = 'Copier';
+      copy.style.cssText = 'border:0;border-radius:10px;padding:6px 10px;font:600 14px system-ui,sans-serif;color:#fff;background:#457b9d;cursor:pointer';
+      copy.addEventListener('click', () => void navigator.clipboard?.writeText(this.url).then(() => (copy.textContent = 'Copié !')).catch(() => undefined));
+      d.extra.append(q, link, copy);
     } else if (social.state === 'connected') {
       const t = document.createElement('span');
       t.textContent = `Au tour de ${social.nameOf(social.holder)}`;
