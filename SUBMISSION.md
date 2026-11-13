@@ -28,6 +28,13 @@ with the words to practise. Each visit adds to your streak, XP and level (A1.1 t
 new words go into your Carnet with spaced-repetition review, and the cafe changes as you
 progress: string lights, plants, a daily-special chalkboard, a gramophone.
 
+**A small Paris to explore.** Three shops on a Paris map, each with its own realistic
+shopkeeper, menu, prices and words: Café Lune (Madame Lune), La Boulangerie (Monsieur
+Paul, croissants and éclairs) and Le Marché (Madame Rose, fruit and vegetables in a
+covered market). The bakery opens after the tutorial and the market after your first paid
+order, so a first visit sees all three within minutes. Say "allons au marché" or pinch
+"Paris" to travel.
+
 **How the agent works.** Madame Lune is a spatial AI agent built on Claude with strict
 tool use. A deterministic game core owns the menu, the prices, the money and every
 calculation. The model proposes actions (serve items, quote the total, give change,
@@ -48,8 +55,12 @@ contrast, text size, slow speech, left-handed layout, reduced motion and eyes-on
 selection. Seated by default.
 
 **How we built it.** Meta's Immersive Web SDK (three.js plus an entity-component system),
-WebXR hand tracking, UIKitML spatial panels, procedural 3D models and synthesized spatial
-audio (no downloaded art or sound). Claude runs on a Vercel serverless route; the key
+WebXR hand tracking, UIKitML spatial panels and synthesized spatial audio. Realistic
+shopkeepers are Microsoft Rocketbox avatars (MIT) animated procedurally (look-at, lip
+movement, blinks, gestures, pointing); food, props, surfaces and 360° photo environments
+with image-based lighting are Poly Haven scans (CC0), optimized to stay within a Quest
+frame budget. Each shop's menu and prices live in one data file shared by the app and the
+AI server. Claude runs on a Vercel serverless route; the key
 never reaches the headset. Speech recognition (Whisper) and, when the browser has no
 French voice, Madame Lune's voice run on the headset itself in a Web Worker, so voice works
 in Quest Browser with no extra service. Optional mixed reality mode puts the counter in
