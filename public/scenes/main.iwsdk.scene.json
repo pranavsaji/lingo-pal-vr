@@ -107,8 +107,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -132,8 +131,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -157,8 +155,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -182,8 +179,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -207,8 +203,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -232,8 +227,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     },
     {
@@ -257,8 +251,7 @@
         "scale": 0.14
       },
       "components": {
-        "RayInteractable": {},
-        "PokeInteractable": {}
+        "RayInteractable": {}
       }
     }
   ]

@@ -179,6 +179,10 @@ export class PanelsSystem extends createSystem({}) {
       const visible = s === slot;
       obj.visible = visible;
       obj.position.y = (this.homeY.get(SLOT_NODE[s]) ?? 0) + (visible ? 0 : HIDDEN_OFFSET);
+      // Pointer hit-testing ignores visibility: without this, every hidden panel's
+      // whole element tree is ray- and touch-tested by both hands every frame
+      // (measured ~2.5 ms/frame in the emulator with five hidden panels).
+      (obj as Object3D & { intersectChildren?: boolean }).intersectChildren = visible;
     }
     if (slot === 'carnet') this.renderCarnet();
     if (slot === 'map') this.renderMap();
