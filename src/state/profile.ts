@@ -103,7 +103,10 @@ export function browserKV(): KV | null {
   try {
     if (typeof window === 'undefined') return null;
     const kv = window.localStorage;
-    if (new URLSearchParams(window.location.search).has('reset')) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('restore')) restoreProfile(kv);
+    if (params.has('reset')) {
+      backupProfile(kv);
       kv.removeItem(PROFILE_KEY);
       kv.removeItem(LEGACY_KEY);
     }
@@ -173,5 +176,33 @@ export function saveProfile(kv: KV | null, p: Profile): void {
     kv.setItem(PROFILE_KEY, JSON.stringify(p));
   } catch {
     // Progress is a convenience; never break the session over it.
+  }
+}
+
+export const BACKUP_KEY = `${PROFILE_KEY}.backup`;
+
+/**
+ * Before `?reset` or a `?demo=` seed replaces the profile, keep the learner's real
+ * one (never a demo seed) so a shared link cannot wipe real progress.
+ */
+export function backupProfile(kv: Pick<KV, 'getItem' | 'setItem'>): void {
+  try {
+    const raw = kv.getItem(PROFILE_KEY);
+    const parsed = safeParse(raw) as Partial<Profile> | null;
+    if (raw && parsed && typeof parsed === 'object' && !parsed.demo) kv.setItem(BACKUP_KEY, raw);
+  } catch {
+    // best effort
+  }
+}
+
+/** `?restore`: put the backed-up real profile back. */
+export function restoreProfile(kv: Pick<KV, 'getItem' | 'setItem'>): boolean {
+  try {
+    const raw = kv.getItem(BACKUP_KEY);
+    if (!raw) return false;
+    kv.setItem(PROFILE_KEY, raw);
+    return true;
+  } catch {
+    return false;
   }
 }

@@ -18,7 +18,7 @@
 
 import { addDays, type Day } from './dates.js';
 import type { History } from './history.js';
-import { defaultProfile, PROFILE_KEY, type KV, type Profile } from './profile.js';
+import { backupProfile, defaultProfile, PROFILE_KEY, type KV, type Profile } from './profile.js';
 import { unlockedIds } from './progression.js';
 import { newCard, type SrsCard } from './srs.js';
 
@@ -101,6 +101,7 @@ export function withDemoSeed(kv: KV | null, today: Day): KV | null {
     const url = new URL(window.location.href);
     const flag = url.searchParams.get('demo');
     if (flag !== 'week' && flag !== 'rest') return kv;
+    backupProfile(kv); // a shared demo link must never destroy real progress (`?restore` brings it back)
     kv.setItem(PROFILE_KEY, JSON.stringify(demoProfile(today, flag)));
     url.searchParams.delete('demo');
     window.history.replaceState(null, '', url.toString());
