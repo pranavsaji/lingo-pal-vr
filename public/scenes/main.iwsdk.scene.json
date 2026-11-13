@@ -210,6 +210,31 @@
         "RayInteractable": {},
         "PokeInteractable": {}
       }
+    },
+    {
+      "id": "report-panel",
+      "name": "Report Panel",
+      "content": {
+        "type": "asset",
+        "asset": "report-panel"
+      },
+      "transform": {
+        "position": [
+          -0.78,
+          1.56,
+          -1.32
+        ],
+        "rotationDeg": [
+          -4,
+          30,
+          0
+        ],
+        "scale": 0.14
+      },
+      "components": {
+        "RayInteractable": {},
+        "PokeInteractable": {}
+      }
     }
   ]
 }

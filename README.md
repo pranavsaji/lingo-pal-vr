@@ -42,9 +42,20 @@ Speech recognition picks the first engine available:
 3. **On-device Whisper** (`src/voice/local-voice-worker.ts`): no key needed. This is
    what Quest Browser uses. About 74 MB (Whisper base), downloaded once in the background and cached.
 
-Madame Lune speaks with the browser's French voice when there is one, otherwise with an
-on-device French voice model (114 MB, downloaded once in the background). Subtitles are
-always on. Test the on-device engines on desktop with `?stt=local&tts=local`.
+Shopkeepers speak with natural voices from Inworld TTS-2 through `/api/tts` when
+`INWORLD_API_KEY` is set (Madame Lune and Madame Rose: Hélène with different delivery;
+Monsieur Paul: Alain; the learner's own phrases: Étienne). Responses are cached at the CDN,
+so repeated lines are free. Without the key: the browser's French voice, or an on-device
+French voice model (114 MB, downloaded once). Subtitles are always on. Test engines with
+`?tts=cloud|browser|local` and `?stt=local`.
+
+## Daily shopping list and weekly report
+
+- **La liste de courses**: every day, one thing to buy in each shop (café, bakery, market),
+  shown on the home panel; ticked when paid for in that shop; the full list is worth +60 XP.
+  The shopkeeper knows what is on your list in their shop.
+- **Ma semaine**: XP per day for the last 7 days, minutes learning, new words, orders,
+  average pronunciation, active days and streak, and the trend versus the week before.
 
 ## Realistic look
 

@@ -19,12 +19,14 @@ import { CelebrationSystem } from './world/celebration-system.js';
 import { MixedRealitySystem } from './world/mixed-reality-system.js';
 import { OnboardingSystem } from './world/onboarding-system.js';
 import { NpcSystem } from './world/npc-system.js';
+import { CustomersSystem } from './world/customers-system.js';
 import { QualitySystem } from './world/quality-system.js';
 import { PlaceSystem } from './world/place-system.js';
+import { QuestSystem } from './world/quest-system.js';
 
 import { localVoice } from './voice/local-voice.js';
 import { SpeechInput } from './voice/speech-input.js';
-import { speakFrench, speechEngine } from './speech.js';
+import { luneSpeaking, speakFrench, speechEngine } from './speech.js';
 import { appState, events } from './game-state.js';
 import { handState } from './hands/hand-state.js';
 import { store } from './state/store.js';
@@ -50,8 +52,8 @@ if (import.meta.env.DEV) {
 }
 
 // ?debug exposes the voice engines for automated checks (no secrets involved).
-if (new URLSearchParams(location.search).has('debug')) {
-  (window as unknown as Record<string, unknown>).__lingoVoice = { localVoice, speakFrench, speechEngine, SpeechInput };
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('debug')) {
+  (window as unknown as Record<string, unknown>).__lingoVoice = { localVoice, speakFrench, speechEngine, SpeechInput, luneSpeaking };
 }
 
 World.create(document.getElementById('scene-container') as HTMLDivElement, projectOptions).then((world) => {
@@ -59,6 +61,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(QualitySystem); // resolution + foveation, before any XR session starts
   world.registerSystem(ItemSystem);
   world.registerSystem(PlaceSystem); // builds the shop set, backdrop and lighting; switches shops
+  world.registerSystem(QuestSystem); // daily shopping list across Paris + learning time for the weekly report
   world.registerSystem(LessonSystem); // starts the session (streak, XP) before the agent greets
   world.registerSystem(PanelsSystem);
   world.registerSystem(ChatSystem);
@@ -66,6 +69,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(HandSystem);
   world.registerSystem(AudioSystem);
   world.registerSystem(NpcSystem);
+  world.registerSystem(CustomersSystem); // background customers, loaded after each shopkeeper
   world.registerSystem(CoinSystem);
   world.registerSystem(DecorSystem);
   world.registerSystem(MixedRealitySystem);

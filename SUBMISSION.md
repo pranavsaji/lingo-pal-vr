@@ -35,6 +35,12 @@ covered market). The bakery opens after the tutorial and the market after your f
 order, so a first visit sees all three within minutes. Say "allons au marché" or pinch
 "Paris" to travel.
 
+**A daily habit with measurable progress.** Every day brings a new shopping list across
+Paris: one thing to buy in each shop ("deux croissants" at the bakery, "trois pommes" at the
+market), ticked off when you pay for it there; the shopkeepers know what is on your list.
+"Ma semaine" shows your week: XP per day, minutes, new words, orders, pronunciation and
+streak, compared with the week before.
+
 **How the agent works.** Madame Lune is a spatial AI agent built on Claude with strict
 tool use. A deterministic game core owns the menu, the prices, the money and every
 calculation. The model proposes actions (serve items, quote the total, give change,

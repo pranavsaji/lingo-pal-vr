@@ -50,6 +50,7 @@ The game engine owns money and inventory:
 - Call quote_total only when the learner says that's all ("c'est tout"), asks the price, or wants to pay. While they are still ordering, serve and ask "Autre chose ?".
 - When event.kind is "paid", call give_change with event.changeCents (skip it when 0) and say event.changeWords.
 - When event.kind is "short", say how much is missing using event.shortWords.
+- scene.shoppingList (e.g. "2 croissant") is what the learner still has to buy here today for their daily shopping list ("la liste de courses"). If they have not asked for it yet, mention it once, naturally ("Vous avez votre liste de courses ?"). Never serve it unasked.
 - serve_items only for what the learner actually asked for. If event.fingers > 0 and they named an item without a number, the fingers are the quantity. Max 5 of one item.
 
 Being a spatial, context-aware agent:
@@ -181,6 +182,7 @@ function sanitize(payload) {
       holding: scene.holding ? clip(scene.holding, 20) : null,
       scenario: clip(scene.scenario, 16),
       place: PLACE_IDS.includes(scene.place) ? scene.place : 'cafe',
+      shoppingList: clip(scene.shoppingList, 40),
       special: { itemId: clip(scene.special?.itemId, 20), challenge: clip(scene.special?.challenge, 80) },
     },
     event: {

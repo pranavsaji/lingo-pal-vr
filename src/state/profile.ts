@@ -4,6 +4,8 @@
  * site data), so every access is defensive and the app works without it.
  */
 
+import type { History } from './history.js';
+import type { Quest } from './quest.js';
 import type { SrsCard } from './srs.js';
 
 export interface Settings {
@@ -33,6 +35,10 @@ export interface Profile {
   lastVisit: string;
   stats: { orders: number; payments: number; phrases: number; pronunciationTotal: number; pronunciationCount: number };
   settings: Settings;
+  /** Daily activity (XP, minutes, words, orders, pronunciation) for the weekly report. */
+  history: History;
+  /** Today's shopping list across Paris (null until first created). */
+  quest: Quest | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -63,6 +69,8 @@ export function defaultProfile(): Profile {
     lastVisit: '',
     stats: { orders: 0, payments: 0, phrases: 0, pronunciationTotal: 0, pronunciationCount: 0 },
     settings: { ...DEFAULT_SETTINGS },
+    history: {},
+    quest: null,
   };
 }
 
@@ -116,6 +124,8 @@ export function loadProfile(kv: KV | null): Profile {
         settings: { ...base.settings, ...(stored.settings ?? {}) },
         srs: { ...(stored.srs ?? {}) },
         memories: { ...(stored.memories ?? {}) },
+        history: { ...(stored.history ?? {}) },
+        quest: stored.quest ?? null,
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

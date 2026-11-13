@@ -90,6 +90,43 @@
     color: #9fd3c7;
   }
 
+  .quest {
+    flex-direction: column;
+    gap: 4px;
+    margin-left: 24px;
+    margin-right: 24px;
+    margin-top: 4px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 14px;
+    background-color: #e9e2cf;
+  }
+
+  .quest:dark {
+    background-color: #2b2d33;
+  }
+
+  .quest-title {
+    color: #8a3a12;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .quest-title:dark {
+    color: #f4a261;
+  }
+
+  .quest-line {
+    color: #1c1d20;
+    font-size: 17px;
+  }
+
+  .quest-line:dark {
+    color: #fafaf7;
+  }
+
   .actions {
     flex-direction: row;
     gap: 12px;
@@ -170,6 +207,12 @@
     <span class="english" id="english">Pinch any object on the counter to hear its French name.</span>
     <span class="tip" id="tip">Tip: point your hand at it, then touch thumb and index finger.</span>
   </div>
+  <div class="quest" id="quest">
+    <span class="quest-title" id="quest-title">LISTE DE COURSES · 0 / 3</span>
+    <span class="quest-line" id="quest-0">Café Lune : un café</span>
+    <span class="quest-line" id="quest-1">Boulangerie : deux croissants</span>
+    <span class="quest-line" id="quest-2">Marché : trois pommes</span>
+  </div>
   <div class="actions">
     <div class="action" id="start-button">
       <span class="action-text" id="start-label">Commencer la mission</span>
@@ -195,6 +238,9 @@
     </div>
     <div class="action" id="exit-button" style="display: none; background-color: #6c757d">
       <span class="action-text">Exit VR</span>
+    </div>
+    <div class="action" id="week-button" style="background-color: #e76f51">
+      <span class="action-text">Ma semaine</span>
     </div>
   </div>
 </Panel>

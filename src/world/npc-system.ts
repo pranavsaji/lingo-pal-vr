@@ -3,6 +3,9 @@
  * calls become visible behaviour: point_at swings an arm toward the item, emote
  * plays a gesture, and she looks at the learner (or at what the learner looks at).
  * Lip flap is driven by the speech engine; blinks and breathing keep her alive.
+ * While she speaks she talks with her hands (./characters/body-language.ts: beats,
+ * open palms, nods, a lean), and between lines she shifts her weight and glances
+ * away now and then. Emotes and pointing always win over both layers.
  *
  * Each shop has its own rigged human (Microsoft Rocketbox avatars, see
  * ./characters/shopkeepers.ts): Madame Lune (cafe), Monsieur Paul (boulangerie),
@@ -24,6 +27,7 @@ import { luneSpeaking } from '../speech.js';
 import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
 import { type CharacterDriver, type CharacterPose, createPose } from './characters/character-pose.js';
+import { ease, IdleLife, standingLegs, TalkGestures } from './characters/body-language.js';
 import { aimArm, EMOTE_SECONDS, emoteEnvelope, lipFlap, poseEmote } from './characters/gestures.js';
 import { HumanRig, prepareAvatar } from './characters/human-rig.js';
 import { ProceduralLuneDriver } from './characters/procedural-driver.js';
@@ -68,6 +72,10 @@ export class NpcSystem extends createSystem({}) {
   private target!: CharacterPose;
   private headYaw = 0;
   private headPitch = 0;
+  private readonly talk = new TalkGestures();
+  private readonly idle = new IdleLife();
+  /** 0..1: how much emotes/pointing currently own the body (talk and idle layers fade out). */
+  private busy = 0;
 
   init(): void {
     this.headWorld = new Vector3();
@@ -133,7 +141,8 @@ export class NpcSystem extends createSystem({}) {
       const gltf = AssetManager.getGLTF(spec.assetId); // a fresh skeleton-aware clone
       if (!gltf) throw new Error(`glTF "${spec.assetId}" missing from the cache`);
       prepareAvatar(gltf.scene, spec.name);
-      const rig = new HumanRig(gltf.scene, spec.rig);
+      // Legs driven too, so the weight shift keeps her feet planted (visible in mixed reality).
+      const rig = new HumanRig(gltf.scene, { ...spec.rig, legs: true });
       rig.apply(this.pose);
       this.avatars.set(place, rig);
       if (this.place === place) this.activate(rig, true);
@@ -215,6 +224,13 @@ export class NpcSystem extends createSystem({}) {
     d.head.getWorldPosition(this.headWorld);
     const pointing = t < this.pointUntil;
     const lookItem = director.perception.lookingAt;
+    const quiet = !this.speaking && !pointing && !this.emote && !lookItem;
+    this.talk.step(delta, this.speaking);
+    this.idle.step(delta, quiet);
+    this.busy += ((pointing || this.emote ? 1 : 0) - this.busy) * ease(delta, 10);
+    const free = 1 - this.busy;
+    // Reduced motion keeps the talking layer, but smaller.
+    const talkW = free * (store.profile.settings.reduceMotion ? 0.45 : 1);
     if (pointing) this.look.copy(this.pointTarget);
     else if (lookItem && Math.sin(t * 0.7) > 0.3) {
       const v = findVocab(lookItem);
@@ -223,8 +239,8 @@ export class NpcSystem extends createSystem({}) {
     } else this.player.head.getWorldPosition(this.look);
     this.dir.subVectors(this.look, this.headWorld);
     const horiz = Math.hypot(this.dir.x, this.dir.z);
-    const rawYaw = Math.atan2(this.dir.x, this.dir.z);
-    const rawPitch = -Math.atan2(this.dir.y, horiz);
+    const rawYaw = Math.atan2(this.dir.x, this.dir.z) + this.idle.glanceYaw + this.talk.yaw * this.talk.blend * free;
+    const rawPitch = -Math.atan2(this.dir.y, horiz) + this.idle.glancePitch;
     this.headYaw += (MathUtils.clamp(rawYaw, -0.7, 0.7) - this.headYaw) * k;
     this.headPitch += (MathUtils.clamp(rawPitch, -0.35, 0.45) - this.headPitch) * k;
 
@@ -238,6 +254,9 @@ export class NpcSystem extends createSystem({}) {
       else env = emoteEnvelope(p);
     }
     poseEmote(target, emote, this.headPitch, p, env, t, this.human);
+    // Conversational layer on top of the resting arms (written before pointing so the point wins).
+    this.talk.apply(target, talkW);
+    this.idle.apply(target, free);
 
     // --- Pointing overrides the arm on the item's side.
     if (pointing) {
@@ -269,6 +288,15 @@ export class NpcSystem extends createSystem({}) {
     pose.shoulderRaise += (target.shoulderRaise - pose.shoulderRaise) * sk;
     pose.lPoint += (target.lPoint - pose.lPoint) * sk;
     pose.rPoint += (target.rPoint - pose.rPoint) * sk;
+
+    // --- Body channels from the talking layer (already smoothed), plus the idle weight shift.
+    pose.torsoPitch = target.torsoPitch;
+    pose.torsoYaw = target.torsoYaw;
+    pose.lWrist = target.lWrist;
+    pose.rWrist = target.rWrist;
+    pose.lGrip = target.lGrip;
+    pose.rGrip = target.rGrip;
+    standingLegs(pose, this.idle.sway * (0.4 + 0.6 * free));
 
     // --- Lip flap from the speech engine.
     pose.mouthOpen += (lipFlap(this.speaking, t) - pose.mouthOpen) * (1 - Math.exp(-delta * 25));

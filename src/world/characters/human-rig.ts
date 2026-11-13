@@ -13,7 +13,10 @@
  *
  * Arms map the procedural Madame Lune convention (upper arm hanging along -Y,
  * Euler(armX, 0, armZ) swings it; forearm bends about X) onto the A-posed bind
- * pose through a per-arm "straighten" rotation computed once at bind time.
+ * pose through a per-arm "straighten" rotation computed once at bind time. Legs
+ * (optional, `legs: true`) use the same scheme, so a seated pose is three angles
+ * per leg. Body language (torso lean, weight shift, wrist flex, finger grip) rides
+ * on the spine, pelvis, hand and finger joints.
  * Zero allocations per frame: every temporary is a class field.
  */
 
@@ -102,7 +105,22 @@ interface Arm {
   fixF: Quaternion;
   /** Rest-space rotation that lines the bind-pose hand up with the forearm (straight wrist). */
   wrist: Quaternion;
+  /** Rest-space wrist flex axis (+ angle bends the hand toward the palm); null without finger bones. */
+  flexAxis: Vector3 | null;
   fingers: FingerSeg[];
+}
+
+interface Leg {
+  side: 1 | -1;
+  thigh: Joint;
+  calf: Joint;
+  foot: Joint | null;
+  /** Rotates the bind-pose thigh to hang straight down. */
+  fixT: Quaternion;
+  fixTinv: Quaternion;
+  /** fixC * fixT: straightens thigh and shin; and its inverse (for the foot). */
+  fixTC: Quaternion;
+  fixTCinv: Quaternion;
 }
 
 /** Tunables that differ slightly per avatar. */
@@ -115,7 +133,15 @@ export interface HumanRigOptions {
   jawOpen?: number;
   /** Resting smile: mouth-corner lift in metres. */
   smile?: number;
+  /** Drive the legs from the pose (seated or standing customers). Off: legs keep the bind pose. */
+  legs?: boolean;
 }
+
+/** Weight shift at hipSway = 1: hip slide (m) and pelvis tilt (rad). */
+const SWAY_SHIFT = 0.018;
+const SWAY_ROLL = 0.04;
+/** Hip-to-ankle length used to keep the feet planted while the hips slide (m). */
+const LEG_LENGTH = 0.85;
 
 const FINGER_REST = [0.12, 0.22, 0.28, 0.32, 0.36]; // thumb..pinky, per segment
 const FINGER_FIST = [0.45, 1.25, 1.4, 1.45, 1.5];
@@ -125,12 +151,17 @@ export class HumanRig implements CharacterDriver {
   readonly leftShoulder: Object3D;
   readonly rightShoulder: Object3D;
   readonly boneCount: number;
+  /** Rest height of the hip joints above the root (m): seat a rig by lowering its root to seat + ~0.1 - hipHeight. */
+  readonly hipHeight: number;
   /** Which optional features this skeleton supports (for diagnostics). */
-  readonly features: { jaw: boolean; lids: boolean; eyes: boolean; fingers: boolean };
+  readonly features: { jaw: boolean; lids: boolean; eyes: boolean; fingers: boolean; legs: boolean };
 
   private readonly neck: Joint | null;
   private readonly headJ: Joint;
   private readonly spine2: Joint | null;
+  private readonly spine1: Joint | null;
+  private readonly pelvis: Joint | null;
+  private readonly legs: Leg[] = [];
   private readonly jaw: Joint | null;
   private readonly eyes: Joint[] = [];
   private readonly lidTop: Joint[] = [];
@@ -145,7 +176,7 @@ export class HumanRig implements CharacterDriver {
   private readonly qb = new Quaternion();
 
   constructor(readonly root: Object3D, options: HumanRigOptions = {}) {
-    this.opts = { armClearance: 0.1, pronation: 0.9, jawOpen: 0.14, smile: 0.0028, ...options };
+    this.opts = { armClearance: 0.1, pronation: 0.9, jawOpen: 0.14, smile: 0.0028, legs: false, ...options };
     root.updateMatrixWorld(true);
     const rootInvQ = root.getWorldQuaternion(new Quaternion()).invert();
     const rootInv = root.matrixWorld.clone().invert();
@@ -165,6 +196,8 @@ export class HumanRig implements CharacterDriver {
     this.headJ = req('head');
     this.neck = opt('neck');
     this.spine2 = opt('spine2');
+    this.spine1 = opt('spine1');
+    this.pelvis = opt('pelvis');
     this.jaw = opt('mjaw');
     for (const s of ['l', 'r']) {
       const eye = opt(`${s}eye`);
@@ -181,6 +214,13 @@ export class HumanRig implements CharacterDriver {
     this.lidTravel = this.lidTop.length ? Math.max(0.004, (this.lidTop[0].world0.y - this.lidBot[0].world0.y) * 0.85) : 0;
 
     this.arms = (['l', 'r'] as const).map((s) => this.bindArm(s, req, opt, bones, rootInv));
+    if (this.opts.legs) {
+      for (const s of ['l', 'r'] as const) {
+        const leg = this.bindLeg(s, opt);
+        if (leg) this.legs.push(leg);
+      }
+    }
+    this.hipHeight = this.legs.length ? this.legs[0].thigh.world0.y : (this.pelvis?.world0.y ?? 0);
     this.head = this.headJ.bone;
     this.leftShoulder = this.arms[0].upper.bone;
     this.rightShoulder = this.arms[1].upper.bone;
@@ -189,7 +229,22 @@ export class HumanRig implements CharacterDriver {
       lids: this.lidTop.length === 2,
       eyes: this.eyes.length === 2,
       fingers: this.arms[0].fingers.length > 0,
+      legs: this.legs.length === 2,
     };
+  }
+
+  private bindLeg(s: 'l' | 'r', opt: (k: string) => Joint | null): Leg | null {
+    const thigh = opt(`${s}thigh`);
+    const calf = opt(`${s}calf`);
+    if (!thigh || !calf) return null;
+    const foot = opt(`${s}foot`);
+    const ankle = foot ? foot.world0 : calf.world0;
+    const dT = new Vector3().subVectors(calf.world0, thigh.world0).normalize();
+    const dC = new Vector3().subVectors(ankle, calf.world0).normalize();
+    const fixT = new Quaternion().setFromUnitVectors(dT, DOWN);
+    const fixC = foot ? new Quaternion().setFromUnitVectors(dC.clone().applyQuaternion(fixT), DOWN) : new Quaternion();
+    const fixTC = fixC.clone().multiply(fixT);
+    return { side: s === 'l' ? 1 : -1, thigh, calf, foot, fixT, fixTinv: fixT.clone().invert(), fixTC, fixTCinv: fixTC.clone().invert() };
   }
 
   private bindArm(
@@ -212,6 +267,7 @@ export class HumanRig implements CharacterDriver {
 
     // Fingers: curl axis = segment direction x palm normal (rest space).
     const fingers: FingerSeg[] = [];
+    let flexAxis: Vector3 | null = null;
     if (hand) {
       const idx = opt(`${s}finger1`);
       const pinky = opt(`${s}finger4`) ?? opt(`${s}finger3`);
@@ -219,6 +275,8 @@ export class HumanRig implements CharacterDriver {
         const a = new Vector3().subVectors(idx.world0, hand.world0);
         const b = new Vector3().subVectors(pinky.world0, hand.world0);
         const palm = new Vector3().crossVectors(b, a).multiplyScalar(side).normalize();
+        const flex = new Vector3().crossVectors(dF, palm);
+        if (flex.lengthSq() > 1e-8) flexAxis = flex.normalize();
         for (let f = 0; f <= 4; f++) {
           let prev = hand;
           for (let seg = 0; seg < 3; seg++) {
@@ -243,15 +301,35 @@ export class HumanRig implements CharacterDriver {
       const dH = new Vector3().subVectors(mid.world0, hand.world0).normalize();
       wrist.setFromUnitVectors(dH, dF);
     }
-    return { side, clav, upper, fore, hand, fixU, fixUinv: fixU.clone().invert(), fixF, wrist, fingers };
+    return { side, clav, upper, fore, hand, fixU, fixUinv: fixU.clone().invert(), fixF, wrist, flexAxis, fingers };
   }
 
   apply(p: CharacterPose): void {
     const { e, qa } = this;
+    // Weight shift: the hips slide toward the standing leg and tip up on that side;
+    // the spine leans the other way so the head stays over the feet.
+    const roll = p.hipSway * SWAY_ROLL;
+    if (this.pelvis) {
+      this.pelvis.offset(p.hipSway * SWAY_SHIFT, 0, 0);
+      this.pelvis.rotate(qa.setFromAxisAngle(Z_AXIS, roll));
+    }
+    const torsoRoll = p.torsoRoll - (this.pelvis ? roll * 1.3 : 0);
+    // Torso lean split over the two upper spine joints (the thighs hang off the lower spine).
+    if (this.spine1) {
+      e.set(p.torsoPitch * 0.5, p.torsoYaw * 0.5, torsoRoll * 0.5);
+      this.spine1.rotate(qa.setFromEuler(e));
+    }
     // Breathing: chest rises a touch, shoulders follow.
     if (this.spine2) {
-      qa.setFromAxisAngle(X_AXIS, -p.breath * 0.012);
-      this.spine2.rotate(qa);
+      const k = this.spine1 ? 0.5 : 1;
+      e.set(p.torsoPitch * k - p.breath * 0.012, p.torsoYaw * k, torsoRoll * k);
+      this.spine2.rotate(qa.setFromEuler(e));
+    }
+    if (this.legs.length) {
+      // Keep the legs plumb (and the feet planted) under the shifted, tipped hips.
+      const lean = -roll - (this.pelvis ? (p.hipSway * SWAY_SHIFT) / LEG_LENGTH : 0);
+      this.poseLeg(this.legs[0], p.lThighX, p.lThighZ + lean, p.lKnee, p.lFoot);
+      this.poseLeg(this.legs[1], p.rThighX, p.rThighZ + lean, p.rKnee, p.rFoot);
     }
     // Head: split between neck (40%) and head (60%).
     if (this.neck) {
@@ -277,11 +355,36 @@ export class HumanRig implements CharacterDriver {
     }
 
     const sh = p.breath * 0.015 + p.shoulderRaise * 0.22;
-    this.poseArm(this.arms[0], p.lArmX, p.lArmZ, p.lForearmX, p.lTwist, p.lPoint, sh);
-    this.poseArm(this.arms[1], p.rArmX, p.rArmZ, p.rForearmX, p.rTwist, p.rPoint, sh);
+    this.poseArm(this.arms[0], p.lArmX, p.lArmZ, p.lArmY, p.lForearmX, p.lTwist, p.lPoint, sh, p.lWrist, p.lGrip);
+    this.poseArm(this.arms[1], p.rArmX, p.rArmZ, p.rArmY, p.rForearmX, p.rTwist, p.rPoint, sh, p.rWrist, p.rGrip);
   }
 
-  private poseArm(arm: Arm, ax: number, az: number, fx: number, twist: number, point: number, shoulder: number): void {
+  private poseLeg(leg: Leg, tx: number, tz: number, knee: number, foot: number): void {
+    const { e, qa, qb } = this;
+    e.set(tx, 0, tz);
+    leg.thigh.rotate(qa.setFromEuler(e).multiply(leg.fixT));
+    // Shin: E_c = fixT^-1 * Rx(knee) * fixC * fixT, relative to the posed thigh.
+    qa.copy(leg.fixTinv).multiply(qb.setFromAxisAngle(X_AXIS, knee)).multiply(leg.fixTC);
+    leg.calf.rotate(qa);
+    // Foot keeps its bind relation to the straightened shin, then flexes (toes up for foot > 0).
+    if (leg.foot) {
+      qa.copy(leg.fixTCinv).multiply(qb.setFromAxisAngle(X_AXIS, -foot)).multiply(leg.fixTC);
+      leg.foot.rotate(qa);
+    }
+  }
+
+  private poseArm(
+    arm: Arm,
+    ax: number,
+    az: number,
+    ay: number,
+    fx: number,
+    twist: number,
+    point: number,
+    shoulder: number,
+    flex: number,
+    grip: number,
+  ): void {
     const { e, qa, qb } = this;
     const s = arm.side;
     if (arm.clav) arm.clav.rotate(qa.setFromAxisAngle(Z_AXIS, s * shoulder));
@@ -289,7 +392,10 @@ export class HumanRig implements CharacterDriver {
     const lift = Math.min(1, Math.abs(ax) / 1.2);
     const z = az + s * this.opts.armClearance * (1 - lift);
     e.set(ax, 0, z);
-    qa.setFromEuler(e).multiply(arm.fixU);
+    // Inward rotation about the (straightened, hanging) upper arm's own axis, then the swing.
+    qa.setFromEuler(e);
+    if (ay !== 0) qa.multiply(qb.setFromAxisAngle(Y_AXIS, -s * ay));
+    qa.multiply(arm.fixU);
     arm.upper.rotate(qa);
 
     // Forearm: E_f = fixU^-1 * Rx(fx) * Ry(pronation) * fixF * fixU (less pronation when pointing).
@@ -299,11 +405,17 @@ export class HumanRig implements CharacterDriver {
     qa.multiply(qb.setFromAxisAngle(Y_AXIS, pron));
     qa.multiply(arm.fixF).multiply(arm.fixU);
     arm.fore.rotate(qa);
-    // Wrist: partly straightened at rest, fully when pointing.
-    if (arm.hand) arm.hand.rotate(qa.identity().slerp(arm.wrist, 0.3 + 0.7 * point));
+    // Wrist: partly straightened at rest, fully when pointing; then flexed.
+    if (arm.hand) {
+      qa.identity().slerp(arm.wrist, 0.3 + 0.7 * point);
+      if (arm.flexAxis && flex !== 0) qa.premultiply(qb.setFromAxisAngle(arm.flexAxis, flex * (1 - point)));
+      arm.hand.rotate(qa);
+    }
 
+    const g = Math.max(-1, Math.min(1, grip));
     for (const f of arm.fingers) {
-      const rest = FINGER_REST[f.finger];
+      const base = FINGER_REST[f.finger];
+      const rest = g >= 0 ? base + (FINGER_FIST[f.finger] - base) * g : base * (1 + 0.85 * g);
       // Pointing: index straight, thumb and the others curled into a loose fist.
       const target = f.finger === 1 ? 0 : FINGER_FIST[f.finger];
       const a = rest + (target - rest) * point;
@@ -313,7 +425,10 @@ export class HumanRig implements CharacterDriver {
 
   /** Back to the bind pose (A-pose). */
   reset(): void {
-    const all: Array<Joint | null> = [this.headJ, this.neck, this.spine2, this.jaw, ...this.eyes, ...this.lidTop, ...this.lidBot];
+    const all: Array<Joint | null> = [
+      this.headJ, this.neck, this.spine2, this.spine1, this.pelvis, this.jaw, ...this.eyes, ...this.lidTop, ...this.lidBot,
+    ];
+    for (const l of this.legs) all.push(l.thigh, l.calf, l.foot);
     for (const c of this.corners) all.push(c.j);
     for (const a of this.arms) {
       all.push(a.clav, a.upper, a.fore, a.hand);

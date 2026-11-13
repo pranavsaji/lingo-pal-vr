@@ -4,6 +4,9 @@
  * and the agent executor mutate it. No World, no DOM rendering.
  */
 
+import { logFor, weekReport, type WeekReport } from './history.js';
+import { applyPaidOrder, dailyQuest, QUEST_XP, questComplete, type Quest, type QuestTask } from './quest.js';
+import type { PlaceId } from '../game-state.js';
 import { events } from '../game-state.js';
 import { emptyOrder, type OrderState } from '../agent/tools.js';
 import { localDay, type Day } from './dates.js';
@@ -65,6 +68,7 @@ export class Store {
     if (!(amount > 0)) return 0;
     const before = levelFor(this.profile.xp).id;
     this.profile.xp += Math.round(amount);
+    logFor(this.profile.history, this.today).xp += Math.round(amount);
     this.session.xp += Math.round(amount);
     const after = levelFor(this.profile.xp).id;
     events.xp.emit({ amount, total: this.profile.xp, levelUp: before !== after ? after : null });
@@ -90,6 +94,7 @@ export class Store {
     if (this.profile.wordsSeen.includes(id)) return false;
     this.profile.wordsSeen.push(id);
     this.profile.srs[id] = newCard(this.today);
+    logFor(this.profile.history, this.today).newWords += 1;
     this.award('wordHeard');
     return true;
   }
@@ -123,6 +128,9 @@ export class Store {
     this.session.pronunciation.push(score);
     this.profile.stats.pronunciationTotal += score;
     this.profile.stats.pronunciationCount += 1;
+    const log = logFor(this.profile.history, this.today);
+    log.pronSum += score;
+    log.pronCount += 1;
     this.profile.stats.phrases += 1;
     if (score >= 70) this.award('phraseSpoken');
     else this.save();
@@ -132,8 +140,42 @@ export class Store {
     this.session.orders += 1;
     this.profile.stats.orders += 1;
     this.profile.stats.payments += 1;
+    logFor(this.profile.history, this.today).orders += 1;
     this.award('orderCompleted');
     this.award('correctPayment', exact ? 1 : 0.5);
+  }
+
+  /** Time spent learning (called every ~30 s, not per frame). */
+  addTime(seconds: number): void {
+    if (!(seconds > 0)) return;
+    logFor(this.profile.history, this.today).seconds += seconds;
+    this.save();
+  }
+
+  weekReport(): WeekReport {
+    return weekReport(this.profile.history, this.today);
+  }
+
+  /** Today's shopping list (a new one each day). */
+  questToday(): Quest {
+    if (!this.profile.quest || this.profile.quest.day !== this.today) {
+      this.profile.quest = dailyQuest(this.today);
+      this.save();
+    }
+    return this.profile.quest;
+  }
+
+  /** An order was paid in `place`: tick the list; the full list pays a bonus once. */
+  questPaid(place: PlaceId, lines: { itemId: string; qty: number }[]): { fresh: QuestTask[]; completed: boolean } {
+    const quest = this.questToday();
+    const fresh = applyPaidOrder(quest, place, lines);
+    let completed = false;
+    if (fresh.length && questComplete(quest) && !quest.rewarded) {
+      quest.rewarded = true;
+      completed = true;
+      this.addXp(QUEST_XP);
+    } else if (fresh.length) this.save();
+    return { fresh, completed };
   }
 
   setOrder(next: OrderState): void {

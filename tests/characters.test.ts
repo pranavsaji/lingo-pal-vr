@@ -115,7 +115,7 @@ describe('HumanRig', () => {
     expect(rig.head).toBe(bones.get('Bip01_Head'));
     expect(rig.leftShoulder).toBe(bones.get('Bip01_L_UpperArm'));
     expect(rig.rightShoulder).toBe(bones.get('Bip01_R_UpperArm'));
-    expect(rig.features).toEqual({ jaw: true, lids: true, eyes: true, fingers: true });
+    expect(rig.features).toEqual({ jaw: true, lids: true, eyes: true, fingers: true, legs: false });
   });
 
   it('rests the arms down and forward (no T/A-pose), hands near the counter top', () => {

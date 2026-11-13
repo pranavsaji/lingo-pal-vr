@@ -1,6 +1,10 @@
 Shopkeeper avatars (lune.glb = Female_Adult_05, paul.glb = Male_Adult_05, rose.glb = Female_Adult_02)
 from Microsoft Rocketbox: https://github.com/microsoft/Microsoft-Rocketbox
 Converted to glTF (metres, welded, 1024px WebP textures); skeleton and skinning unchanged.
+Background customers (customer-*.glb): customer-m03 = Male_Adult_03, customer-f14 = Female_Adult_14,
+customer-m08 = Male_Adult_08, customer-f09 = Female_Adult_09, customer-m12 = Male_Adult_12,
+customer-f07 = Female_Adult_07. Same conversion with a lighter texture set (body color 1024px,
+head color 1024px, head normal 512px, hair opacity 512px); hair cards removed on m03 and m08.
 
 MIT License
 

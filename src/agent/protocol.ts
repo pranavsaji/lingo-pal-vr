@@ -45,6 +45,8 @@ export interface AgentScene {
   special: { itemId: string; challenge: string };
   /** The shop (menu, shopkeeper and prices on the server come from shared/places.json). */
   place: PlaceId;
+  /** Today's shopping-list item still to buy in this shop, e.g. "2 croissant" ('' if none). */
+  shoppingList?: string;
 }
 
 export interface AgentRequest {

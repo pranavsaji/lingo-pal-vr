@@ -13,7 +13,7 @@ import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
 import { appState, events } from './game-state.js';
 import { applyFrenchFont } from './fonts.js';
-import { speakFrench } from './speech.js';
+import { prefetchFrench, speakFrench } from './speech.js';
 import { store } from './state/store.js';
 import { onActivate } from './ui/dwell.js';
 
@@ -123,6 +123,8 @@ export class ChatSystem extends createSystem({}) {
     this.choices.forEach((o, i) => {
       this.set(`opt-${i}-fr`, o.fr);
       this.set(`opt-${i}-en`, o.en);
+      // Fetch the learner-voice audio of each reply while Madame Lune talks: pinching one plays instantly.
+      setTimeout(() => prefetchFrench(o.fr, 'learner'), 1200 + i * 300);
     });
     this.renderStatus();
   }
@@ -130,7 +132,7 @@ export class ChatSystem extends createSystem({}) {
   private choose(i: number): void {
     const c = this.choices[i];
     if (!c || this.pending > 0) return;
-    speakFrench(c.fr);
+    speakFrench(c.fr, undefined, 'learner'); // the learner's own reply, in the learner's voice
     if (c.payCents !== undefined) {
       this.track(director.pay(c.payCents));
       return;

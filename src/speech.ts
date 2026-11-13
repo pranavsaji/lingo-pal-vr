@@ -1,19 +1,20 @@
 /**
- * Madame Lune's French voice, with two engines:
- *  1. The browser's speech synthesis, when it has a French voice (desktop
- *     Chrome, Edge, Safari).
- *  2. An on-device French voice model (see voice/local-voice.ts) when it has
- *     none, which is the usual case in Quest Browser. Audio plays through a
- *     3D panner at Madame Lune, chunk by chunk, so speech starts quickly.
+ * The shopkeepers' French voices, with three engines, best first:
+ *  1. Cloud voices (Inworld TTS-2 through /api/tts): a natural voice per
+ *     character (Madame Lune, Monsieur Paul, Madame Rose) and one for the
+ *     learner's own phrases. Played through a 3D panner at the shopkeeper.
+ *  2. The browser's speech synthesis, when it has a French voice.
+ *  3. An on-device French voice model (see voice/local-voice.ts), the usual
+ *     case in Quest Browser when the cloud route is unavailable.
  * Emits speaking start/end for her lip sync (estimated timing when an engine
  * gives no events, so her mouth still moves). Subtitles are always on, so a
  * silent device still works.
- * URL overrides for testing: ?tts=local or ?tts=browser.
+ * URL overrides for testing: ?tts=cloud, ?tts=local or ?tts=browser.
  */
 
 import { audioHub, ensureAudioContext } from './audio/audio-hub.js';
 import { fontsReady } from './fonts.js';
-import { Emitter } from './game-state.js';
+import { appState, Emitter, type PlaceId } from './game-state.js';
 import { store } from './state/store.js';
 import { localVoice } from './voice/local-voice.js';
 import { ttsChunks } from './voice/voice-text.js';
@@ -26,7 +27,9 @@ export const luneSpeaking = new Emitter<boolean>();
 const hasBrowserTts = typeof window !== 'undefined' && 'speechSynthesis' in window;
 const forced = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('tts') : null;
 /** Which engine speaks: decided once the browser has listed its voices. */
-let engine: 'browser' | 'local' = forced === 'local' ? 'local' : 'browser';
+let engine: 'cloud' | 'browser' | 'local' = forced === 'local' ? 'local' : 'browser';
+/** The cloud route answered its probe (null = not known yet). */
+let cloudOk: boolean | null = null;
 
 function pickVoice(): void {
   if (!hasBrowserTts) return;
@@ -42,8 +45,21 @@ function pickVoice(): void {
 function chooseEngine(): void {
   pickVoice();
   if (forced === 'browser' || forced === 'local') return;
+  if (cloudOk) {
+    engine = 'cloud'; // natural voices; the 114 MB on-device model is never downloaded
+    return;
+  }
   engine = !frenchVoice && localVoice.supported ? 'local' : 'browser';
   if (engine === 'local') localVoice.preload('tts');
+}
+
+if (typeof fetch !== 'undefined' && typeof window !== 'undefined' && forced !== 'local' && forced !== 'browser') {
+  fetch('./api/tts?probe=1')
+    .then((r) => (cloudOk = r.ok))
+    .catch(() => (cloudOk = false))
+    .finally(() => {
+      if (cloudOk) engine = 'cloud';
+    });
 }
 
 if (typeof window !== 'undefined') {
@@ -51,7 +67,7 @@ if (typeof window !== 'undefined') {
     pickVoice();
     window.speechSynthesis.addEventListener('voiceschanged', () => {
       pickVoice();
-      if (frenchVoice && forced !== 'local') engine = 'browser';
+      if (frenchVoice && forced !== 'local' && engine !== 'cloud') engine = 'browser';
     });
   }
   // Voices load asynchronously; decide after they have had time to appear, and after the
@@ -61,7 +77,7 @@ if (typeof window !== 'undefined') {
 }
 
 /** The engine in use, for the settings panel and diagnostics. */
-export function speechEngine(): 'browser' | 'local' {
+export function speechEngine(): 'cloud' | 'browser' | 'local' {
   return engine;
 }
 
@@ -146,31 +162,110 @@ async function speakLocal(text: string, slow: boolean, who: 'lune' | 'other'): P
   return spoke;
 }
 
+// ---- cloud voices ----------------------------------------------------------
+
+/** Each shop's shopkeeper voice (server/tts-handler.mjs SPEAKERS). */
+const KEEPER: Record<PlaceId, string> = { cafe: 'lune', boulangerie: 'paul', marche: 'rose' };
+const cloudCache = new Map<string, Promise<AudioBuffer | null>>();
+
+function fetchCloud(speaker: string, text: string, slow: boolean, ctx: AudioContext): Promise<AudioBuffer | null> {
+  const key = `${speaker}|${slow ? 1 : 0}|${text}`;
+  let p = cloudCache.get(key);
+  if (!p) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    p = fetch(`./api/tts?s=${speaker}&t=${encodeURIComponent(text)}${slow ? '&slow=1' : ''}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((buf) => (buf ? ctx.decodeAudioData(buf) : null))
+      .catch(() => null)
+      .finally(() => clearTimeout(timer));
+    cloudCache.set(key, p);
+    if (cloudCache.size > 60) cloudCache.delete(cloudCache.keys().next().value!);
+    void p.then((b) => {
+      if (!b) cloudCache.delete(key);
+    });
+  }
+  return p;
+}
+
+/** Resolves true if the line was spoken with a cloud voice. */
+async function speakCloud(text: string, slow: boolean, who: Who): Promise<boolean> {
+  const ctx = ensureAudioContext();
+  if (!ctx || text.length > 240) return false;
+  stopLocal();
+  const token = speakToken;
+  const speaker = who === 'learner' ? 'learner' : KEEPER[appState.place];
+  const buf = await fetchCloud(speaker, text, slow, ctx);
+  if (!buf) return false;
+  if (token !== speakToken) return true; // a newer line took over
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  // The shopkeeper's voice comes from where they stand; the learner's own phrases are not positioned.
+  src.connect(who === 'lune' ? (audioHub.voice ?? ctx.destination) : ctx.destination);
+  current = src;
+  if (who === 'lune') {
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    luneSpeaking.emit(true);
+    src.onended = () => {
+      if (token === speakToken) endLune();
+    };
+    // Covers a suspended audio context (no ended event).
+    fallbackTimer = setTimeout(endLune, buf.duration * 1000 + 600);
+  }
+  src.start();
+  return true;
+}
+
+/** Warm the cache for a line that may be spoken soon (e.g. the suggested replies). */
+export function prefetchFrench(text: string, who: Who = 'learner'): void {
+  if (engine !== 'cloud' || text.length > 240) return;
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+  const speaker = who === 'learner' ? 'learner' : KEEPER[appState.place];
+  void fetchCloud(speaker, text, store.profile.settings.slowSpeech, ctx);
+}
+
 // ---- public ----------------------------------------------------------------
+
+/** 'lune' is the current shop's shopkeeper (animates their mouth); 'learner' is the learner's own phrase. */
+export type Who = 'lune' | 'learner' | 'other';
 
 /**
  * @param rate speech rate; defaults to the learner's "slow speech" setting.
- * @param who 'lune' animates Madame Lune's mouth.
+ * @param who 'lune' = the shopkeeper (animates their mouth), 'learner' = the learner's
+ * own phrase, 'other' = a word or prompt (said in the shopkeeper's voice).
  */
-export function speakFrench(text: string, rate?: number, who: 'lune' | 'other' = 'other'): void {
+export function speakFrench(text: string, rate?: number, who: Who = 'other'): void {
   const r = rate ?? (store.profile.settings.slowSpeech ? 0.7 : 0.9);
+  if (engine === 'cloud' || (forced === 'cloud' && cloudOk)) {
+    if (hasBrowserTts) window.speechSynthesis.cancel();
+    void speakCloud(text, r < 0.8, who).then((spoke) => {
+      if (!spoke) speakFallback(text, r, who); // offline or route failure: keep talking
+    });
+    return;
+  }
+  speakFallback(text, r, who);
+}
+
+function speakFallback(text: string, r: number, who: Who): void {
+  const w = who === 'lune' ? 'lune' : 'other';
   if (engine === 'local' && !localVoice.failed.tts) {
     if (hasBrowserTts) window.speechSynthesis.cancel();
     if (!localVoice.ready.tts) {
       // Voice still downloading (first visit only): subtitles + lip movement, no late audio.
       localVoice.preload('tts');
       stopLocal();
-      speakBrowser(text, r, who, false);
+      speakBrowser(text, r, w, false);
       return;
     }
-    void speakLocal(text, r < 0.8, who).then((spoke) => {
+    void speakLocal(text, r < 0.8, w).then((spoke) => {
       // Model unavailable (offline, out of memory): fall back to the browser voice.
-      if (!spoke && localVoice.failed.tts) speakBrowser(text, r, who);
+      if (!spoke && localVoice.failed.tts) speakBrowser(text, r, w);
     });
     return;
   }
   stopLocal();
-  speakBrowser(text, r, who);
+  speakBrowser(text, r, w);
 }
 
 function speakBrowser(text: string, r: number, who: 'lune' | 'other', audible = true): void {

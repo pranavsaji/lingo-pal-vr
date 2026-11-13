@@ -44,6 +44,13 @@ const shopkeepers = {
   'shopkeeper-lune': shopkeeper('lune.glb', 'Madame Lune', 'background'),
   'shopkeeper-paul': shopkeeper('paul.glb', 'Monsieur Paul', 'lazy'),
   'shopkeeper-rose': shopkeeper('rose.glb', 'Madame Rose', 'lazy'),
+  // Background customers (src/world/customers-system.ts): loaded per shop, after its shopkeeper.
+  'customer-m03': shopkeeper('customer-m03.glb', 'Customer (Male_Adult_03)', 'lazy'),
+  'customer-f14': shopkeeper('customer-f14.glb', 'Customer (Female_Adult_14)', 'lazy'),
+  'customer-m08': shopkeeper('customer-m08.glb', 'Customer (Male_Adult_08)', 'lazy'),
+  'customer-f09': shopkeeper('customer-f09.glb', 'Customer (Female_Adult_09)', 'lazy'),
+  'customer-m12': shopkeeper('customer-m12.glb', 'Customer (Male_Adult_12)', 'lazy'),
+  'customer-f07': shopkeeper('customer-f07.glb', 'Customer (Female_Adult_07)', 'lazy'),
 };
 // --- END shopkeeper characters ---
 
@@ -60,6 +67,7 @@ export default defineAssets({
   'carnet-panel': uikitml('carnet.uikitml', 'Carnet Panel'),
   'settings-panel': uikitml('settings.uikitml', 'Settings Panel'),
   'map-panel': uikitml('map.uikitml', 'Map Panel'),
+  'report-panel': uikitml('report.uikitml', 'Report Panel'),
   ...props,
   ...shopkeepers, // shopkeeper characters (see block above)
 });

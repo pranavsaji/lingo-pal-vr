@@ -7,6 +7,7 @@
  */
 
 import { appState, events } from '../game-state.js';
+import { pendingHere } from '../state/quest.js';
 import { priceToFrench } from './menu.js';
 import { dailySpecial } from './scenarios.js';
 import type { Store } from '../state/store.js';
@@ -64,6 +65,10 @@ export class AgentDirector {
         scenario: special.scenarioId,
         special: { itemId: special.item.id, challenge: special.challenge.en },
         place: appState.place,
+        shoppingList: (() => {
+          const t = pendingHere(this.store.profile.quest, appState.place);
+          return t ? `${t.qty} ${t.itemId}` : '';
+        })(),
       },
       event,
       history: this.history.slice(-10),

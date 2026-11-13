@@ -17,9 +17,9 @@ import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
 import { onActivate } from './dwell.js';
 
-type Slot = 'home' | 'carnet' | 'settings' | 'map';
-const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel' };
-const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel'];
+type Slot = 'home' | 'carnet' | 'settings' | 'map' | 'report';
+const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel', report: 'report-panel' };
+const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel', 'report-panel'];
 const CARNET_ROWS = 12;
 const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
@@ -34,7 +34,7 @@ const XP_TRACK_PX = 400;
  */
 const NARROW_TAN = Math.tan((42 * Math.PI) / 180);
 const NARROW_SCALE = 0.85;
-const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'chat-panel': 24 };
+const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'map-panel': -21, 'report-panel': -21, 'chat-panel': 24 };
 
 const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality'];
 
@@ -78,7 +78,7 @@ export class PanelsSystem extends createSystem({}) {
       this.homeY.set(id, obj.position.y);
       this.basePos.set(id, obj.position.clone());
       this.baseQuat.set(id, obj.quaternion.clone());
-      if (id === 'carnet-panel' || id === 'settings-panel' || id === 'map-panel') applyFrenchFont(panel.document.rootElement);
+      if (id !== 'lesson-panel' && id !== 'chat-panel') applyFrenchFont(panel.document.rootElement);
     }
 
     this.click('lesson-panel', 'carnet-button', () => this.show('carnet'));
@@ -94,6 +94,9 @@ export class PanelsSystem extends createSystem({}) {
         store.hearWord(v.id);
         this.renderCarnet();
       });
+    // Weekly report.
+    this.click('lesson-panel', 'week-button', () => this.show('report'));
+    this.click('report-panel', 'week-back', () => this.show('home'));
     // Paris map.
     this.click('lesson-panel', 'map-button', () => this.show('map'));
     this.click('map-panel', 'map-back', () => this.show('home'));
@@ -170,6 +173,7 @@ export class PanelsSystem extends createSystem({}) {
     }
     if (slot === 'carnet') this.renderCarnet();
     if (slot === 'map') this.renderMap();
+    if (slot === 'report') this.renderReport();
     if (slot === 'settings') this.renderSettings(store.profile.settings);
   }
 
@@ -196,6 +200,36 @@ export class PanelsSystem extends createSystem({}) {
     });
     const due = store.dueWords(5).length;
     this.text('carnet-panel', 'review-label', due ? `Révision (${due})` : 'Révision du jour');
+  }
+
+  /** Ma semaine: XP bars per day, weekly totals, trend vs last week. */
+  private renderReport(): void {
+    const r = store.weekReport();
+    const maxXp = Math.max(30, ...r.days.map((d) => d.xp));
+    r.days.forEach((d, i) => {
+      const h = d.xp > 0 ? Math.max(8, Math.round((d.xp / maxXp) * 96)) : 4;
+      this.style('report-panel', `bar-${i}`, { height: h, backgroundColor: d.isToday ? '#f4a261' : d.xp > 0 ? '#2a9d8f' : '#4a4c55' });
+      this.text('report-panel', `bar-${i}-xp`, d.xp > 0 ? String(d.xp) : '');
+      this.text('report-panel', `bar-${i}-day`, d.isToday ? "Auj." : d.label);
+    });
+    const t = r.totals;
+    this.text('report-panel', 'stat-xp', String(t.xp));
+    this.text('report-panel', 'stat-min', `${t.minutes} min`);
+    this.text('report-panel', 'stat-words', String(t.newWords));
+    this.text('report-panel', 'stat-orders', String(t.orders));
+    this.text('report-panel', 'stat-pron', r.pronunciation === null ? '-' : `${r.pronunciation} %`);
+    this.text('report-panel', 'stat-days', `${t.activeDays} / 7 · ${store.profile.streakDays} j`);
+    const prev = r.lastWeek.xp;
+    const trend =
+      prev === 0
+        ? t.xp > 0
+          ? 'Great start! Every day you come back grows your streak.'
+          : 'Order something today to start your week.'
+        : t.xp >= prev
+          ? `+${Math.round(((t.xp - prev) / prev) * 100)} % XP vs last week. Bravo !`
+          : `${Math.round(((t.xp - prev) / prev) * 100)} % XP vs last week. A few minutes a day is enough.`;
+    const best = r.bestDay && r.bestDay.xp > 0 ? ` Best day: ${r.bestDay.xp} XP.` : '';
+    this.text('report-panel', 'week-note', `${trend}${best}`);
   }
 
   /** Shop cards: where you are, what is open, what opens next. */

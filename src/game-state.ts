@@ -46,7 +46,7 @@ export const events = {
   /** The learner ordered without speaking (fingers + gaze); text is the phrase said for them. */
   voiceOrder: new Emitter<string>(),
   /** Show a panel in the home slot (voice command or button). */
-  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map'>(),
+  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report'>(),
   /** Start a spaced-repetition review of these word ids. */
   review: new Emitter<string[]>(),
   /** Replay the hand tutorial. */
@@ -65,6 +65,8 @@ export const events = {
   subtitle: new Emitter<{ who: 'lune' | 'learner'; fr: string; en: string }>(),
   /** The learner moved to another shop (the scene, menu and shopkeeper switch). */
   place: new Emitter<PlaceId>(),
+  /** Shopping list progress: an item was ticked off (completed = the whole list is done). */
+  questProgress: new Emitter<{ done: number; total: number; completed: boolean; label: string }>(),
   /** The learner asked to go to a shop (map panel, voice). PlaceSystem decides and travels. */
   travel: new Emitter<PlaceId>(),
 };

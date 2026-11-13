@@ -57,6 +57,9 @@ export class AudioSystem extends createSystem({}) {
       }),
       events.unlocked.on(() => this.chime(0.4)),
       events.celebrate.on(() => this.fanfare()),
+      events.questProgress.on(({ completed }) => {
+        if (!completed) this.chime(0.2); // the full list gets the fanfare instead
+      }),
       events.listening.on((on) => this.blip(on)),
       events.heard.on(({ score }) => {
         if (score !== null && score >= 85) this.chime(0);

@@ -268,7 +268,7 @@ export class HandSystem extends createSystem({}) {
       this.orderFired = key;
       const phrase = `${quantityPhrase(item, n)}, s'il vous plaît.`;
       const text = phrase.charAt(0).toUpperCase() + phrase.slice(1);
-      speakFrench(text, store.profile.settings.slowSpeech ? 0.7 : 0.9);
+      speakFrench(text, store.profile.settings.slowSpeech ? 0.7 : 0.9, 'learner');
       events.voiceOrder.emit(text);
       void director.handle({ kind: 'say', text, fingers: n });
     }
