@@ -42,6 +42,13 @@ Madame Lune speaks with the browser's French voice when there is one, otherwise 
 on-device French voice model (114 MB, downloaded once in the background). Subtitles are
 always on. Test the on-device engines on desktop with `?stt=local&tts=local`.
 
+## Visual clarity
+
+`src/world/quality-system.ts` renders above the default resolution (framebuffer scale 1.3 on
+Quest 3, 1.1-1.15 on Quest 2/3S/Pro) with light fixed foveation (0.15) so the side panels'
+text stays sharp; if frames drop it raises foveation step by step and relaxes it again when
+there is headroom. Overrides for testing: `?res=1.5`, `?fov=0.5`.
+
 ## Meta VR Glasses
 
 Gaze tracking is requested (optional), so on the glasses you look at a target and pinch
