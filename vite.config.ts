@@ -29,7 +29,7 @@ function shopkeeperApi(): Plugin {
       // Shopkeeper voices: GET with query, binary audio back.
       server.middlewares.use('/api/tts', (req, res) => {
         const query = Object.fromEntries(new URL(req.url ?? '/', 'http://local').searchParams);
-        void handleTts(query, env, req.socket.remoteAddress ?? 'local').then(
+        void handleTts(query, env, req.socket.remoteAddress ?? 'local', req.headers).then(
           ({ status, headers, body }: { status: number; headers: Record<string, string>; body: unknown }) => {
             res.statusCode = status;
             for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);

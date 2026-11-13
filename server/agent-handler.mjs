@@ -14,6 +14,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { createRateLimiter } from './limits.mjs';
 import placesData from '../shared/places.json' with { type: 'json' };
 
 /** Shops on the Paris map (shared with the client so menus and prices never drift). */
@@ -139,17 +140,10 @@ export function toolsFor(placeId) {
 
 // ---- Request hygiene ---------------------------------------------------------
 
-const RATE = { windowMs: 60_000, max: 40 };
-const hits = new Map();
-
-/** Best-effort per-IP limit (per server instance) to cap cost during judging. */
+const limiter = createRateLimiter({ windowMs: 60_000, max: 40 });
+/** Per-IP sliding window (shared helper: never wiped, oldest IPs evicted). */
 export function rateLimited(ip) {
-  const now = Date.now();
-  const list = (hits.get(ip) ?? []).filter((t) => now - t < RATE.windowMs);
-  list.push(now);
-  hits.set(ip, list);
-  if (hits.size > 5000) hits.clear();
-  return list.length > RATE.max;
+  return limiter(ip);
 }
 
 const clip = (s, n) => (typeof s === 'string' ? s.slice(0, n) : '');

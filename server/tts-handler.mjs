@@ -12,6 +12,8 @@
  * Cost (check current pricing): about $25 per million characters for inworld-tts-2.
  */
 
+import { createDailyBudget, createRateLimiter, crossSite } from './limits.mjs';
+
 const INWORLD = 'https://api.inworld.ai/tts/v1/voice';
 const MAX_CHARS = 240;
 
@@ -27,19 +29,16 @@ export const SPEAKERS = {
   learner: { voiceId: 'Étienne', style: '', rate: 0.95 },
 };
 
-const RATE = { windowMs: 60_000, max: 60 };
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  const list = (hits.get(ip) ?? []).filter((t) => now - t < RATE.windowMs);
-  list.push(now);
-  hits.set(ip, list);
-  if (hits.size > 5000) hits.clear();
-  return list.length > RATE.max;
-}
+const rateLimited = createRateLimiter({ windowMs: 60_000, max: 60 });
+/**
+ * Characters of speech per day per server instance (~$25 per million characters):
+ * TTS_DAILY_CHAR_BUDGET, default 150,000 (about $3.75). Cached lines are served
+ * by the CDN and never reach this function, so real use stays far below it.
+ */
+let budget = null;
 
 /** Returns { status, headers, body } (body is a Buffer for audio, an object for JSON). */
-export async function handleTts(query, env = process.env, ip = 'local') {
+export async function handleTts(query, env = process.env, ip = 'local', headers = {}) {
   const key = env.INWORLD_API_KEY;
   if (query.probe) return key ? json(200, { ok: true, provider: 'inworld' }) : json(503, { ok: false });
   if (!key) return json(503, { error: 'INWORLD_API_KEY not set' });
@@ -48,7 +47,10 @@ export async function handleTts(query, env = process.env, ip = 'local') {
   if (!speaker || !text) return json(400, { error: 'need s (speaker) and t (text)' });
   if (text.length > MAX_CHARS) return json(413, { error: 'text too long' });
   if (/[[\]]/.test(text)) return json(400, { error: 'brackets are reserved for delivery instructions' });
+  if (crossSite(headers)) return json(403, { error: 'same-origin only' });
   if (rateLimited(ip)) return json(429, { error: 'slow down' });
+  budget ??= createDailyBudget(Number(env.TTS_DAILY_CHAR_BUDGET) || 150_000);
+  if (!budget.take(text.length + (speaker.style?.length ?? 0))) return json(429, { error: 'daily voice budget used up' });
 
   const rate = speaker.rate * (query.slow === '1' ? 0.8 : 1);
   const ctrl = new AbortController();

@@ -2,6 +2,7 @@
  * Vercel serverless function: GET/POST /api/stt (raw audio body).
  * Set OPENAI_API_KEY or DEEPGRAM_API_KEY in the Vercel project's Environment Variables.
  */
+import { crossSite } from '../server/limits.mjs';
 import { handleStt } from '../server/stt-handler.mjs';
 
 export const config = { api: { bodyParser: false } };
@@ -20,6 +21,10 @@ async function readBody(req) {
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     res.status(405).json({ error: 'GET or POST only' });
+    return;
+  }
+  if (crossSite(req.headers)) {
+    res.status(403).json({ error: 'same-origin only' });
     return;
   }
   try {

@@ -9,19 +9,16 @@
  * Check current model names and pricing on the provider's docs before launch.
  */
 
+import { createRateLimiter } from './limits.mjs';
+
 const MAX_BYTES = 2_000_000; // ~7 s of opus is far below this
 
 // Per-IP limit: the provider key is billed per request. In-memory, so per
 // serverless instance; set a spend cap on the provider account as well.
-const RATE = { windowMs: 60_000, max: 20 };
-const hits = new Map();
+const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
+/** Per-IP sliding window (shared helper: never wiped, oldest IPs evicted). */
 export function sttRateLimited(ip) {
-  const now = Date.now();
-  const list = (hits.get(ip) ?? []).filter((t) => now - t < RATE.windowMs);
-  list.push(now);
-  hits.set(ip, list);
-  if (hits.size > 5000) hits.clear(); // bound memory
-  return list.length > RATE.max;
+  return limiter(ip);
 }
 
 export function sttProvider(env = process.env) {
