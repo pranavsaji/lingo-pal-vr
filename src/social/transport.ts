@@ -14,6 +14,7 @@
 
 import type { Room } from '@trystero-p2p/nostr';
 import { APP_ID } from './protocol.js';
+import { deriveRoom, runHandshake, type Invite, type RoomKeys } from './secret.js';
 
 export type LinkEvent =
   | { kind: 'peer'; peerId: string; via: string }
@@ -24,6 +25,10 @@ export type LinkEvent =
   | { kind: 'error'; error: string };
 
 const FALLBACK_AFTER_MS = 6000;
+const HANDSHAKE_TIMEOUT_MS = 10_000;
+/** Inbound size limits (bytes): game messages are small JSON; a pose is at most 324 bytes. */
+const MAX_MSG_BYTES = 8 * 1024;
+const MAX_POSE_BYTES = 512;
 
 /**
  * Nostr relays that relayed trystero signaling between two browsers in a test
@@ -59,15 +64,17 @@ export class PeerLink {
   private stream: MediaStream | null = null;
   private fallbackTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
+  private keys: RoomKeys | null = null;
   peerId: string | null = null;
 
   constructor(
-    private code: string,
+    private invite: Invite,
     private on: (e: LinkEvent) => void,
   ) {}
 
   async open(): Promise<void> {
     try {
+      this.keys = await deriveRoom(this.invite);
       const nostr = await import('@trystero-p2p/nostr');
       if (this.closed) return;
       this.join('nostr', nostr.joinRoom, NOSTR_RELAYS);
@@ -79,7 +86,7 @@ export class PeerLink {
 
   private async fallback(): Promise<void> {
     this.fallbackTimer = null;
-    if (this.closed || this.peerId) return;
+    if (this.closed || this.peerId || !this.keys) return;
     try {
       const torrent = await import('@trystero-p2p/torrent');
       if (this.closed || this.peerId) return;
@@ -91,14 +98,25 @@ export class PeerLink {
 
   private join(
     name: string,
-    joinRoom: (config: { appId: string; password: string; rtcConfig: RTCConfiguration; relayConfig?: { urls: string[] } }, roomId: string, cb?: { onJoinError?: (d: { error: string }) => void }) => Room,
+    joinRoom: typeof import('@trystero-p2p/nostr').joinRoom,
     relays?: string[],
   ): void {
-    const room = joinRoom({ appId: APP_ID, password: `cafe-${this.code}`, rtcConfig: RTC_CONFIG, ...(relays ? { relayConfig: { urls: relays } } : {}) }, this.code, {
-      onJoinError: (d) => this.on({ kind: 'error', error: `${name}: ${d.error}` }),
-    });
+    const keys = this.keys;
+    if (!keys) return;
+    const room = joinRoom(
+      { appId: APP_ID, password: keys.password, rtcConfig: RTC_CONFIG, maxReceiveBytes: 64 * 1024, ...(relays ? { relayConfig: { urls: relays } } : {}) },
+      keys.roomId,
+      {
+        onJoinError: (d) => this.on({ kind: 'error', error: `${name}: ${d.error}` }),
+        // A peer only "joins" (data, voice) after proving it holds the room key; failures are dropped.
+        onPeerHandshake: (_id, send, receive, isInitiator) => runHandshake(keys.key, (d) => send(d), receive, isInitiator),
+        handshakeTimeoutMs: HANDSHAKE_TIMEOUT_MS,
+      },
+    );
     const msg = room.makeAction('msg');
     const pose = room.makeAction('pose');
+    msg.onReceive = (c) => c.byteLength <= MAX_MSG_BYTES;
+    pose.onReceive = (c) => c.byteLength <= MAX_POSE_BYTES;
     const j: Joined = { name, room, msg: msg as never, pose: pose as never };
     this.rooms.push(j);
     msg.onMessage = (data, ctx) => {
@@ -109,8 +127,11 @@ export class PeerLink {
     };
     room.onPeerJoin = (peerId) => {
       if (this.peerId && this.peerId !== peerId) {
-        // Only two seats at the counter: tell a third visitor, then ignore them.
-        void msg.send({ t: 'full' }, { target: peerId }).catch(() => undefined);
+        // Only two seats at the counter: tell a third visitor, then hang up on them.
+        void msg
+          .send({ t: 'full' }, { target: peerId })
+          .catch(() => undefined)
+          .finally(() => room.getPeers()[peerId]?.close());
         return;
       }
       if (this.peerId === peerId) return;

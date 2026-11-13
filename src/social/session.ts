@@ -12,9 +12,11 @@
 
 import type { AgentEvent, AgentTurn } from '../agent/protocol.js';
 import type { TurnResult } from '../agent/director.js';
-import type { Effect, OrderState } from '../agent/tools.js';
+import { parseIntent } from '../agent/intent.js';
+import { orderTotal, type Effect, type OrderState } from '../agent/tools.js';
 import { Emitter, type PlaceId } from '../game-state.js';
 import { decodeMsg, displayName, liteTurn, PROTOCOL_VERSION, type Msg, type Role, type TurnLite } from './protocol.js';
+import type { Invite } from './secret.js';
 import type { LinkEvent } from './transport.js';
 import { TurnTaker, waitLine, welcomeLine, yourTurnLine } from './turns.js';
 
@@ -29,7 +31,8 @@ export interface GameBridge {
     coinDropped: Emitter<number>;
   };
   director: {
-    handle(ev: AgentEvent): Promise<TurnResult>;
+    /** `scope`: a guest's turn (the shopkeeper sees only the guest's name, none of my profile). */
+    handle(ev: AgentEvent, scope?: GuestScope): Promise<TurnResult>;
     pay(cents: number): Promise<TurnResult> | null;
   };
   store: {
@@ -46,6 +49,11 @@ export interface GameBridge {
   inXr(): boolean;
 }
 
+/** Context for a turn the host's shopkeeper takes on behalf of the guest. */
+export interface GuestScope {
+  name: string;
+}
+
 export interface LinkLike {
   open(): Promise<void>;
   send(m: object): void;
@@ -55,9 +63,10 @@ export interface LinkLike {
   readonly via: string;
 }
 
-export type LinkFactory = (code: string, on: (e: LinkEvent) => void) => LinkLike;
+export type LinkFactory = (invite: Invite, on: (e: LinkEvent) => void) => LinkLike;
 
-export type SessionState = 'off' | 'waiting' | 'connected';
+/** 'invited': a ?room= link was opened; nothing is sent until the learner confirms. */
+export type SessionState = 'off' | 'invited' | 'waiting' | 'connected';
 
 /** Guest requests the host has not answered after this long are released. */
 export const REPLY_TIMEOUT_MS = 15_000;
@@ -65,7 +74,11 @@ export const REPLY_TIMEOUT_MS = 15_000;
 export const LONELY_MS = 25_000;
 const ANNOUNCE_MIN_MS = 900;
 const ANNOUNCE_MAX_MS = 9000;
-const MIN_ACT_GAP_MS = 600;
+export const MIN_ACT_GAP_MS = 600;
+/** A guest may put money on the shared tray at most this many times per order. */
+export const MAX_PAYS_PER_ORDER = 12;
+/** A guest payment may overpay by at most one 10-euro note. */
+const MAX_OVERPAY_CENTS = 1000;
 
 const emptyTurn = (): AgentTurn => ({ fr: '', en: '', replies: [], actions: [], points: 0, source: 'script' });
 const noop = (): TurnResult => ({ turn: emptyTurn(), effects: [], rejected: [] });
@@ -73,6 +86,7 @@ const noop = (): TurnResult => ({ turn: emptyTurn(), effects: [], rejected: [] }
 export class SocialSession {
   role: Role | null = null;
   code = '';
+  invite: Invite | null = null;
   state: SessionState = 'off';
   friendName = '';
   friendXr = false;
@@ -107,6 +121,8 @@ export class SocialSession {
   private lastGuestSay = '';
   private lastActAt = -Infinity;
   private friendStream: MediaStream | null = null;
+  private lastPayAt = -Infinity;
+  private paysThisOrder = 0;
 
   constructor(
     private g: GameBridge,
@@ -128,24 +144,57 @@ export class SocialSession {
   }
 
   /** Open a new room as its host. */
-  host(code: string): void {
-    this.start(code, 'host');
+  host(invite: Invite): void {
+    this.start(invite, 'host');
   }
 
-  /** Join a friend's room. Installs the forwarding right away, before the connection. */
-  join(code: string): void {
-    this.start(code, 'guest');
+  /**
+   * A friend's link was opened: ask first ("Rejoindre ?"), connect nothing yet.
+   * The shopkeeper is forwarded already so she does not greet me solo meanwhile.
+   */
+  invited(invite: Invite): void {
+    if (this.active) return;
+    this.invite = invite;
+    this.code = invite.code;
+    this.role = 'guest';
+    this.state = 'invited';
+    this.patchDirector();
+    this.changed.emit();
+  }
+
+  /** "Rejoindre" (button, dwell, or saying "oui"). */
+  accept(): void {
+    if (this.state !== 'invited' || !this.invite) return;
+    this.start(this.invite, 'guest');
+  }
+
+  /** "Non merci": back to solo, and my own shopkeeper greets me. */
+  decline(): void {
+    if (this.state !== 'invited') return;
+    this.unpatchDirector();
+    this.state = 'off';
+    this.role = null;
+    this.code = '';
+    this.invite = null;
+    this.changed.emit();
+    void this.g.director.handle({ kind: 'arrive' });
+  }
+
+  /** Join a friend's room right away (tests; the app asks first with invited()). */
+  join(invite: Invite): void {
+    this.start(invite, 'guest');
     this.patchDirector();
   }
 
-  private start(code: string, role: Role): void {
-    if (this.active) return;
-    this.code = code;
+  private start(invite: Invite, role: Role): void {
+    if (this.active && this.state !== 'invited') return;
+    this.invite = invite;
+    this.code = invite.code;
     this.role = role;
     this.state = 'waiting';
     this.note = null;
     this.lonely = false;
-    this.link = this.makeLink(code, (e) => this.onLink(e));
+    this.link = this.makeLink(invite, (e) => this.onLink(e));
     this.listen();
     this.later(() => {
       if (this.state === 'waiting') {
@@ -158,6 +207,7 @@ export class SocialSession {
   }
 
   async leave(): Promise<void> {
+    if (this.state === 'invited') return this.decline();
     if (!this.active) return;
     this.link?.send({ t: 'bye' });
     const link = this.link;
@@ -166,6 +216,7 @@ export class SocialSession {
     this.state = 'off';
     this.role = null;
     this.code = '';
+    this.invite = null;
     this.changed.emit();
     await link?.close();
   }
@@ -299,6 +350,7 @@ export class SocialSession {
           if (this.state === 'connected') this.send({ t: 'turn', turn: lite, holder: this.turns.holder });
         }),
         ev.order.on((order) => {
+          if (order.phase !== 'paying' && order.phase !== 'paid') this.paysThisOrder = 0;
           if (this.state === 'connected') this.send({ t: 'order', order });
         }),
         ev.effects.on((fx) => this.onHostEffects(fx)),
@@ -365,12 +417,9 @@ export class SocialSession {
       case 'act':
         void this.guestAct(m.ev);
         break;
-      case 'pay': {
-        this.g.events.coinDropped.emit(m.cents); // the clink on my tray too
-        // Nothing to pay for: release the guest's waiting coins.
-        if (!this.g.director.pay(m.cents)) this.send({ t: 'ack' });
+      case 'pay':
+        void this.guestPay(m.cents);
         break;
-      }
       case 'travel':
         if (m.place !== this.g.appState.place) {
           this.g.events.travel.emit(m.place);
@@ -385,7 +434,10 @@ export class SocialSession {
 
   private async guestAct(ev: AgentEvent): Promise<void> {
     const now = this.now();
-    if (now - this.lastActAt < MIN_ACT_GAP_MS) return;
+    if (now - this.lastActAt < MIN_ACT_GAP_MS || this.guestInFlight > 0) {
+      this.send({ t: 'ack' }); // too fast, or one request already running: dropped
+      return;
+    }
     this.lastActAt = now;
     if (ev.kind === 'say') {
       const r = this.turns.request('guest', now);
@@ -400,25 +452,48 @@ export class SocialSession {
       this.lastGuestSay = ev.text;
       this.friendSaid.emit(ev.text);
     }
-    // The shopkeeper may remember things about the guest: keep them out of my profile.
-    const before = { ...this.g.store.profile.memories };
-    const nameBefore = this.g.store.profile.name;
     this.guestInFlight++;
     try {
-      const res = await (this.original ?? this.g.director).handle(ev);
-      const memories = res.effects.filter((e) => e.kind === 'memory');
-      if (memories.length) {
-        this.send({ t: 'fx', fx: memories });
-        const p = this.g.store.profile;
-        for (const e of memories) {
-          if (e.kind !== 'memory') continue;
-          if (before[e.key] !== undefined) this.g.store.remember(e.key, before[e.key]);
-          else delete p.memories[e.key];
-        }
-        p.name = nameBefore;
-      }
+      // Guest-scoped: the shopkeeper sees the guest's name, none of my memories, mistakes or history.
+      await (this.original ?? this.g.director).handle(ev, { name: this.friendName });
     } catch (err) {
       console.warn('[social] guest turn failed', err);
+      this.send({ t: 'ack' });
+    } finally {
+      this.guestInFlight--;
+    }
+  }
+
+  /** Validate a guest payment (pace, amount, count) before it touches my tray. */
+  acceptPay(cents: number, now: number): boolean {
+    const o = this.g.store.order;
+    const due = orderTotal(o.lines) - o.trayCents;
+    if (o.phase !== 'paying' || due <= 0) return false;
+    if (now - this.lastPayAt < MIN_ACT_GAP_MS || this.guestInFlight > 0) return false;
+    if (this.paysThisOrder >= MAX_PAYS_PER_ORDER) return false;
+    // Coins and notes are multiples of 10 cents (or "c'est juste": exactly what is due).
+    const valid = cents === due || (cents % 10 === 0 && cents <= due + MAX_OVERPAY_CENTS);
+    if (!valid) return false;
+    this.lastPayAt = now;
+    this.paysThisOrder++;
+    return true;
+  }
+
+  private async guestPay(cents: number): Promise<void> {
+    if (!this.acceptPay(cents, this.now())) {
+      this.send({ t: 'ack' }); // release the guest's waiting coins
+      return;
+    }
+    this.g.events.coinDropped.emit(cents); // the clink on my tray too
+    const p = this.g.director.pay(cents);
+    if (!p) {
+      this.send({ t: 'ack' });
+      return;
+    }
+    this.guestInFlight++;
+    try {
+      await p;
+    } catch {
       this.send({ t: 'ack' });
     } finally {
       this.guestInFlight--;
@@ -457,8 +532,8 @@ export class SocialSession {
         else this.pendingOrder = m.order;
         break;
       case 'fx': {
+        // Never persist anything the peer sends (memories are not even accepted by decodeMsg).
         const scene = m.fx.filter((e) => e.kind !== 'memory');
-        for (const e of m.fx) if (e.kind === 'memory') this.g.store.remember(e.key, e.value);
         if (scene.length && here()) this.g.events.effects.emit(scene);
         break;
       }
@@ -532,6 +607,14 @@ export class SocialSession {
   }
 
   private forward(ev: AgentEvent): Promise<TurnResult> {
+    if (this.state === 'invited' && ev.kind === 'say') {
+      // Voice answer to "Rejoindre le café de votre ami ?"
+      const intent = parseIntent(ev.text).kind;
+      const t = ev.text.trim().toLowerCase();
+      if (intent === 'no' || /^non\b/.test(t)) this.decline(); // "non merci" parses as thanks
+      else if (intent === 'yes' || /^(oui|ouais|d'accord|rejoindre)\b/.test(t)) this.accept();
+      return Promise.resolve(noop());
+    }
     // The host's shopkeeper greets us herself; nothing to do before we are connected.
     if (ev.kind === 'arrive' || this.state !== 'connected') return Promise.resolve(noop());
     if (ev.kind === 'say') {
@@ -551,6 +634,7 @@ export class SocialSession {
 
 /** The status line for panels (French, English). */
 export function statusLine(s: Pick<SocialSession, 'state' | 'role' | 'friendName' | 'lonely' | 'note'>): { fr: string; en: string } {
+  if (s.state === 'invited') return { fr: 'Rejoindre le café de votre ami ?', en: "Join your friend's café?" };
   if (s.note) return s.note;
   if (s.state === 'connected') return { fr: `Connecté avec ${s.friendName}`, en: `Connected with ${s.friendName}` };
   if (s.state === 'waiting') {

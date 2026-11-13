@@ -69,9 +69,12 @@ export function drawCard(c: CanvasRenderingContext2D, k: CardContent): void {
     drawQr(c, k.url, CARD_W / 2 - 120, y, 240);
     y += 252;
     c.fillStyle = '#fafaf7';
-    c.font = 'bold 26px monospace';
-    c.fillText(k.link, CARD_W / 2, y + 4);
-    y += 40;
+    // The link carries the room key after "#": two lines so it stays readable.
+    const cut = k.link.indexOf('#');
+    c.font = 'bold 22px monospace';
+    c.fillText(cut > 0 ? k.link.slice(0, cut) : k.link, CARD_W / 2, y + 2);
+    if (cut > 0) c.fillText(k.link.slice(cut), CARD_W / 2, y + 30);
+    y += cut > 0 ? 62 : 40;
     c.fillStyle = '#c9ccd3';
     c.font = '21px sans-serif';
     y = wrap(c, 'Open this link on a laptop or phone (or scan it) to join from any browser.', CARD_W / 2, y, CARD_W - 60, 27);

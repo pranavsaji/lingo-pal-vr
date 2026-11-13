@@ -33,6 +33,15 @@ export interface TurnResult {
   rejected: Rejection[];
 }
 
+/**
+ * A turn taken for someone else at the counter (Café à deux guest): the request
+ * carries only their name, none of this learner's profile, memories, mistakes
+ * or conversation, and nothing from it is written back to this learner's profile.
+ */
+export interface GuestScope {
+  name: string;
+}
+
 export interface Perception {
   lookingAt: string | null;
   holding: string | null;
@@ -66,6 +75,8 @@ function idForNoun(noun: string): string | undefined {
 
 export class AgentDirector {
   private history: AgentRequest['history'] = [];
+  /** The Café à deux guest's own conversation (never mixed with the learner's). */
+  private guestHistory: AgentRequest['history'] = [];
   private queue: Promise<unknown> = Promise.resolve();
   private inFlight = 0;
   perception: Perception = { lookingAt: null, holding: null };
@@ -169,15 +180,16 @@ export class AgentDirector {
   /** A new shop: a new shopkeeper does not know the previous conversation. */
   resetConversation(): void {
     this.history = [];
+    this.guestHistory = [];
     this.offer = null;
     this.upsold = false;
     this.trick = null;
   }
 
   /** Serialized: one turn at a time, in order. */
-  handle(event: AgentEvent): Promise<TurnResult> {
+  handle(event: AgentEvent, guest?: GuestScope): Promise<TurnResult> {
     this.inFlight++;
-    const run = this.queue.then(() => this.run(event));
+    const run = this.queue.then(() => (guest ? this.runGuest(event, guest) : this.run(event)));
     this.queue = run.catch(() => undefined);
     void run.finally(() => {
       this.inFlight = Math.max(0, this.inFlight - 1);
@@ -330,6 +342,34 @@ export class AgentDirector {
     if (note) events.agentNote.emit(note);
     events.turn.emit(turn);
     return { turn, effects, rejected };
+  }
+
+  /**
+   * A guest's turn: same shopkeeper, same shared order, but a request scoped
+   * to the guest. No memories, mistakes, XP, plans or notes touch this
+   * learner's profile, so nothing the guest says can read or write it.
+   */
+  private async runGuest(event: AgentEvent, guest: GuestScope): Promise<TurnResult> {
+    if (event.kind === 'say') {
+      this.guestHistory.push({ role: 'learner', text: event.text });
+      events.subtitle.emit({ who: 'learner', fr: event.text, en: '' });
+    }
+    const req = this.buildRequest(event);
+    req.profile = { name: guest.name.slice(0, 16), level: 'A1', sessions: 1, streakDays: 0, weakWords: [], memories: {}, lastVisit: '' };
+    req.history = this.guestHistory.slice(-10);
+    delete req.scene.tomorrow;
+    req.scene.shoppingList = '';
+    const turn = await this.transport(req, () => this.onSlow());
+    const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
+    if (rejected.length) this.rejectedLog.push(...rejected);
+    this.store.setOrder(state);
+    // Only the shared scene: memories, goodbyes (visit summary, plans) and offers stay out.
+    const shared = effects.filter((e) => e.kind !== 'memory' && e.kind !== 'goodbye' && e.kind !== 'quiz');
+    this.guestHistory.push({ role: 'lune', text: turn.fr });
+    events.subtitle.emit({ who: 'lune', fr: turn.fr, en: turn.en });
+    if (shared.length) events.effects.emit(shared);
+    events.turn.emit(turn);
+    return { turn, effects: shared, rejected };
   }
 
   /** Apply tool actions locally (scripted moments such as the tutorial); same validation, no model call. */

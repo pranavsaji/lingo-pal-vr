@@ -10,7 +10,8 @@ import { director } from '../agent/runtime.js';
 import { appState, events } from '../game-state.js';
 import { luneSpeaking } from '../speech.js';
 import { store } from '../state/store.js';
-import { roomFromSearch } from './protocol.js';
+import { makeRoomCode } from './protocol.js';
+import { hasRoomParam, makeSecret, parseInvite } from './secret.js';
 import { SocialSession, type GameBridge } from './session.js';
 import { PeerLink } from './transport.js';
 
@@ -29,7 +30,7 @@ const bridge: GameBridge = {
   inXr: () => socialEnv.immersive,
 };
 
-export const social = new SocialSession(bridge, (code, on) => new PeerLink(code, on));
+export const social = new SocialSession(bridge, (invite, on) => new PeerLink(invite, on));
 
 social.changed.on(() => {
   if (social.active && !watching) {
@@ -43,9 +44,18 @@ if (typeof location !== 'undefined' && (import.meta.env.DEV || new URLSearchPara
   (window as unknown as Record<string, unknown>).__lingoSocial = social;
 }
 
-const invited = typeof location !== 'undefined' ? roomFromSearch(location.search) : null;
-if (invited) {
-  // A friend's link: no first-run tutorial (it would play with the shared order); the host's shopkeeper greets us.
+/** The link had ?room= but no valid key (#k=...): it cannot be joined (the UI says so). */
+export const brokenInvite = typeof location !== 'undefined' && hasRoomParam(location.search) && !parseInvite(location.search, location.hash);
+
+const invite = typeof location !== 'undefined' ? parseInvite(location.search, location.hash) : null;
+if (invite) {
+  // A friend's link: ask before joining (nothing is sent until then). No first-run tutorial
+  // (it would play with the shared order); the host's shopkeeper greets us once we join.
   if (!store.profile.onboarded) store.markOnboarded();
-  social.join(invited);
+  social.invited(invite);
+}
+
+/** Open a new room with a fresh code and key. */
+export function hostRoom(): void {
+  social.host({ code: makeRoomCode(), secret: makeSecret() });
 }
