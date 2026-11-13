@@ -23,8 +23,10 @@ credited with thanks). Downloaded and optimized by `scripts/fetch-assets.mjs`.
   bananas, food_pears_asian_01, lemon, yellow_onion, sweet_potato, food_kiwi_01,
   food_avocado_01, food_pomegranate_01 (plus potted_plant_01, round_wooden_table_01,
   standing_chalkboard_01 prepared but unused).
-- Textures: checkered_pavement_tiles, marble_01, dark_wood, oak_veneer_01,
-  red_brick_plaster_patch_02, terracotta_floor_tiles, cobblestone_floor_04, wood_table_worn.
+- Models (continued): tea_set_01 (the café cup, saucer, plate and teapot are cut from it).
+- Textures: marble_01, dark_wood, oak_veneer_01, wood_floor, old_wood_floor,
+  cobblestone_floor_04, wood_table_worn (plus checkered_pavement_tiles,
+  red_brick_plaster_patch_02 and terracotta_floor_tiles, prepared but unused).
 - 360° environments (backdrop + lighting): comfy_cafe, decor_shop, leadenhall_market.
   Shop names and brand lettering in the Leadenhall Market photo are blurred so no real
   trademarks are shown.
@@ -51,6 +53,12 @@ credited with thanks). Downloaded and optimized by `scripts/fetch-assets.mjs`.
 MMS-TTS: Pratap et al., "Scaling Speech Technology to 1,000+ Languages" (Meta AI, 2023).
 It is used here in a free, non-commercial competition entry. Replace it (for example with
 a licensed cloud voice through a server route) before any paid release.
+
+## Photo-scanned breads and pastries
+
+From ambientCG (https://ambientcg.com), CC0: 3DBread003, 3DBread004, 3DBread006,
+3DBread007, 3DBread010, 3DBread011, 3DPastry001, 3DPastry002, 3DPastry003. Converted from
+OBJ with their color, normal and ambient-occlusion maps by `scripts/fetch-assets.mjs`.
 
 ## Fonts
 

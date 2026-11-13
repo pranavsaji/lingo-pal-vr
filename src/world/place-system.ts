@@ -17,6 +17,8 @@ import {
   IBLTexture,
   Mesh,
   MeshBasicMaterial,
+  NeutralToneMapping,
+  type DirectionalLight,
   SphereGeometry,
 } from '@iwsdk/core';
 import { refreshVocabIds, director } from '../agent/runtime.js';
@@ -65,7 +67,7 @@ export class PlaceSystem extends createSystem({
     if (!p) {
       const look = PLACE_LOOKS[place];
       const models = placeModelIds(place, PLACE_VOCAB[place].map((v) => v.model));
-      const surfaces = [look.floor, look.counterTop, look.counterFront, look.shelf, ...(look.wall ? [look.wall] : [])].map((s) => s.tex);
+      const surfaces = [look.floor, look.counterTop, look.counterFront, look.backTop, look.backFront].map((s) => s.tex);
       p = Promise.all([
         ...models.map((id) => AssetManager.loadGLTFById(id).catch(() => null)),
         ...surfaces.map((id) => loadSurface(id)),
@@ -110,7 +112,7 @@ export class PlaceSystem extends createSystem({
   private async buildSet(place: PlaceId): Promise<void> {
     const look = PLACE_LOOKS[place];
     const sets = new Map<string, TextureSet | null>();
-    for (const s of [look.floor, look.counterTop, look.counterFront, look.shelf, ...(look.wall ? [look.wall] : [])]) sets.set(s.tex, await loadSurface(s.tex));
+    for (const s of [look.floor, look.counterTop, look.counterFront, look.backTop, look.backFront]) sets.set(s.tex, await loadSurface(s.tex));
     const shop = buildShopSet(look, sets, (id) => AssetManager.getGLTF(id)?.scene ?? null);
     if (this.set) {
       // Cached model instances share geometry and materials with the asset cache: detach, then dispose the rest.
@@ -120,8 +122,38 @@ export class PlaceSystem extends createSystem({
     this.set = { entity: this.world.createTransformEntity(shop.root), shop };
   }
 
+  /**
+   * Photographic rendering: neutral tone mapping keeps the backdrop photo's real
+   * colors (ACES re-grades an already tone-mapped photo and the 3D objects stop
+   * matching it), and the key light's shadow map is fitted tightly to the counters
+   * so contact shadows are crisp, with soft PCF edges.
+   */
+  private applyRendering(exposure: number): void {
+    const r = this.world.renderer;
+    r.toneMapping = NeutralToneMapping;
+    r.toneMappingExposure = exposure;
+    let key: DirectionalLight | null = null;
+    this.world.scene.traverse((o) => {
+      if (!key && (o as DirectionalLight).isDirectionalLight && (o as DirectionalLight).castShadow) key = o as DirectionalLight;
+    });
+    const light = key as DirectionalLight | null;
+    if (!light) return;
+    light.target.position.set(0, 1, -1.3);
+    if (!light.target.parent) light.parent?.add(light.target); // the target only needs a world matrix
+    const cam = light.shadow.camera;
+    cam.left = -2.6;
+    cam.right = 2.6;
+    cam.top = 2.6;
+    cam.bottom = -2.6;
+    cam.updateProjectionMatrix();
+    light.shadow.radius = 3;
+    light.shadow.bias = -0.0004;
+    light.shadow.normalBias = 0.02;
+  }
+
   private applyEnvironment(place: PlaceId): void {
     const look = PLACE_LOOKS[place];
+    this.applyRendering(look.exposure ?? 1);
     const base = import.meta.env.BASE_URL;
     const yaw = (look.hdriYawDeg * Math.PI) / 180;
     for (const e of this.queries.dome.entities) {

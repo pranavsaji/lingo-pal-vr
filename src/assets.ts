@@ -16,6 +16,10 @@ const PROP_IDS = [
   'hanging_industrial_lamp', 'carrot_cake', 'hamburger_buns', 'wooden_cutting_board', 'wicker_basket_01',
   'wooden_crate_01', 'bananas', 'food_pears_asian_01', 'lemon', 'yellow_onion', 'sweet_potato',
   'food_kiwi_01', 'food_avocado_01', 'food_pomegranate_01',
+  // Derived from Poly Haven tea_set_01; photo-scanned breads and pastries from ambientCG (CC0).
+  'cafe_cup', 'cafe_plate', 'cafe_teapot',
+  '3DBread011', '3DBread007', '3DBread004', '3DBread006', '3DBread003', '3DBread010',
+  '3DPastry001', '3DPastry002', '3DPastry003',
 ] as const;
 
 const props = Object.fromEntries(

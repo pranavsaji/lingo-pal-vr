@@ -82,7 +82,7 @@ export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) 
   root.name = 'Shop Set';
   const props: Object3D[] = [];
 
-  // Floor: textured disc, 4 m radius, fading at the edge into the backdrop photo.
+  // Floor: textured disc (matching the photo's floor), fading at the edge into the backdrop.
   const floorMat = mat(sets, look.floor, 8, 8, 0xd9d2c5);
   const fade = radialFade();
   if (fade) {
@@ -104,18 +104,14 @@ export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) 
   root.add(room(box(2.2, 0.03, 0.012, trim, 0, 0.9, -0.694)));
   root.add(room(box(2.2, 0.02, 0.012, trim, 0, 0.06, -0.694)));
 
-  // Back wall behind the shopkeeper (the photo backdrop shows the rest of the shop).
-  if (look.wall) {
-    const wall = box(3.4, 2.7, 0.1, mat(sets, look.wall, 3.4, 2.7, 0xb5654d), 0, 1.35, -2.6);
-    wall.castShadow = false;
-    root.add(room(wall));
-  }
-  const shelfMat = mat(sets, look.shelf, 2.4, 0.25, 0x8a5a35);
-  for (const y of [1.3, 1.75]) {
-    const shelf = box(2.4, 0.03, 0.25, shelfMat, 0, y, -2.45);
-    shelf.castShadow = false;
-    root.add(room(shelf));
-  }
+  // Back counter behind the shopkeeper. No wall: the 360 photo is the rest of the shop,
+  // so what you see behind the counter is a real room, not a CG backdrop.
+  const back = box(2.7, 0.89, 0.5, mat(sets, look.backFront, 2.7, 0.89, 0x6b4226), 0, 0.445, -2.2);
+  back.castShadow = false;
+  root.add(room(back));
+  const backTop = box(2.8, 0.04, 0.56, mat(sets, look.backTop, 2.8, 0.56, 0xe8e4dc), 0, 0.91, -2.2);
+  backTop.castShadow = false;
+  root.add(room(backTop));
 
   // Side tables (marble-like top from the counter surface, dark metal base).
   const topMat = mat(sets, look.counterTop, 0.72, 0.72, 0xf3efe7);

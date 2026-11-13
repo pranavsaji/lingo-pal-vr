@@ -11,7 +11,8 @@
  * has a triangle target and textures are capped (512 px props, 1024 px surfaces).
  */
 
-import { NodeIO } from '@gltf-transform/core';
+import { Document, NodeIO } from '@gltf-transform/core';
+import { execFileSync } from 'node:child_process';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, prune, simplify, textureCompress, weld } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
@@ -36,6 +37,7 @@ export const MODELS = {
   painted_wooden_chair_01: { tris: 4000, tex: 512 },
   standing_chalkboard_01: { tris: 2500, tex: 512 },
   hanging_industrial_lamp: { tris: 2500, tex: 512 },
+  tea_set_01: { tris: 6000, tex: 512, error: 0.01 },
   // boulangerie
   carrot_cake: { tris: 5000, tex: 512 },
   hamburger_buns: { tris: 4000, tex: 512 },
@@ -62,9 +64,17 @@ export const TEXTURES = [
   'terracotta_floor_tiles', // boulangerie floor
   'cobblestone_floor_04', // market floor
   'wood_table_worn', // market stall
+  'wood_floor', // cafe floor (matches the photo's planks)
+  'old_wood_floor', // bakery floor
 ];
 
 export const HDRIS = ['comfy_cafe', 'decor_shop', 'leadenhall_market'];
+
+/**
+ * Photo-scanned breads and pastries from ambientCG (https://ambientcg.com, CC0),
+ * converted from OBJ + PBR maps to GLB (public/models/props/<id>.glb).
+ */
+export const SCANS = ['3DBread011', '3DBread007', '3DBread004', '3DBread006', '3DBread003', '3DBread010', '3DPastry001', '3DPastry002', '3DPastry003'];
 
 /**
  * Regions to blur in a backdrop (fractions of width/height): real shop names and
@@ -72,7 +82,7 @@ export const HDRIS = ['comfy_cafe', 'decor_shop', 'leadenhall_market'];
  */
 const REDACT = {
   leadenhall_market: [
-    [0, 0.285, 1, 0.352], // fascia boards with shop names, all around
+    [0, 0.272, 1, 0.358], // fascia boards with shop names, all around
     [0.45, 0.25, 0.55, 0.278], // red LED sign over the arcade
     [0.335, 0.375, 0.405, 0.5], // lettering in shop windows
     [0.2, 0.43, 0.235, 0.49],
@@ -157,10 +167,11 @@ async function hdri(id) {
   fs.mkdirSync(outDir, { recursive: true });
   const hdr = files.hdri['1k'].hdr.url;
   fs.copyFileSync(await download(hdr, path.join(CACHE, 'hdri', path.basename(hdr))), path.join(outDir, `${id}_1k.hdr`));
-  // Backdrop: the tonemapped photo, 4096 x 2048 (about 11 px per degree), JPEG.
+  // Backdrop: the tonemapped photo as a JPEG (see W x H below).
   const bg = await download(files.tonemapped.url, path.join(CACHE, 'hdri', `${id}_tonemapped.jpg`));
-  const W = 4096;
-  const H = 2048;
+  // 5120 x 2560 (~14 px per degree): sharper than 4K, still one texture per shop.
+  const W = 5120;
+  const H = 2560;
   const base = await sharp(bg, { limitInputPixels: false }).resize(W, H, { fit: 'fill' }).toBuffer();
   const patches = [];
   for (const [x0, y0, x1, y1] of REDACT[id] ?? []) {
@@ -174,7 +185,102 @@ async function hdri(id) {
   console.log(`hdri ${id}: ${(fs.statSync(path.join(outDir, `${id}_bg.jpg`)).size / 1024).toFixed(0)} KB backdrop`);
 }
 
+/** Minimal OBJ reader: v / vt / vn and polygon faces (fan-triangulated). */
+function parseObj(text) {
+  const v = [], vt = [], vn = [];
+  const pos = [], uv = [], nor = [];
+  for (const line of text.split('\n')) {
+    const t = line.trim().split(/\s+/);
+    if (t[0] === 'v') v.push(t.slice(1, 4).map(Number));
+    else if (t[0] === 'vt') vt.push(t.slice(1, 3).map(Number));
+    else if (t[0] === 'vn') vn.push(t.slice(1, 4).map(Number));
+    else if (t[0] === 'f') {
+      const corners = t.slice(1).map((c) => c.split('/').map((n) => (n ? Number(n) : 0)));
+      for (let k = 1; k + 1 < corners.length; k++) {
+        for (const [a, b, c] of [corners[0], corners[k], corners[k + 1]].map((x) => x)) {
+          const P = v[(a < 0 ? v.length + a : a - 1)];
+          pos.push(...P);
+          const T = b ? vt[b < 0 ? vt.length + b : b - 1] : [0, 0];
+          uv.push(T[0], 1 - T[1]); // OBJ v grows up, glTF v grows down
+          const N = c ? vn[c < 0 ? vn.length + c : c - 1] : [0, 1, 0];
+          nor.push(...N);
+        }
+      }
+    }
+  }
+  return { pos: new Float32Array(pos), uv: new Float32Array(uv), nor: new Float32Array(nor) };
+}
+
+async function scan(id) {
+  const zip = await download(`https://ambientcg.com/get?file=${id}_LQ-1K-JPG.zip`, path.join(CACHE, 'acg', `${id}.zip`));
+  const dir = path.join(CACHE, 'acg', id);
+  fs.mkdirSync(dir, { recursive: true });
+  execFileSync('unzip', ['-o', '-q', zip, '-d', dir]);
+  const file = (suffix) => path.join(dir, `${id}_LQ-1K-JPG${suffix}`);
+  const { pos, uv, nor } = parseObj(fs.readFileSync(file('.obj'), 'utf8'));
+
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const acc = (arr, type) => doc.createAccessor().setArray(arr).setType(type).setBuffer(buffer);
+  const tex = async (suffix, name) => {
+    const src = file(suffix);
+    if (!fs.existsSync(src)) return null;
+    const img = await sharp(src).resize(512, 512).webp({ quality: suffix.includes('Normal') ? 90 : 82 }).toBuffer();
+    return doc.createTexture(name).setImage(img).setMimeType('image/webp');
+  };
+  const material = doc.createMaterial(id).setRoughnessFactor(0.72).setMetallicFactor(0);
+  const color = await tex('_Color.jpg', 'color');
+  const normal = await tex('_NormalGL.jpg', 'normal');
+  const ao = await tex('_AmbientOcclusion.jpg', 'ao');
+  if (color) material.setBaseColorTexture(color);
+  if (normal) material.setNormalTexture(normal);
+  if (ao) material.setOcclusionTexture(ao);
+  const prim = doc
+    .createPrimitive()
+    .setAttribute('POSITION', acc(pos, 'VEC3'))
+    .setAttribute('NORMAL', acc(nor, 'VEC3'))
+    .setAttribute('TEXCOORD_0', acc(uv, 'VEC2'))
+    .setMaterial(material);
+  const mesh = doc.createMesh(id).addPrimitive(prim);
+  doc.createScene(id).addChild(doc.createNode(id).setMesh(mesh));
+  await doc.transform(weld(), prune());
+  const out = path.join(ROOT, 'public/models/props', `${id}.glb`);
+  await new NodeIO().registerExtensions(ALL_EXTENSIONS).write(out, doc);
+  console.log(`scan ${id}: ${triangles(doc)} tris, ${(fs.statSync(out).size / 1024).toFixed(0)} KB`);
+}
+
+/**
+ * Single objects cut out of a multi-object model, re-centered at the origin
+ * (base at y = 0): { from, keep: { nodeName: [dx, dy, dz] } }.
+ */
+export const DERIVED = {
+  cafe_cup: { from: 'tea_set_01', keep: { tea_set_01_saucer_circular_04: [-0.153, 0, 0.189], tea_set_01_cup_small_01: [-0.153, 0.012, -0.048] } },
+  cafe_plate: { from: 'tea_set_01', keep: { tea_set_01_plate_large_circular_03: [0.097, 0, 0.189] } },
+  cafe_teapot: { from: 'tea_set_01', keep: { tea_set_01_teapot_01: [0.347, 0, -0.066], tea_set_01_teapot_01_lid: [0.347, 0, -0.066] } },
+};
+
+async function derive(id, { from, keep }) {
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+  const doc = await io.read(path.join(ROOT, 'public/models/props', `${from}.glb`));
+  for (const node of doc.getRoot().listNodes()) {
+    const offset = keep[node.getName()];
+    if (!node.getMesh()) continue;
+    if (!offset) {
+      node.dispose();
+      continue;
+    }
+    const t = node.getTranslation();
+    node.setTranslation([t[0] + offset[0], t[1] + offset[1], t[2] + offset[2]]);
+  }
+  await doc.transform(prune());
+  const out = path.join(ROOT, 'public/models/props', `${id}.glb`);
+  await io.write(out, doc);
+  console.log(`derived ${id}: ${triangles(doc)} tris, ${(fs.statSync(out).size / 1024).toFixed(0)} KB`);
+}
+
 const want = (id) => !only || only.has(id);
 for (const [id, opts] of Object.entries(MODELS)) if (want(id)) await model(id, opts).catch((e) => console.error(`model ${id} FAILED: ${e.message}`));
 for (const id of TEXTURES) if (want(id)) await texture(id).catch((e) => console.error(`texture ${id} FAILED: ${e.message}`));
 for (const id of HDRIS) if (want(id)) await hdri(id).catch((e) => console.error(`hdri ${id} FAILED: ${e.message}`));
+for (const id of SCANS) if (want(id)) await scan(id).catch((e) => console.error(`scan ${id} FAILED: ${e.message}`));
+for (const [id, spec] of Object.entries(DERIVED)) if (want(id) || want(spec.from)) await derive(id, spec).catch((e) => console.error(`derived ${id} FAILED: ${e.message}`));

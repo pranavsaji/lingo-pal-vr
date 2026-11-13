@@ -53,11 +53,14 @@ export interface PlaceLook {
   hdriYawDeg: number;
   backdropIntensity: number;
   iblIntensity: number;
+  /** Renderer exposure for this shop (neutral tone mapping). */
+  exposure?: number;
   floor: Surface;
   counterTop: Surface;
   counterFront: Surface;
-  wall: Surface | null;
-  shelf: Surface;
+  /** Back counter behind the shopkeeper (the photo backdrop is the rest of the room). */
+  backTop: Surface;
+  backFront: Surface;
   /** Accent color of the counter trim and awning. */
   accent: number;
   props: PropPlacement[];
@@ -65,51 +68,59 @@ export interface PlaceLook {
 
 const p = (id: string) => `prop-${id}`;
 
+/** Top of the back counter behind the shopkeeper. */
+const B = 0.93;
+/** Depth of the back counter's top (props sit here, in front of the photo backdrop). */
+const BZ = -2.2;
+
 export const PLACE_LOOKS: Record<PlaceId, PlaceLook> = {
   cafe: {
     hdri: 'comfy_cafe',
     hdriYawDeg: 0,
     backdropIntensity: 1,
     iblIntensity: 0.9,
-    floor: { tex: 'checkered_pavement_tiles', perMeter: 0.6, roughness: 0.45 },
+    floor: { tex: 'wood_floor', perMeter: 0.5, roughness: 0.55 },
     counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
     counterFront: { tex: 'dark_wood', perMeter: 0.9 },
-    wall: { tex: 'red_brick_plaster_patch_02', perMeter: 0.45 },
-    shelf: { tex: 'oak_veneer_01', perMeter: 1 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    backFront: { tex: 'dark_wood', perMeter: 0.9 },
     accent: 0xc9a227,
     props: [
-      { model: p('wine_bottles_01'), pos: [-0.95, 1.315, -2.45] },
-      { model: p('wine_bottles_01'), pos: [0.35, 1.765, -2.45], rotY: Math.PI },
+      { model: p('wine_bottles_01'), pos: [-1.0, B, BZ] },
+      { model: p('cafe_teapot'), pos: [0.55, B, BZ], scale: 1.3, rotY: -0.4 },
+      { model: p('cafe_cup'), pos: [0.85, B, BZ + 0.05], rotY: 0.6 },
+      { model: p('ceramic_vase_01'), pos: [1.15, B, BZ], scale: 0.6 },
+      { model: p('3DPastry003'), pos: [-0.35, B, BZ], rotY: 0.3 },
       { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
       { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
       { model: p('painted_wooden_chair_01'), pos: [1.78, 0, -0.42], rotY: -1.9 },
       { model: p('painted_wooden_chair_01'), pos: [-1.82, 0, -0.42], rotY: 1.9 },
-      { model: p('ceramic_vase_01'), pos: [1.55, 1.315, -2.42], scale: 0.6 },
     ],
   },
   boulangerie: {
     hdri: 'decor_shop',
     hdriYawDeg: 0,
-    backdropIntensity: 1,
+    backdropIntensity: 0.85, // the photo's windows are bright: keep the room from looking washed out
     iblIntensity: 1,
-    floor: { tex: 'terracotta_floor_tiles', perMeter: 0.8, roughness: 0.7 },
+    floor: { tex: 'old_wood_floor', perMeter: 0.6, roughness: 0.65 },
     counterTop: { tex: 'oak_veneer_01', perMeter: 1.2, roughness: 0.45 },
     counterFront: { tex: 'dark_wood', perMeter: 0.9 },
-    wall: { tex: 'red_brick_plaster_patch_02', perMeter: 0.45 },
-    shelf: { tex: 'oak_veneer_01', perMeter: 1 },
+    backTop: { tex: 'oak_veneer_01', perMeter: 1.2, roughness: 0.45 },
+    backFront: { tex: 'dark_wood', perMeter: 0.9 },
     accent: 0xe8d8b0,
     props: [
-      { model: p('wicker_basket_01'), pos: [-0.9, 1.315, -2.42], scale: 1.1 },
-      { model: p('hamburger_buns'), pos: [-0.9, 1.34, -2.42], scale: 0.9 },
-      { model: p('wicker_basket_01'), pos: [0.2, 1.315, -2.42], scale: 1.1, rotY: 0.3 },
-      { model: p('carrot_cake'), pos: [0.95, 1.315, -2.42] },
-      { model: p('wicker_basket_01'), pos: [-0.4, 1.765, -2.42], scale: 1.1 },
-      { model: p('croissant'), pos: [-0.45, 1.79, -2.42], rotY: 0.6 },
-      { model: p('croissant'), pos: [-0.35, 1.79, -2.38], rotY: 2.2 },
-      { model: p('strawberry_chocolate_cake'), pos: [0.75, 1.765, -2.42], scale: 0.9 },
+      { model: p('wicker_basket_01'), pos: [-0.95, B, BZ], scale: 1.1 },
+      { model: p('3DBread006'), pos: [-1.02, B + 0.02, BZ], rotY: 0.4 },
+      { model: p('3DBread003'), pos: [-0.86, B + 0.02, BZ + 0.03], rotY: 2.1 },
+      { model: p('wicker_basket_01'), pos: [-0.3, B, BZ], scale: 1.1, rotY: 0.3 },
+      { model: p('3DBread010'), pos: [-0.36, B + 0.02, BZ], rotY: 1.2 },
+      { model: p('3DBread004'), pos: [-0.22, B + 0.02, BZ + 0.02] },
+      { model: p('3DBread011'), pos: [0.35, B, BZ + 0.04], scale: 2.2, rotY: 0.1 },
+      { model: p('3DBread011'), pos: [0.38, B, BZ - 0.05], scale: 2.2, rotY: -0.08 },
+      { model: p('3DPastry003'), pos: [0.85, B, BZ] },
+      { model: p('carrot_cake'), pos: [1.2, B, BZ] },
       { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
       { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
-      { model: p('potted_plant_01'), pos: [2.0, 0, -1.7], rotY: 1.4, scale: 0.85 },
     ],
   },
   marche: {
@@ -120,8 +131,8 @@ export const PLACE_LOOKS: Record<PlaceId, PlaceLook> = {
     floor: { tex: 'cobblestone_floor_04', perMeter: 0.7, roughness: 0.85 },
     counterTop: { tex: 'wood_table_worn', perMeter: 0.8, roughness: 0.75 },
     counterFront: { tex: 'wood_table_worn', perMeter: 0.8, roughness: 0.75 },
-    wall: null,
-    shelf: { tex: 'wood_table_worn', perMeter: 1 },
+    backTop: { tex: 'wood_table_worn', perMeter: 0.8, roughness: 0.75 },
+    backFront: { tex: 'wood_table_worn', perMeter: 0.8, roughness: 0.75 },
     accent: 0x2a7d4f,
     props: [
       { model: p('wooden_crate_01'), pos: [-1.0, 0, -1.55], scale: 0.9 },
@@ -130,14 +141,14 @@ export const PLACE_LOOKS: Record<PlaceId, PlaceLook> = {
       { model: p('wooden_crate_01'), pos: [1.05, 0, -1.55], scale: 0.9, rotY: -0.05 },
       { model: p('food_pears_asian_01'), pos: [0.95, 0.32, -1.55], scale: 1.2 },
       { model: p('food_pears_asian_01'), pos: [1.2, 0.32, -1.5], scale: 1.2, rotY: 2 },
-      { model: p('wicker_basket_01'), pos: [-0.5, 1.315, -2.42], scale: 1.2 },
-      { model: p('yellow_onion'), pos: [-0.55, 1.34, -2.42] },
-      { model: p('yellow_onion'), pos: [-0.45, 1.34, -2.4] },
-      { model: p('wicker_basket_01'), pos: [0.5, 1.315, -2.42], scale: 1.2 },
-      { model: p('lemon'), pos: [0.45, 1.39, -2.42] },
-      { model: p('lemon'), pos: [0.55, 1.39, -2.4] },
-      { model: p('food_pomegranate_01'), pos: [-0.6, 1.765, -2.42] },
-      { model: p('food_avocado_01'), pos: [0.6, 1.765, -2.42] },
+      { model: p('wicker_basket_01'), pos: [-0.5, B, BZ], scale: 1.2 },
+      { model: p('yellow_onion'), pos: [-0.55, B + 0.025, BZ] },
+      { model: p('yellow_onion'), pos: [-0.45, B + 0.025, BZ + 0.02] },
+      { model: p('wicker_basket_01'), pos: [0.5, B, BZ], scale: 1.2 },
+      { model: p('lemon'), pos: [0.45, B + 0.075, BZ] },
+      { model: p('lemon'), pos: [0.55, B + 0.075, BZ + 0.02] },
+      { model: p('food_pomegranate_01'), pos: [-1.0, B, BZ] },
+      { model: p('food_avocado_01'), pos: [1.0, B, BZ] },
     ],
   },
 };
