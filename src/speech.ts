@@ -12,6 +12,7 @@
  */
 
 import { audioHub, ensureAudioContext } from './audio/audio-hub.js';
+import { fontsReady } from './fonts.js';
 import { Emitter } from './game-state.js';
 import { store } from './state/store.js';
 import { localVoice } from './voice/local-voice.js';
@@ -53,9 +54,10 @@ if (typeof window !== 'undefined') {
       if (frenchVoice && forced !== 'local') engine = 'browser';
     });
   }
-  // Voices load asynchronously; decide after they have had time to appear.
-  setTimeout(chooseEngine, 2500);
-  if (forced === 'local') localVoice.preload('tts');
+  // Voices load asynchronously; decide after they have had time to appear, and after the
+  // panel fonts are built (the voice model is CPU-heavy and would delay readable text).
+  void fontsReady().then(() => setTimeout(chooseEngine, 1500));
+  if (forced === 'local') void fontsReady().then(() => localVoice.preload('tts'));
 }
 
 /** The engine in use, for the settings panel and diagnostics. */

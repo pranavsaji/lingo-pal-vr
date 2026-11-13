@@ -50,3 +50,15 @@ export function applyFrenchFont(panel: UIKit.Component<any> | null | undefined):
     },
   });
 }
+
+/**
+ * Resolves when both French fonts are built. Heavy background work (on-device
+ * voice models) waits for this so panel text appears as early as possible.
+ */
+export function fontsReady(): Promise<void> {
+  const f = fonts();
+  return Promise.all([f.regular, f.bold]).then(
+    () => undefined,
+    () => undefined,
+  );
+}

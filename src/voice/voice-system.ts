@@ -18,6 +18,7 @@ import { speakFrench } from '../speech.js';
 import { store } from '../state/store.js';
 import { onActivate } from '../ui/dwell.js';
 import { scorePronunciation } from './pronunciation.js';
+import { fontsReady } from '../fonts.js';
 import { localVoice } from './local-voice.js';
 import { SpeechInput } from './speech-input.js';
 
@@ -52,8 +53,11 @@ export class VoiceSystem extends createSystem({}) {
     void this.mic.detect().then((engine) => {
       // On-device recognition: fetch the model in the background once the scene has loaded.
       if (engine === 'local') {
-        const t = setTimeout(() => localVoice.preload('stt'), 8000);
-        this.cleanupFuncs.push(() => clearTimeout(t));
+        let t: ReturnType<typeof setTimeout> | null = null;
+        void fontsReady().then(() => (t = setTimeout(() => localVoice.preload('stt'), 6000)));
+        this.cleanupFuncs.push(() => {
+          if (t) clearTimeout(t);
+        });
       }
       if (engine === 'none') {
         this.set('mic-label', 'Voix : n/a');
