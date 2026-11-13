@@ -42,6 +42,14 @@ Madame Lune speaks with the browser's French voice when there is one, otherwise 
 on-device French voice model (114 MB, downloaded once in the background). Subtitles are
 always on. Test the on-device engines on desktop with `?stt=local&tts=local`.
 
+## Meta VR Glasses
+
+Gaze tracking is requested (optional), so on the glasses you look at a target and pinch
+with either hand. When the headset's view is narrow (under ~42 degrees per side, as on the
+glasses), the side panels swing toward the center and shrink to 85% so they stay in view
+while you face Madame Lune. Force it on any device with `?layout=glasses` (or `?layout=wide`).
+Test in the emulator by setting `dev.emulator.device` to `metaVRGlasses` in `iwsdk.config.json`.
+
 ## Test on a Quest
 
 Open https://lingo-pal-vr.vercel.app in Quest Browser. For local builds, put the Quest

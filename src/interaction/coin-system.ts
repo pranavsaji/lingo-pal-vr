@@ -146,13 +146,14 @@ export class CoinSystem extends createSystem({
 
   /**
    * Coins sit in a grid inside the dish; notes lie side by side on the counter
-   * just outside it (toward the counter edge), never stacked under coins.
+   * just inside it (toward the learner's center line, where a narrow-view headset
+   * such as Meta VR Glasses can still see them), never stacked under coins.
    */
   private homeFor(index: number, isNote: boolean, out: Vector3): Vector3 {
     const left = store.profile.settings.leftHanded;
     const [x, y, z] = dishPos(left);
     const outward = left ? -1 : 1;
-    if (isNote) return out.set(x + outward * 0.17, y + 0.002 + index * 0.002, z + 0.005 - (index % 2) * 0.075);
+    if (isNote) return out.set(x - outward * 0.17, y + 0.002 + index * 0.002, z + 0.005 - (index % 2) * 0.075);
     const slot = index % (COIN_COLS.length * COIN_ROWS.length);
     const lift = Math.floor(index / (COIN_COLS.length * COIN_ROWS.length)) * 0.006; // overflow stacks neatly
     return out.set(x + COIN_COLS[slot % COIN_COLS.length], y + 0.014 + lift, z + COIN_ROWS[Math.floor(slot / COIN_COLS.length)]);

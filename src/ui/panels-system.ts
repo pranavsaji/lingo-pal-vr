@@ -6,7 +6,7 @@
  * renders the XP bar.
  */
 
-import { createSystem, type Object3D, type UIKit, type UIKitMLAsset } from '@iwsdk/core';
+import { createSystem, type Object3D, Quaternion, type UIKit, type UIKitMLAsset, Vector3, VisibilityState } from '@iwsdk/core';
 import { events } from '../game-state.js';
 import { applyFrenchFont } from '../fonts.js';
 import { speakFrench } from '../speech.js';
@@ -23,6 +23,16 @@ const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
 const HIDDEN_OFFSET = 100; // hidden panels move far away so rays cannot hit them
 const XP_TRACK_PX = 400;
+
+/**
+ * Narrow-view headsets (Meta VR Glasses: 37 deg to each side) cannot show the side
+ * panels while the learner looks at Madame Lune. There, panels swing toward the
+ * view center around the learner and shrink slightly. Azimuths are measured
+ * from straight ahead (negative = left); see the glasses check in PLAN.md.
+ */
+const NARROW_TAN = Math.tan((42 * Math.PI) / 180);
+const NARROW_SCALE = 0.85;
+const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'chat-panel': 24 };
 
 const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality'];
 
@@ -46,8 +56,16 @@ export class PanelsSystem extends createSystem({}) {
   private objects = new Map<string, Object3D>();
   private homeY = new Map<string, number>();
   private slot: Slot = 'home';
+  private basePos = new Map<string, Vector3>();
+  private baseQuat = new Map<string, Quaternion>();
+  private fitScale = 1;
+  private fitChecked = false;
+  private yawQ = new Quaternion();
+  private up = new Vector3(0, 1, 0);
+  private forcedLayout: string | null = null;
 
   init(): void {
+    this.forcedLayout = new URLSearchParams(location.search).get('layout'); // ?layout=glasses|wide
     for (const id of ALL_PANELS) {
       const panel = this.world.getSceneObject<UIKitMLAsset>(id);
       const obj = this.world.getSceneObject<Object3D>(id);
@@ -55,6 +73,8 @@ export class PanelsSystem extends createSystem({}) {
       this.panels.set(id, panel);
       this.objects.set(id, obj);
       this.homeY.set(id, obj.position.y);
+      this.basePos.set(id, obj.position.clone());
+      this.baseQuat.set(id, obj.quaternion.clone());
       if (id === 'carnet-panel' || id === 'settings-panel') applyFrenchFont(panel.document.rootElement);
     }
 
@@ -81,6 +101,9 @@ export class PanelsSystem extends createSystem({}) {
     });
 
     this.cleanupFuncs.push(
+      this.world.visibilityState.subscribe((v) => {
+        if (v === VisibilityState.NonImmersive) this.fitChecked = false; // re-measure next session
+      }),
       events.openPanel.on((s) => this.show(s)),
       events.settings.on((s) => this.applySettings(s)),
       events.profile.on(() => {
@@ -162,7 +185,7 @@ export class PanelsSystem extends createSystem({}) {
   }
 
   private applySettings(s: Settings): void {
-    const scale = BASE_SCALE * TEXT_SCALE[s.textSize];
+    const scale = BASE_SCALE * TEXT_SCALE[s.textSize] * this.fitScale;
     for (const obj of this.objects.values()) obj.scale.setScalar(scale);
     for (const [panelId, id, normal] of CONTRAST_TEXT) {
       this.style(panelId, id, { color: s.highContrast ? (normal === '#fafaf7' ? '#ffffff' : '#ffe14d') : normal });
@@ -177,5 +200,51 @@ export class PanelsSystem extends createSystem({}) {
     const lvl = store.level;
     this.style('lesson-panel', 'xp-fill', { width: Math.max(6, Math.round(XP_TRACK_PX * lvl.progress)) });
     this.text('lesson-panel', 'xp-label', lvl.next ? `${lvl.id} > ${lvl.next}` : `${lvl.id} MAX`);
+  }
+
+  update(): void {
+    if (this.fitChecked) return;
+    const forced = this.forcedLayout;
+    let narrow: boolean | null = forced === 'glasses' ? true : forced === 'wide' ? false : null;
+    if (narrow === null) {
+      const xr = this.world.renderer.xr;
+      if (!xr.isPresenting) return;
+      const eyes = xr.getCamera().cameras;
+      if (!eyes.length) return; // first XR frame not rendered yet
+      // Widest horizontal half-angle across both eyes, from each projection matrix.
+      let widest = 0;
+      for (const eye of eyes) {
+        const e = eye.projectionMatrix.elements;
+        if (!e[0]) return;
+        widest = Math.max(widest, (1 + e[8]) / e[0], (1 - e[8]) / e[0]);
+      }
+      narrow = widest < NARROW_TAN;
+    }
+    this.fitChecked = true;
+    this.fitView(narrow);
+  }
+
+  /** Swing panels toward the view center (narrow) or back to the authored layout. */
+  private fitView(narrow: boolean): void {
+    this.fitScale = narrow ? NARROW_SCALE : 1;
+    for (const [id, obj] of this.objects) {
+      const base = this.basePos.get(id)!;
+      const q = this.baseQuat.get(id)!;
+      const target = NARROW_AZIMUTH_DEG[id];
+      if (!narrow || target === undefined) {
+        obj.position.x = base.x;
+        obj.position.z = base.z;
+        obj.quaternion.copy(q);
+        continue;
+      }
+      const r = Math.hypot(base.x, base.z);
+      const from = Math.atan2(base.x, -base.z);
+      const to = (target * Math.PI) / 180;
+      obj.position.x = r * Math.sin(to);
+      obj.position.z = -r * Math.cos(to);
+      // Keep facing the learner: yaw changes by the opposite of the azimuth change.
+      obj.quaternion.copy(q).premultiply(this.yawQ.setFromAxisAngle(this.up, from - to));
+    }
+    this.applySettings(store.profile.settings);
   }
 }

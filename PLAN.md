@@ -145,6 +145,12 @@ lingo-pal-vr, ANTHROPIC_API_KEY set for all environments). Verified: page 200, C
 /api/agent live turn ~2 s, app renders with no console errors. Paste-ready Devpost text and the
 video shot list are in SUBMISSION.md; licenses in CREDITS.md (MMS-TTS is CC-BY-NC 4.0).
 
+Glasses check (Nov 12, IWER metaVRGlasses): default layout put the outer halves of both side panels
+and the 5/10 EUR notes outside the 37 deg view. Fixed: narrow-FOV layout (panels to -21/+24 deg,
+scale 0.85, detected from the XR projection or ?layout=glasses) -> all panel corners inside
+(-34..+35 deg); notes moved to the inner side of the dish. Gaze+pinch verified on items and a
+reply (either hand); gaze-off hand-ray fallback and gaze priority verified.
+
 Not yet verified (needs a real Quest): fps, hand-joint thresholds (gestures.ts TUNING),
 mic + on-device voice speed in Quest Browser, passthrough mode, Meta VR Glasses fit.
 Next: Quest device pass, demo video, Devpost form.
