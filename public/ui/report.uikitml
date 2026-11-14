@@ -29,7 +29,7 @@
     padding-bottom: 14px;
     padding-left: 22px;
     padding-right: 22px;
-    background-color: #e76f51;
+    background-color: #16233b;
   }
 
   .brand {
@@ -39,7 +39,7 @@
   }
 
   .sub {
-    color: #ffe8df;
+    color: #c3cad6;
     font-size: 15px;
   }
 
@@ -71,7 +71,7 @@
     width: 34px;
     height: 4px;
     border-radius: 6px;
-    background-color: #4a4c55;
+    background-color: #3a4558;
   }
 
   .val {
@@ -80,7 +80,7 @@
   }
 
   .val:dark {
-    color: #c9ccd3;
+    color: #c3cad6;
   }
 
   .day {
@@ -114,7 +114,7 @@
   }
 
   .stat:dark {
-    background-color: #2b2d33;
+    background-color: #232c3b;
   }
 
   .num {
@@ -145,7 +145,7 @@
   }
 
   .note:dark {
-    color: #9fd3c7;
+    color: #9fb8cc;
   }
 
   .goal {
@@ -163,7 +163,7 @@
   }
 
   .goal:dark {
-    background-color: #2b2d33;
+    background-color: #232c3b;
   }
 
   .goal-head {
@@ -179,7 +179,7 @@
   }
 
   .goal-title:dark {
-    color: #f4a261;
+    color: #d9a962;
   }
 
   .goal-next {
@@ -188,21 +188,21 @@
   }
 
   .goal-next:dark {
-    color: #c9ccd3;
+    color: #c3cad6;
   }
 
   .goal-track {
     width: 496px;
     height: 14px;
     border-radius: 7px;
-    background-color: #4a4c55;
+    background-color: #3a4558;
   }
 
   .goal-fill {
     width: 7px;
     height: 14px;
     border-radius: 7px;
-    background-color: #f5d90a;
+    background-color: #e2b857;
   }
 
   .rungs {
@@ -211,7 +211,7 @@
   }
 
   .rung {
-    color: #6c757d;
+    color: #4a5568;
     font-size: 13px;
     font-weight: bold;
   }
@@ -226,7 +226,7 @@
   }
 
   .hook:dark {
-    color: #f4a261;
+    color: #d9a962;
   }
 
   .hook-en {
@@ -258,12 +258,12 @@
     padding-left: 22px;
     padding-right: 22px;
     border-radius: 18px;
-    background-color: #6c757d;
+    background-color: #3b4a63;
     cursor: pointer;
   }
 
   .action:hover {
-    background-color: #868e96;
+    background-color: #4a5b78;
   }
 
   .action-text {
@@ -316,7 +316,7 @@
     <div class="action" id="week-back">
       <span class="action-text">Retour</span>
     </div>
-    <div class="action" id="week-passport" style="background-color: #6d2e46">
+    <div class="action" id="week-passport">
       <span class="action-text">Passeport</span>
     </div>
   </div>

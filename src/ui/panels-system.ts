@@ -66,13 +66,13 @@ const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 
 /** Text that must stay readable in high contrast: [panel, element id, normal color]. */
 const CONTRAST_TEXT: [string, string, string][] = [
   ['lesson-panel', 'word', '#fafaf7'],
-  ['lesson-panel', 'english', '#c9ccd3'],
-  ['lesson-panel', 'tip', '#9fd3c7'],
-  ['lesson-panel', 'eyebrow', '#f5d90a'],
+  ['lesson-panel', 'english', '#c3cad6'],
+  ['lesson-panel', 'tip', '#9fb8cc'],
+  ['lesson-panel', 'eyebrow', '#e2b857'],
   ['chat-panel', 'npc-line', '#fafaf7'],
-  ['chat-panel', 'npc-en', '#c9ccd3'],
+  ['chat-panel', 'npc-en', '#c3cad6'],
   ['chat-panel', 'heard', '#fafaf7'],
-  ['chat-panel', 'heard-detail', '#9fd3c7'],
+  ['chat-panel', 'heard-detail', '#9fb8cc'],
   ['chat-panel', 'opt-0-en', '#b8bcc6'],
   ['chat-panel', 'opt-1-en', '#b8bcc6'],
   ['chat-panel', 'opt-2-en', '#b8bcc6'],
@@ -232,7 +232,7 @@ export class PanelsSystem extends createSystem({}) {
         // Shape + color: filled dots are larger, so mastery never relies on color alone.
         const filled = d < m;
         this.style('carnet-panel', `w-${i}-d${d}`, {
-          backgroundColor: filled ? '#f5d90a' : '#4a4c55',
+          backgroundColor: filled ? '#e2b857' : '#3a4558',
           width: filled ? 12 : 8,
           height: filled ? 12 : 8,
         });
@@ -248,7 +248,7 @@ export class PanelsSystem extends createSystem({}) {
     const maxXp = Math.max(30, ...r.days.map((d) => d.xp));
     r.days.forEach((d, i) => {
       const h = d.xp > 0 ? Math.max(8, Math.round((d.xp / maxXp) * 96)) : 4;
-      this.style('report-panel', `bar-${i}`, { height: h, backgroundColor: d.isToday ? '#f4a261' : d.xp > 0 ? '#2a9d8f' : '#4a4c55' });
+      this.style('report-panel', `bar-${i}`, { height: h, backgroundColor: d.isToday ? '#d9a962' : d.xp > 0 ? '#3f8f78' : '#3a4558' });
       this.text('report-panel', `bar-${i}-xp`, d.xp > 0 ? String(d.xp) : '');
       this.text('report-panel', `bar-${i}-day`, d.isToday ? "Auj." : d.label);
     });
@@ -284,7 +284,7 @@ export class PanelsSystem extends createSystem({}) {
       const here = place === appState.place;
       const open = placeUnlocked(place, store.profile);
       this.text('map-panel', `place-${place}-status`, here ? 'Vous êtes ici' : open ? (this.visited.has(place) ? 'Ouvert' : 'Nouveau !') : 'Bientôt');
-      this.style('map-panel', `place-${place}-status`, { backgroundColor: here ? '#9fd3c7' : open ? '#f5d90a' : '#6c757d' });
+      this.style('map-panel', `place-${place}-status`, { backgroundColor: here ? '#9fb8cc' : open ? '#e2b857' : '#4a5568' });
     }
     this.text('map-panel', 'map-hint', 'Pinch a shop (or look at it) to go there.');
   }
@@ -311,7 +311,7 @@ export class PanelsSystem extends createSystem({}) {
   private renderSettings(s: Settings): void {
     for (const key of TOGGLES) this.text('settings-panel', `set-${key}-val`, s[key] ? 'ON' : 'OFF');
     this.text('settings-panel', 'set-textSize-val', s.textSize.toUpperCase());
-    for (const key of TOGGLES) this.style('settings-panel', `set-${key}-val`, { backgroundColor: s[key] ? '#2a9d8f' : '#c9ccd3' });
+    for (const key of TOGGLES) this.style('settings-panel', `set-${key}-val`, { backgroundColor: s[key] ? '#3f8f78' : '#4a5568' });
   }
 
   private applySettings(s: Settings): void {
@@ -321,7 +321,7 @@ export class PanelsSystem extends createSystem({}) {
       this.style(panelId, id, { color: s.highContrast ? (normal === '#fafaf7' ? '#ffffff' : '#ffe14d') : normal });
     }
     for (let i = 0; i < 3; i++) {
-      this.style('chat-panel', `opt-${i}`, s.highContrast ? { backgroundColor: '#000000', borderColor: '#ffffff', borderWidth: 3 } : { backgroundColor: '#2b2d33', borderColor: '#4a4c55', borderWidth: 1 });
+      this.style('chat-panel', `opt-${i}`, s.highContrast ? { backgroundColor: '#000000', borderColor: '#ffffff', borderWidth: 3 } : { backgroundColor: '#232c3b', borderColor: '#3a4558', borderWidth: 1 });
     }
     if (this.slot === 'settings') this.renderSettings(s);
   }

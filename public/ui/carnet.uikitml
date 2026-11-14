@@ -29,7 +29,7 @@
     padding-bottom: 14px;
     padding-left: 22px;
     padding-right: 22px;
-    background-color: #2a9d8f;
+    background-color: #16233b;
   }
 
   .brand {
@@ -39,7 +39,7 @@
   }
 
   .count {
-    color: #fff3c4;
+    color: #c3cad6;
     font-size: 17px;
     font-weight: bold;
   }
@@ -67,12 +67,12 @@
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 10px;
-    background-color: #2b2d33;
+    background-color: #232c3b;
     cursor: pointer;
   }
 
   .word:hover {
-    background-color: #3d5a80;
+    background-color: #2e394b;
   }
 
   .labels {
@@ -99,7 +99,7 @@
     width: 10px;
     height: 10px;
     border-radius: 5px;
-    background-color: #4a4c55;
+    background-color: #3a4558;
   }
 
   .hint {
@@ -111,7 +111,7 @@
   }
 
   .hint:dark {
-    color: #9fd3c7;
+    color: #9fb8cc;
   }
 
   .actions {
@@ -132,12 +132,12 @@
     padding-left: 22px;
     padding-right: 22px;
     border-radius: 18px;
-    background-color: #e63946;
+    background-color: #3b4a63;
     cursor: pointer;
   }
 
   .action:hover {
-    background-color: #ff5a67;
+    background-color: #4a5b78;
   }
 
   .action-text {
@@ -171,10 +171,10 @@
   </div>
   <span class="hint" id="carnet-hint">Pinch a word to hear it. Dots grow each time you remember it on a later day.</span>
   <div class="actions">
-    <div class="action" id="review-button" style="background-color: #2a9d8f">
-      <span class="action-text" id="review-label">Révision du jour</span>
+    <div class="action" id="review-button" style="background-color: #e2b857">
+      <span class="action-text" id="review-label" style="color: #16233b">Révision du jour</span>
     </div>
-    <div class="action" id="carnet-back" style="background-color: #6c757d">
+    <div class="action" id="carnet-back">
       <span class="action-text">Retour</span>
     </div>
   </div>

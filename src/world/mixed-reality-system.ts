@@ -172,7 +172,7 @@ class Label {
     g.fillStyle = '#fafaf7';
     g.font = `bold ${Math.round(h * 0.3)}px sans-serif`;
     g.fillText(fr, w / 2, h * 0.47, w - 60);
-    g.fillStyle = '#9fd3c7';
+    g.fillStyle = '#9fb8cc';
     g.font = `${Math.round(h * 0.2)}px sans-serif`;
     g.fillText(en, w / 2, h * 0.8, w - 60);
     this.texture.needsUpdate = true;

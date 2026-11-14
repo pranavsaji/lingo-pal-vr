@@ -83,7 +83,7 @@ export class VoiceSystem extends createSystem({}) {
         this.set('mic-label', 'Voix : n/a');
         this.set('heard', 'Voice is not available in this browser.');
         this.set('heard-detail', 'Pinch a reply, or hold up fingers while looking at an item.');
-        this.micButton?.setProperties({ backgroundColor: '#6c757d' });
+        this.micButton?.setProperties({ backgroundColor: '#4a5568' });
       }
     });
   }
@@ -111,13 +111,13 @@ export class VoiceSystem extends createSystem({}) {
     events.listening.emit(true);
     if (this.palMode) {
       events.palState.emit('listening');
-      this.micButton?.setProperties({ backgroundColor: '#2f5fb3' });
+      this.micButton?.setProperties({ backgroundColor: '#3a66a8' });
       this.set('mic-label', 'Pal...');
       this.set('heard', 'Ask Pal in English now!');
       this.set('heard-detail', 'Pinch Pal (or "Parler") again when you are done.');
       return;
     }
-    this.micButton?.setProperties({ backgroundColor: '#2a9d8f' });
+    this.micButton?.setProperties({ backgroundColor: '#3f8f78' });
     this.set('mic-label', "J'écoute...");
     this.set('heard', 'Parlez maintenant ! Speak now.');
     this.set('heard-detail', auto ? 'Hands-free: just speak.' : 'Pinch again (or lower your palm) when you are done.');
@@ -127,7 +127,7 @@ export class VoiceSystem extends createSystem({}) {
     if (!this.mic.listening) return;
     this.processing = true;
     events.listening.emit(false);
-    this.micButton?.setProperties({ backgroundColor: '#e63946' });
+    this.micButton?.setProperties({ backgroundColor: '#b5473a' });
     this.set('mic-label', '...');
     const loading = this.mic.engine === 'local' && !localVoice.ready.stt;
     this.set('heard', loading ? 'Un instant... Loading speech recognition.' : 'Un instant... Listening back.');

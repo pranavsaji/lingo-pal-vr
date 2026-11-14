@@ -20,8 +20,8 @@ import { luneSpeaking, speakFrench } from '../speech.js';
 const AFTER_LINE_MS = 700;
 /** If her greeting never plays (muted, no voice), say the line anyway after this. */
 const FALLBACK_MS = 9000;
-const STRIP = '#6d2e46';
-const GOLD = '#f5d90a';
+const STRIP = '#232c3b';
+const GOLD = '#e2b857';
 
 export class PassportSystem extends createSystem({}) {
   private lesson: UIKitMLAsset | null = null;

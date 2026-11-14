@@ -93,12 +93,12 @@ export class HandSystem extends createSystem({}) {
     const ctx = this.badgeCanvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, 128, 128);
-    ctx.fillStyle = 'rgba(29, 53, 87, 0.92)';
+    ctx.fillStyle = 'rgba(22, 35, 59, 0.94)';
     ctx.beginPath();
     ctx.arc(64, 64, 60, 0, Math.PI * 2);
     ctx.fill();
     ctx.lineWidth = 6;
-    ctx.strokeStyle = '#f5d90a';
+    ctx.strokeStyle = '#e2b857';
     ctx.stroke();
     ctx.fillStyle = '#fafaf7';
     ctx.font = 'bold 72px sans-serif';

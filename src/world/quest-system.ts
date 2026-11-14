@@ -72,7 +72,7 @@ export class QuestSystem extends createSystem({}) {
       const mark = t.done ? 'OK' : here ? '>' : '·';
       this.el[`quest-${i}`]?.setProperties({
         text: `${mark}  ${PLACES[t.place].fr} : ${taskPhrase(t)}`,
-        color: t.done ? '#2a9d8f' : here ? '#f4a261' : undefined,
+        color: t.done ? '#3f8f78' : here ? '#d9a962' : undefined,
       } as never);
     });
   }

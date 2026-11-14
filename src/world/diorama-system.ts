@@ -338,7 +338,7 @@ export class DioramaSystem extends createSystem({
       this.drawCard(g, i, p, pinSubtitle(p, hint, subtitles));
     });
     const eyes = store.profile.settings.gazeDwell;
-    this.drawPlain(g, 8, 'Plan de Paris', subtitles ? (eyes ? 'Look at a pin to travel' : 'Touch or pinch a pin to travel') : '', '#1d2633', '#f5d90a');
+    this.drawPlain(g, 8, 'Plan de Paris', subtitles ? (eyes ? 'Look at a pin to travel' : 'Touch or pinch a pin to travel') : '', '#1d2633', '#e2b857');
     this.drawPlain(g, 9, '×  Fermer', subtitles ? 'Close the map' : '', '#3b3d43', '#fafaf7');
     a.tex.needsUpdate = true;
   }
@@ -363,7 +363,7 @@ export class DioramaSystem extends createSystem({
     g.font = 'bold 58px sans-serif';
     g.fillText(title, SLOT_W / 2, sub ? 92 : 120, SLOT_W - 50);
     if (sub) {
-      g.fillStyle = '#c9ccd3';
+      g.fillStyle = '#c3cad6';
       g.font = '36px sans-serif';
       g.fillText(sub, SLOT_W / 2, 152, SLOT_W - 50);
     }
@@ -383,7 +383,7 @@ export class DioramaSystem extends createSystem({
     g.roundRect(6, 6, SLOT_W - 12, SLOT_H - 12, 34);
     g.fill();
     g.lineWidth = here || flashing ? 9 : 5;
-    g.strokeStyle = flashing ? '#f5d90a' : here ? '#f5d90a' : locked ? '#6c757d' : hex(PIN_COLORS[p.id] ?? 0x2a9d8f);
+    g.strokeStyle = flashing ? '#e2b857' : here ? '#e2b857' : locked ? '#4a5568' : hex(PIN_COLORS[p.id] ?? 0x2a9d8f);
     g.stroke();
     // Icon disc.
     const cx = 82;
@@ -405,7 +405,7 @@ export class DioramaSystem extends createSystem({
     g.font = 'bold 50px sans-serif';
     g.fillText(p.fr, tx, sub ? 88 : 116, maxW);
     if (sub) {
-      g.fillStyle = here ? '#f5d90a' : locked ? '#f5d90a' : '#b8c0cc';
+      g.fillStyle = here ? '#e2b857' : locked ? '#e2b857' : '#b8c0cc';
       g.font = `${sub.length > 24 ? 28 : 34}px sans-serif`;
       wrap(g, sub, tx, 136, maxW, sub.length > 24 ? 32 : 38);
     }

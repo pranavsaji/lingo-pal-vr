@@ -47,9 +47,9 @@ const FLAT_HEAD: [number, number, number] = [0, 1.22, -0.05];
 
 type ButtonId = 'mic' | 'hide' | 'leave';
 const BUTTONS: { id: ButtonId; fr: string; en: string; color: string }[] = [
-  { id: 'mic', fr: 'Micro', en: 'Mic on', color: '#2a9d8f' },
-  { id: 'hide', fr: 'Masquer', en: 'Hide', color: '#457b9d' },
-  { id: 'leave', fr: 'Quitter', en: 'Leave', color: '#d1495b' },
+  { id: 'mic', fr: 'Micro', en: 'Mic on', color: '#3f8f78' },
+  { id: 'hide', fr: 'Masquer', en: 'Hide', color: '#3b4a63' },
+  { id: 'leave', fr: 'Quitter', en: 'Leave', color: '#b5473a' },
 ];
 
 interface Button {
@@ -278,8 +278,8 @@ export class SocialSystem extends createSystem({
     if (social.state === 'invited') {
       // "Rejoindre le café de votre ami ?": Join / No thanks (pinch, look, or say "oui").
       b.mesh.visible = b.id !== 'hide';
-      if (b.id === 'mic') drawButton(c, 'Rejoindre', 'Join', '#2a9d8f', b.hover);
-      else if (b.id === 'leave') drawButton(c, 'Non merci', 'No thanks', '#6c757d', b.hover);
+      if (b.id === 'mic') drawButton(c, 'Rejoindre', 'Join', '#3f8f78', b.hover);
+      else if (b.id === 'leave') drawButton(c, 'Non merci', 'No thanks', '#4a5568', b.hover);
       b.tex.needsUpdate = true;
       return;
     }
@@ -287,7 +287,7 @@ export class SocialSystem extends createSystem({
     const off = b.id === 'mic' && (this.muted || !this.mic);
     const fr = b.id === 'mic' ? (off ? 'Micro : non' : 'Micro : oui') : spec.fr;
     const en = b.id !== 'mic' ? spec.en : this.micBlocked ? 'Mic blocked' : off ? 'Pinch to talk' : 'Mic on';
-    drawButton(c, fr, en, off ? '#6c757d' : spec.color, b.hover);
+    drawButton(c, fr, en, off ? '#4a5568' : spec.color, b.hover);
     b.tex.needsUpdate = true;
   }
 
@@ -399,7 +399,7 @@ export class SocialSystem extends createSystem({
         'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:8px 14px;border-radius:16px;background:rgba(29,53,87,.92);color:#fafaf7;font:15px/1.3 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.3)';
       const title = document.createElement('b');
       title.textContent = 'Café à deux';
-      title.style.color = '#f5d90a';
+      title.style.color = '#e2b857';
       const status = document.createElement('span');
       const extra = document.createElement('div');
       extra.style.cssText = 'display:flex;align-items:center;gap:8px';
@@ -410,14 +410,14 @@ export class SocialSystem extends createSystem({
         b.addEventListener('click', fn);
         return b;
       };
-      const sound = btn('Activer le son', '#f4a261', () => {
+      const sound = btn('Activer le son', '#d9a962', () => {
         ensureAudioContext();
         void this.audio?.el.play().catch(() => undefined);
         this.renderDom();
       });
-      const mic = btn('Micro', '#2a9d8f', () => this.setMuted(!this.muted));
-      const leave = btn('Quitter', '#d1495b', () => void social.leave());
-      const join = btn('Rejoindre', '#2a9d8f', () => social.accept());
+      const mic = btn('Micro', '#3f8f78', () => this.setMuted(!this.muted));
+      const leave = btn('Quitter', '#b5473a', () => void social.leave());
+      const join = btn('Rejoindre', '#3f8f78', () => social.accept());
       root.append(title, status, extra, join, sound, mic, leave);
       document.body.appendChild(root);
       this.dom = { root, status, extra, mic, sound, join, leave };
@@ -430,7 +430,7 @@ export class SocialSystem extends createSystem({
     d.mic.style.display = invited ? 'none' : '';
     d.leave.textContent = invited ? 'Non merci' : 'Quitter';
     d.mic.textContent = this.micBlocked ? 'Micro bloqué' : this.muted || !this.mic ? 'Micro : non' : 'Micro : oui';
-    d.mic.style.background = this.muted || !this.mic ? '#6c757d' : '#2a9d8f';
+    d.mic.style.background = this.muted || !this.mic ? '#4a5568' : '#3f8f78';
     const ctx = ensureAudioContextIfExists();
     d.sound.style.display = !invited && ctx && ctx.state !== 'running' ? '' : 'none';
     d.extra.replaceChildren();
@@ -456,7 +456,7 @@ export class SocialSystem extends createSystem({
     } else if (social.state === 'connected') {
       const t = document.createElement('span');
       t.textContent = `Au tour de ${social.nameOf(social.holder)}`;
-      t.style.color = '#f4a261';
+      t.style.color = '#d9a962';
       d.extra.append(t);
     }
   }

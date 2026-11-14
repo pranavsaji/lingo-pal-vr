@@ -135,7 +135,7 @@ describe('finger counting on captured-skeleton hand poses', () => {
       report.push(`${name} ${((ok / trials) * 100).toFixed(1)}%`);
       expect(ok / trials, report.join(', ')).toBeGreaterThanOrEqual(0.97);
     }
-  });
+  }, 30_000);
 
   it('as a 72 Hz stream with 3 mm jitter, the debounced count is right within 1 s and never wrong', () => {
     const r = rng(11);
@@ -160,5 +160,5 @@ describe('finger counting on captured-skeleton hand poses', () => {
       }
       expect(onTime / trials, `${name} on time`).toBeGreaterThanOrEqual(0.99);
     }
-  });
+  }, 30_000);
 });

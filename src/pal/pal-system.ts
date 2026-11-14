@@ -144,11 +144,11 @@ export class PalSystem extends createSystem({
     body.color.setHex(this.dimmed ? 0x8c8c8c : 0xffffff);
     this.rig.ringMat.color.setHex(s.highContrast ? 0xffffff : PAL_BLUE);
     const hc = s.highContrast;
-    this.style('pal-box', hc ? { borderColor: '#ffffff', borderWidth: 3, backgroundColor: '#000000' } : { borderColor: '#6f9be8', borderWidth: 2, backgroundColor: '#1d3566' });
+    this.style('pal-box', hc ? { borderColor: '#ffffff', borderWidth: 3, backgroundColor: '#000000' } : { borderColor: '#7c9fd0', borderWidth: 2, backgroundColor: '#1b2c4a' });
     this.style('pal-line', { color: '#ffffff' });
-    this.style('pal-tip', { color: hc ? '#ffffff' : '#cfe0ff' });
-    this.style('pal-say', hc ? { borderColor: '#ffffff', borderWidth: 3, backgroundColor: '#ffffff' } : { borderColor: '#2f5fb3', borderWidth: 2, backgroundColor: '#dce8ff' });
-    this.style('pal-say-sd', { color: hc ? '#000000' : '#4a4c55' });
+    this.style('pal-tip', { color: hc ? '#ffffff' : '#c8d5ea' });
+    this.style('pal-say', hc ? { borderColor: '#ffffff', borderWidth: 3, backgroundColor: '#ffffff' } : { borderColor: '#3a66a8', borderWidth: 2, backgroundColor: '#e3eaf5' });
+    this.style('pal-say-sd', { color: hc ? '#000000' : '#3a4558' });
     for (let i = 0; i < 3; i++) this.style(`opt-${i}-sd`, { color: hc ? '#ffffff' : '#9aa0aa' });
     this.style('pal-button', hc ? { borderColor: '#ffffff', borderWidth: 3 } : { borderColor: '#000000', borderWidth: 0 });
   }

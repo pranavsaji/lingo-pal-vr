@@ -115,12 +115,12 @@ export class LessonSystem extends createSystem({}) {
   private celebrate(fr: string, en: string): void {
     this.set('eyebrow', fr);
     this.set('english', en);
-    this.flashHeader('#f4a261');
+    this.flashHeader('#d9a962');
   }
 
   private flashHeader(color: string): void {
     this.el.header?.setProperties({ backgroundColor: color });
-    setTimeout(() => this.el.header?.setProperties({ backgroundColor: '#1d3557' }), 900);
+    setTimeout(() => this.el.header?.setProperties({ backgroundColor: '#16233b' }), 900);
   }
 
   private startMission(ids: string[] = MISSIONS, mode: 'mission' | 'review' = 'mission'): void {
@@ -155,7 +155,7 @@ export class LessonSystem extends createSystem({}) {
     this.set('word', `${store.profile.streakDays} jour${store.profile.streakDays === 1 ? '' : 's'} de suite`);
     this.set('english', `${s.en} ${hook.en}`);
     this.set('tip', hook.fr);
-    this.flashHeader('#2a9d8f');
+    this.flashHeader('#3f8f78');
   }
 
   private onItemPicked(id: string): void {
@@ -179,7 +179,7 @@ export class LessonSystem extends createSystem({}) {
       const review = this.mode === 'review';
       if (review) store.reviewWord(id, this.stepMistakes === 0 ? 2 : 1);
       this.addPoints(10);
-      this.flashHeader('#2a9d8f');
+      this.flashHeader('#3f8f78');
       this.missionStep += 1;
       if (this.missionStep >= this.missionIds.length) {
         this.mode = 'done';
@@ -195,7 +195,7 @@ export class LessonSystem extends createSystem({}) {
       this.set('tip', `Oui ! ${entry.fr} = ${entry.en}.`);
       setTimeout(() => this.showMissionPrompt(), 1200);
     } else {
-      this.flashHeader('#e63946');
+      this.flashHeader('#b5473a');
       this.stepMistakes += 1;
       if (this.mode === 'review') events.missionTarget.emit(targetId); // now show the hint ring
       const target = vocabById(targetId);

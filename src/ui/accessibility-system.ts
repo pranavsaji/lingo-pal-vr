@@ -27,7 +27,7 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
     (id) => ['lesson-panel', id, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }],
   ),
   ...['choose-hands', 'choose-eyes', 'choose-voice', 'choose-text'].map(
-    (id) => ['lesson-panel', id, { color: '#4a4c55', width: 2 }] as [string, string, { color: string; width: number }],
+    (id) => ['lesson-panel', id, { color: '#3a4558', width: 2 }] as [string, string, { color: string; width: number }],
   ),
   ...['highContrast', 'textSize', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'realLife', 'pronunciationHelp', 'tutorial'].map(
     (k) => ['settings-panel', `set-${k}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }],
@@ -39,8 +39,8 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
   ...PLACE_ORDER.map((p) => ['map-panel', `place-${p}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }]),
   ['report-panel', 'week-back', { color: '#000000', width: 0 }],
   ['chat-panel', 'mic-button', { color: '#000000', width: 0 }],
-  ['chat-panel', 'rl-translate', { color: '#4a4c55', width: 1 }],
-  ['chat-panel', 'rl-aide', { color: '#4a4c55', width: 1 }],
+  ['chat-panel', 'rl-translate', { color: '#3a4558', width: 1 }],
+  ['chat-panel', 'rl-aide', { color: '#3a4558', width: 1 }],
 ];
 
 export class AccessibilitySystem extends createSystem({}) {
@@ -78,7 +78,7 @@ export class AccessibilitySystem extends createSystem({}) {
       const el = this.panels.get(panel)?.getElementById(id);
       el?.setProperties((s.highContrast ? { borderColor: '#ffffff', borderWidth: 3 } : { borderColor: normal.color, borderWidth: normal.width }) as never);
     }
-    this.panels.get('settings-panel')?.getElementById('a11y-summary')?.setProperties({ text: a11ySummary(s), color: s.highContrast ? '#ffffff' : '#f5d90a' } as never);
+    this.panels.get('settings-panel')?.getElementById('a11y-summary')?.setProperties({ text: a11ySummary(s), color: s.highContrast ? '#ffffff' : '#e2b857' } as never);
   }
 
   private press(panel: string, id: string): void {

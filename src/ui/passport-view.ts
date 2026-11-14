@@ -9,7 +9,7 @@ import { nextStamp, STAMP_SLOTS, STAMPS, stampDate, type StampKind } from '../st
 import { daysToNextRest, MAX_REST } from '../state/rest-days.js';
 import { store } from '../state/store.js';
 
-const KIND_COLOR: Record<StampKind, string> = { shop: '#c8553d', streak: '#e09f3e', skill: '#2a9d8f' };
+const KIND_COLOR: Record<StampKind, string> = { shop: '#9c4a3c', streak: '#a8823a', skill: '#3f8f78' };
 const NEXT_TRACK_PX = 480;
 const GOAL_TRACK_PX = 496;
 
@@ -48,13 +48,13 @@ export function renderPassport(panel: Panel): void {
     text(panel, `${id}-name`, s.fr);
     if (day) {
       const fresh = day === store.today;
-      style(panel, id, { backgroundColor: KIND_COLOR[s.kind], borderColor: fresh ? '#f5d90a' : KIND_COLOR[s.kind], borderWidth: fresh ? 4 : 2 });
+      style(panel, id, { backgroundColor: KIND_COLOR[s.kind], borderColor: fresh ? '#e2b857' : KIND_COLOR[s.kind], borderWidth: fresh ? 4 : 2 });
       style(panel, `${id}-name`, { color: '#ffffff' });
       text(panel, `${id}-sub`, fresh ? `${stampDate(day)} · NOUVEAU` : stampDate(day));
       style(panel, `${id}-sub`, { color: '#fff3d6' });
     } else {
       const pr = s.progress(f);
-      style(panel, id, { backgroundColor: '#2b2d33', borderColor: '#4a4c55', borderWidth: 2 });
+      style(panel, id, { backgroundColor: '#232c3b', borderColor: '#3a4558', borderWidth: 2 });
       style(panel, `${id}-name`, { color: '#9a9da6' });
       text(panel, `${id}-sub`, pr.need > 1 ? `${Math.min(pr.have, pr.need)} / ${pr.need}` : 'à gagner');
       style(panel, `${id}-sub`, { color: '#7d818c' });
@@ -91,12 +91,12 @@ export function renderGoals(report: Panel, dayRows: { day: string }[]): void {
   text(report, 'goal-title', `OBJECTIF · ${g.label}`);
   text(report, 'goal-next', g.next ? `${g.next.xpToNext} XP to ${g.next.id}` : 'Top level. Bravo !');
   style(report, 'goal-fill', { width: Math.max(7, Math.round(GOAL_TRACK_PX * g.progress)) });
-  g.rungs.forEach((r, i) => style(report, `rung-${i}`, { color: r.current ? '#f5d90a' : r.reached ? '#2a9d8f' : '#6c757d' }));
+  g.rungs.forEach((r, i) => style(report, `rung-${i}`, { color: r.current ? '#e2b857' : r.reached ? '#3f8f78' : '#4a5568' }));
   // Days a rest day covered show as a blue "repos" bar instead of an empty day.
   const rest = store.profile.restUsed;
   dayRows.forEach((row, i) => {
     if (!rest.includes(row.day)) return;
-    style(report, `bar-${i}`, { height: 18, backgroundColor: '#457b9d' });
+    style(report, `bar-${i}`, { height: 18, backgroundColor: '#3f8f78' });
     text(report, `bar-${i}-xp`, 'repos');
   });
   const hook = store.tomorrowHook();

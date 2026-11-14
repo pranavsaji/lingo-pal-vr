@@ -28,7 +28,7 @@
     padding-bottom: 16px;
     padding-left: 24px;
     padding-right: 24px;
-    background-color: #1d3557;
+    background-color: #16233b;
   }
 
   .brand {
@@ -38,7 +38,7 @@
   }
 
   .score {
-    color: #f5d90a;
+    color: #e2b857;
     font-size: 20px;
     font-weight: bold;
   }
@@ -59,7 +59,7 @@
   }
 
   .eyebrow:dark {
-    color: #f5d90a;
+    color: #e2b857;
   }
 
   .word {
@@ -78,7 +78,7 @@
   }
 
   .english:dark {
-    color: #c9ccd3;
+    color: #c3cad6;
   }
 
   .tip {
@@ -87,7 +87,7 @@
   }
 
   .tip:dark {
-    color: #9fd3c7;
+    color: #9fb8cc;
   }
 
   .quest {
@@ -105,7 +105,7 @@
   }
 
   .quest:dark {
-    background-color: #2b2d33;
+    background-color: #232c3b;
   }
 
   .quest-title {
@@ -115,7 +115,7 @@
   }
 
   .quest-title:dark {
-    color: #f4a261;
+    color: #d9a962;
   }
 
   .quest-line {
@@ -145,12 +145,12 @@
     padding-left: 22px;
     padding-right: 22px;
     border-radius: 18px;
-    background-color: #e63946;
+    background-color: #3b4a63;
     cursor: pointer;
   }
 
   .action:hover {
-    background-color: #ff5a67;
+    background-color: #4a5b78;
   }
 
   .action-text {
@@ -172,14 +172,14 @@
     width: 400px;
     height: 12px;
     border-radius: 6px;
-    background-color: #4a4c55;
+    background-color: #3a4558;
   }
 
   .xp-fill {
     width: 0px;
     height: 12px;
     border-radius: 6px;
-    background-color: #f5d90a;
+    background-color: #e2b857;
   }
 
   .xp-label {
@@ -189,7 +189,7 @@
   }
 
   .xp-label:dark {
-    color: #f5d90a;
+    color: #e2b857;
   }
 
   .pass {
@@ -204,24 +204,24 @@
     padding-left: 14px;
     padding-right: 14px;
     border-radius: 14px;
-    border-width: 2px;
-    border-color: #f5d90a;
-    background-color: #6d2e46;
+    border-width: 1px;
+    border-color: #e2b857;
+    background-color: #232c3b;
     cursor: pointer;
   }
 
   .pass:hover {
-    background-color: #8a3b59;
+    background-color: #2e394b;
   }
 
   .pass-title {
-    color: #f5d90a;
+    color: #e2b857;
     font-size: 15px;
     font-weight: bold;
   }
 
   .pass-text {
-    color: #ffe3ea;
+    color: #c3cad6;
     font-size: 15px;
   }
 
@@ -240,15 +240,15 @@
     width: 84px;
     height: 84px;
     border-radius: 42px;
-    background-color: #1d3557;
-    border-color: #f5d90a;
+    background-color: #16233b;
+    border-color: #e2b857;
     border-width: 3px;
   }
 
   .tut-icon {
     width: 52px;
     height: 52px;
-    color: #f5d90a;
+    color: #e2b857;
   }
 
   .choices {
@@ -267,21 +267,21 @@
     padding-top: 14px;
     padding-bottom: 12px;
     border-radius: 18px;
-    background-color: #2b2d33;
-    border-color: #4a4c55;
+    background-color: #232c3b;
+    border-color: #3a4558;
     border-width: 2px;
     cursor: pointer;
   }
 
   .choice:hover {
-    background-color: #3d5a80;
-    border-color: #f5d90a;
+    background-color: #2e394b;
+    border-color: #e2b857;
   }
 
   .choice-icon {
     width: 46px;
     height: 46px;
-    color: #f5d90a;
+    color: #e2b857;
   }
 
   .choice-text {
@@ -330,35 +330,35 @@
     <span class="quest-line" id="quest-2">Marché : trois pommes</span>
   </div>
   <div class="actions">
-    <div class="action" id="start-button">
-      <span class="action-text" id="start-label">Commencer la mission</span>
+    <div class="action" id="start-button" style="background-color: #e2b857">
+      <span class="action-text" id="start-label" style="color: #16233b">Commencer la mission</span>
     </div>
-    <div class="action" id="repeat-button" style="background-color: #457b9d">
+    <div class="action" id="repeat-button">
       <span class="action-text">Répéter</span>
     </div>
   </div>
   <div class="actions" id="menu-row">
-    <div class="action" id="carnet-button" style="background-color: #2a9d8f">
+    <div class="action" id="carnet-button">
       <span class="action-text">Mon Carnet</span>
     </div>
-    <div class="action" id="settings-button" style="background-color: #6c4ab6">
+    <div class="action" id="settings-button">
       <span class="action-text">Réglages</span>
     </div>
-    <div class="action" id="map-button" style="background-color: #d1495b">
+    <div class="action" id="map-button">
       <span class="action-text" id="map-label">Paris</span>
     </div>
   </div>
   <div class="actions" id="xr-row">
-    <div class="action" id="xr-button" style="background-color: #2a9d8f; padding-left: 14px; padding-right: 14px">
+    <div class="action" id="xr-button" style="padding-left: 14px; padding-right: 14px">
       <span class="action-text" id="xr-label">Paris (VR)</span>
     </div>
-    <div class="action" id="ar-button" style="background-color: #457b9d; padding-left: 14px; padding-right: 14px">
+    <div class="action" id="ar-button" style="padding-left: 14px; padding-right: 14px">
       <span class="action-text" id="ar-label">Ma pièce (MR)</span>
     </div>
-    <div class="action" id="exit-button" style="display: none; background-color: #6c757d">
+    <div class="action" id="exit-button" style="display: none">
       <span class="action-text">Exit VR</span>
     </div>
-    <div class="action" id="week-button" style="background-color: #e76f51">
+    <div class="action" id="week-button">
       <span class="action-text">Ma semaine</span>
     </div>
   </div>

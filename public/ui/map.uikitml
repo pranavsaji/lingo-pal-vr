@@ -30,7 +30,7 @@
     padding-bottom: 14px;
     padding-left: 22px;
     padding-right: 22px;
-    background-color: #d1495b;
+    background-color: #16233b;
   }
 
   .brand {
@@ -40,7 +40,7 @@
   }
 
   .sub {
-    color: #ffe3e8;
+    color: #c3cad6;
     font-size: 15px;
   }
 
@@ -63,12 +63,12 @@
     padding-left: 14px;
     padding-right: 12px;
     border-radius: 14px;
-    background-color: #2b2d33;
+    background-color: #232c3b;
     cursor: pointer;
   }
 
   .shop:hover {
-    background-color: #3d5a80;
+    background-color: #2e394b;
   }
 
   .top {
@@ -96,7 +96,7 @@
     padding-left: 8px;
     padding-right: 8px;
     border-radius: 10px;
-    background-color: #f5d90a;
+    background-color: #e2b857;
   }
 
   .hint {
@@ -108,7 +108,7 @@
   }
 
   .hint:dark {
-    color: #9fd3c7;
+    color: #9fb8cc;
   }
 
   .actions {
@@ -130,12 +130,12 @@
     padding-left: 18px;
     padding-right: 18px;
     border-radius: 18px;
-    background-color: #6c757d;
+    background-color: #3b4a63;
     cursor: pointer;
   }
 
   .action:hover {
-    background-color: #868e96;
+    background-color: #4a5b78;
   }
 
   .action-text {
@@ -205,16 +205,16 @@
     <div class="action" id="map-back">
       <span class="action-text">Retour</span>
     </div>
-    <div class="action" id="map-passport" style="background-color: #6d2e46">
+    <div class="action" id="map-passport">
       <span class="action-text" id="map-passport-label">Passeport</span>
     </div>
-    <div class="action" id="map-mode" style="background-color: #457b9d">
+    <div class="action" id="map-mode">
       <span class="action-text" id="map-mode-label">Ma pièce (MR)</span>
     </div>
-    <div class="action" id="map-place" style="display: none; background-color: #2a9d8f">
-      <span class="action-text">Placer le café</span>
+    <div class="action" id="map-place" style="display: none; background-color: #e2b857">
+      <span class="action-text" style="color: #16233b">Placer le café</span>
     </div>
-    <div class="action" id="invite-button" style="background-color: #2a9d8f">
+    <div class="action" id="invite-button">
       <span class="action-text" id="invite-label">Inviter un ami</span>
     </div>
   </div>
