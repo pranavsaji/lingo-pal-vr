@@ -9,6 +9,7 @@
  */
 
 import {
+  type BufferGeometry,
   BoxGeometry,
   CanvasTexture,
   CircleGeometry,
@@ -19,12 +20,15 @@ import {
   type Object3D,
 } from '@iwsdk/core';
 import type { PlaceLook, Surface } from '../places/places.js';
+import { freezeStatic, mergeStaticMeshes, stripTransmission } from './static-merge.js';
 import { surfaceMaterial, type TextureSet } from './surfaces.js';
 
 export interface ShopSet {
   root: Group;
   /** Shared, cached model instances: detach these before disposing the set. */
   props: Object3D[];
+  /** Geometry of merged prop meshes (in `props`, shared materials): dispose these after detaching. */
+  geometries: BufferGeometry[];
 }
 
 type Sets = Map<string, TextureSet | null>;
@@ -142,5 +146,20 @@ export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) 
     props.push(obj);
   }
 
-  return { root, props };
+  // Cost without visible change (see static-merge.ts): no refraction pass, one draw per
+  // material for everything static, matrices computed once.
+  stripTransmission(root);
+  const propMaterials = new Set<unknown>();
+  for (const prop of props) prop.traverse((o) => propMaterials.add((o as Mesh).material));
+  const { merged } = mergeStaticMeshes(root);
+  const geometries: BufferGeometry[] = [];
+  for (const mesh of merged) {
+    // Merged from props: the material belongs to the asset cache, so detach before disposal.
+    if (!propMaterials.has(mesh.material)) continue;
+    props.push(mesh);
+    geometries.push(mesh.geometry);
+  }
+  freezeStatic(root);
+
+  return { root, props, geometries };
 }

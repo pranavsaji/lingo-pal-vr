@@ -25,6 +25,7 @@ import { PlaceSystem } from './world/place-system.js';
 import { QuestSystem } from './world/quest-system.js';
 import { PassportSystem } from './world/passport-system.js';
 import { CoachSystem } from './world/coach-system.js';
+import { PerfHudSystem } from './world/perf-hud-system.js';
 import { SocialSystem } from './social/social-system.js'; // Café à deux; also joins a ?room= link before the World starts
 
 import { localVoice } from './voice/local-voice.js';
@@ -90,4 +91,5 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(CoachSystem); // proactive shopkeeper: hints on hesitation / gaze (local, rate-limited)
   world.registerSystem(AccessibilitySystem); // input-mode choice, global voice commands, high contrast in 3D
   world.registerSystem(SocialSystem); // two learners at one counter (idle until a room is opened)
+  if (new URLSearchParams(location.search).has('perf')) world.registerSystem(PerfHudSystem); // tester mode only (TESTING.md)
 });

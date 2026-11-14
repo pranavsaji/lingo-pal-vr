@@ -51,6 +51,7 @@ import {
 } from '@iwsdk/core';
 import { Coin, VocabItem } from '../components.js';
 import { appState, events } from '../game-state.js';
+import { POWER } from './power.js';
 import { COUNTER_Y } from '../layout.js';
 import { store } from '../state/store.js';
 import { onActivate } from '../ui/dwell.js';
@@ -263,6 +264,15 @@ export class MixedRealitySystem extends createSystem({
         this.renderButtons();
       })
       .catch(() => undefined);
+
+    // Frame-rate guard (src/world/power.ts): occlusion is the first MR luxury to go.
+    this.cleanupFuncs.push(
+      events.power.on((level) => {
+        if (level < POWER.occlusion || !this.occlusionOn) return;
+        this.disableOcclusion();
+        this.occlusionDegraded = true;
+      }),
+    );
 
     this.cleanupFuncs.push(
       events.settings.on((s) => {
@@ -733,7 +743,7 @@ export class MixedRealitySystem extends createSystem({
   // ---------------------------------------------------------------- depth occlusion
 
   private enableOcclusion(): void {
-    if (this.occlusionOn || this.occlusionDegraded) return;
+    if (this.occlusionOn || this.occlusionDegraded || appState.powerLevel >= POWER.occlusion) return;
     this.occlusionOn = true;
     for (const e of this.queries.items.entities) this.occlude(e);
     for (const e of this.queries.coins.entities) this.occlude(e);

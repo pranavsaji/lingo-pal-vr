@@ -88,6 +88,8 @@ export const events = {
   invite: new Emitter<void>(),
   /** Café à deux: a friend is (true) or is no longer (false) at a counter-end seat. */
   friendPresent: new Emitter<boolean>(),
+  /** Frame-rate guard: the power level changed (0 = everything on; see src/world/power.ts). */
+  power: new Emitter<number>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
@@ -109,4 +111,6 @@ export const appState = {
   choosingInput: false,
   /** When set, a pinched chat reply is offered here first; returning true consumes it (no agent turn). */
   interceptReply: null as ((fr: string) => boolean) | null,
+  /** Frame-rate guard: extras dropped to hold the frame rate (0 = none; see src/world/power.ts). */
+  powerLevel: 0,
 };

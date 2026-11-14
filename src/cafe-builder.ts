@@ -21,7 +21,19 @@ import {
 } from '@iwsdk/core';
 import type { ItemShape } from './vocab.js';
 
+/** Materials shared within the item being built, so its meshes can merge (one draw per material). */
+let itemMats: Map<string, MeshStandardMaterial> | null = null;
+
 function mat(color: number, opts: { roughness?: number; metalness?: number; transparent?: boolean; opacity?: number } = {}): MeshStandardMaterial {
+  const key = `${color}|${opts.roughness}|${opts.metalness}|${opts.transparent}|${opts.opacity}`;
+  const shared = itemMats?.get(key);
+  if (shared) return shared;
+  const m = newMat(color, opts);
+  itemMats?.set(key, m);
+  return m;
+}
+
+function newMat(color: number, opts: { roughness?: number; metalness?: number; transparent?: boolean; opacity?: number }): MeshStandardMaterial {
   return new MeshStandardMaterial({
     color,
     roughness: opts.roughness ?? 0.6,
@@ -41,6 +53,15 @@ function mesh(geo: ConstructorParameters<typeof Mesh>[0], m: MeshStandardMateria
 
 /** Build one pinchable vocabulary object. */
 export function buildItem(shape: ItemShape, color: number): Group {
+  itemMats = new Map();
+  try {
+    return buildItemShape(shape, color);
+  } finally {
+    itemMats = null;
+  }
+}
+
+function buildItemShape(shape: ItemShape, color: number): Group {
   const g = new Group();
   switch (shape) {
     case 'croissant': {

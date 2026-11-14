@@ -11,6 +11,8 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 // @ts-expect-error plain ESM module shared with the Vercel function
 import { handleAgent } from './server/agent-handler.mjs';
 // @ts-expect-error plain ESM module shared with the Vercel function
+import { handlePerf } from './server/perf-handler.mjs';
+// @ts-expect-error plain ESM module shared with the Vercel function
 import { handleStt } from './server/stt-handler.mjs';
 // @ts-expect-error plain ESM module shared with the Vercel function
 import { handleTts } from './server/tts-handler.mjs';
@@ -58,7 +60,7 @@ function shopkeeperApi(): Plugin {
           res.end(JSON.stringify(body));
         });
       });
-      const routes: Record<string, Handler> = { '/api/agent': handleAgent };
+      const routes: Record<string, Handler> = { '/api/agent': handleAgent, '/api/perf': handlePerf };
       for (const [route, handle] of Object.entries(routes)) server.middlewares.use(route, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;

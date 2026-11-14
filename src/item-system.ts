@@ -25,11 +25,16 @@ import { events } from './game-state.js';
 import { SERVE } from './layout.js';
 import { addDwellTarget } from './ui/dwell.js';
 import { VOCAB, vocabById, type VocabEntry } from './vocab.js';
+import { mergeStaticMeshes, stripTransmission } from './world/static-merge.js';
 
 /** The realistic model when it has loaded, otherwise the procedural stand-in. */
 function itemModel(entry: VocabEntry): Group {
   const gltf = entry.model ? AssetManager.getGLTF(entry.model) : null;
-  if (!gltf) return buildItem(entry.shape, entry.color);
+  if (!gltf) {
+    const built = buildItem(entry.shape, entry.color);
+    mergeStaticMeshes(built); // a box of macarons: 10 meshes, a few materials
+    return built;
+  }
   const g = new Group();
   const scene = gltf.scene;
   scene.scale.setScalar(entry.modelScale ?? 1);
@@ -41,6 +46,9 @@ function itemModel(entry: VocabEntry): Group {
       o.receiveShadow = true;
     }
   });
+  // One draw call per material; no refraction pass.
+  stripTransmission(scene);
+  mergeStaticMeshes(scene);
   g.add(scene);
   return g;
 }

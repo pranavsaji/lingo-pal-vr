@@ -69,10 +69,15 @@ app and the AI server so they cannot drift apart.
 
 ## Visual clarity
 
-`src/world/quality-system.ts` renders above the default resolution (framebuffer scale 1.3 on
-Quest 3, 1.1-1.15 on Quest 2/3S/Pro) with light fixed foveation (0.15) so the side panels'
-text stays sharp; if frames drop it raises foveation step by step and relaxes it again when
-there is headroom. Overrides for testing: `?res=1.5`, `?fov=0.5`.
+`src/world/quality-system.ts` renders at each headset's physical panel resolution
+(framebuffer scale 1.2 on Quest 3, 1.1 on Quest 3S, 1.0 elsewhere; Meta's render-scale table
+puts the Quest panel at ~1.2) at the 72 Hz baseline, with light fixed foveation (0.15) so the
+side panels' text stays sharp. If frames drop it raises foveation step by step; if foveation is
+maxed and frames still drop for 3 s, it sheds extras one at a time (`src/world/power.ts`:
+slower shadow updates, background customers, depth occlusion, decor, frozen shadows) and
+restores them only after a long stable stretch. Static scenery is merged per material and
+refractive glass is drawn as plain transparency (`src/world/static-merge.ts`).
+Overrides for testing: `?res=1.5`, `?fov=0.5`, `?power=0..5`. Tester mode: `?perf` (TESTING.md).
 
 ## Meta VR Glasses
 
