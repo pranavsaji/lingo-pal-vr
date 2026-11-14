@@ -19,10 +19,11 @@ import { caughtTrick, findElsewhere, lowStockToday, shouldTrickChange, trickAmou
 import { parseAmountCents, parseIntent } from './intent.js';
 import { MENU, menuItem, PLACES, priceToDigits, priceToFrench } from './menu.js';
 import { hintTurn } from './proactive.js';
+import { acceptsInvite, advanceCurveball, asksSlower, celebration, findCurveball, INVITE, invitationDue, inviteReply, pickCurveball } from './real-life.js';
 import { dailySpecial } from './scenarios.js';
 import { definite, orderPhrase } from './script.js';
 import type { Store } from '../state/store.js';
-import type { AgentEvent, AgentRequest, AgentScene, AgentTurn } from './protocol.js';
+import type { AgentEvent, AgentRequest, AgentScene, AgentTurn, CurveStage, RealLifeScene } from './protocol.js';
 import { applyActions, orderTotal, payWith, type Effect, type Rejection } from './tools.js';
 
 export type Transport = (req: AgentRequest, onSlow: () => void) => Promise<AgentTurn>;
@@ -97,6 +98,16 @@ export class AgentDirector {
   private noted = new Set<string>();
   /** The note for the turn being built (set by detectors, shown after the turn). */
   private pendingNote = '';
+
+  // ---- "Vraie vie" mode (src/agent/real-life.ts) ----
+  /** This visit's curveball and its stage (one per shop visit). */
+  private rl: { place: string; curveball: string; stage: CurveStage } | null = null;
+  /** Help used on the current order ("Traduire", "Aide"); an order paid with none is celebrated. */
+  private rlHelp = 0;
+  /** Extras for the coming "paid" turn: the no-help celebration, or the invitation. */
+  private paidExtra: { celebrate: boolean; invite: boolean } | null = null;
+  /** She invited the learner to real-life mode and waits for the answer. */
+  private inviting = false;
 
   constructor(
     private store: Store,
@@ -174,7 +185,72 @@ export class AgentDirector {
     if (stock && Object.keys(stock).length) req.scene.lowStock = stock;
     if (this.agencyOn() && !this.upsold) req.scene.canUpsell = true;
     if (tomorrow) req.scene.tomorrow = tomorrow;
+    if (p.settings.realLife) req.scene.realLife = this.realLifeScene();
     return req;
+  }
+
+  /** This visit's curveball (picked on the first real-life turn in a shop). */
+  private realLifeScene(): RealLifeScene {
+    if (!this.rl || this.rl.place !== appState.place) {
+      const cb = pickCurveball(appState.place, this.random());
+      this.rl = { place: appState.place, curveball: cb?.fr ?? '', stage: cb ? 'todo' : 'done' };
+    }
+    return { curveball: this.rl.curveball, stage: this.rl.stage };
+  }
+
+  /** Real-life mode: the curveball's stage this visit ('' curveball when none yet). */
+  get realLifeState(): RealLifeScene | null {
+    return this.rl ? { curveball: this.rl.curveball, stage: this.rl.stage } : null;
+  }
+
+  /** The learner used help in real-life mode ("Traduire", "Aide"): this order is not celebrated. */
+  noteHelp(): void {
+    if (this.store.profile.settings.realLife) this.rlHelp += 1;
+  }
+
+  get helpUsed(): number {
+    return this.rlHelp;
+  }
+
+  /** The invitation is waiting for an answer. */
+  get invitePending(): boolean {
+    return this.inviting;
+  }
+
+  /** Her answer to "Prêt pour la vraie vie ?" (null: not an answer, the conversation goes on). */
+  private inviteTurn(event: AgentEvent): AgentTurn | null {
+    if (!this.inviting || event.kind !== 'say') return null;
+    const a = acceptsInvite(event.text);
+    if (a !== 'what') this.inviting = false;
+    if (!a) return null;
+    if (a === 'yes') this.store.setSetting('realLife', true);
+    return inviteReply(a);
+  }
+
+  /** Real-life bookkeeping after a turn: the curveball's stage, and one slow line on request. */
+  private afterRealLife(event: AgentEvent, turn: AgentTurn): AgentTurn {
+    const rl = this.rl;
+    const cb = rl ? findCurveball(rl.place, rl.curveball) : undefined;
+    if (rl && cb) rl.stage = advanceCurveball(rl.stage, event.kind === 'say' ? event.text : null, turn.fr, cb);
+    return event.kind === 'say' && asksSlower(event.text) ? { ...turn, slow: true } : turn;
+  }
+
+  /** The "paid" line, plus the no-help celebration or the one-time invitation. */
+  private withPaidExtra(turn: AgentTurn): AgentTurn {
+    const x = this.paidExtra;
+    this.paidExtra = null;
+    if (!x || this.trick?.announced) return turn; // the change test speaks first; the invitation waits for the next order
+    if (x.celebrate) {
+      const c = celebration(this.store.profile.memories);
+      events.celebrate.emit();
+      return { ...turn, fr: `${turn.fr} ${c.fr}`, en: `${turn.en} ${c.en}`.trim() };
+    }
+    if (x.invite) {
+      this.inviting = true;
+      this.store.markRealLifeInvited();
+      return { ...turn, fr: `${turn.fr} ${INVITE.fr}`, en: `${turn.en} ${INVITE.en}`.trim(), replies: INVITE.replies };
+    }
+    return turn;
   }
 
   /** A new shop: a new shopkeeper does not know the previous conversation. */
@@ -184,6 +260,10 @@ export class AgentDirector {
     this.offer = null;
     this.upsold = false;
     this.trick = null;
+    this.rl = null;
+    this.rlHelp = 0;
+    this.paidExtra = null;
+    this.inviting = false;
   }
 
   /** Serialized: one turn at a time, in order. */
@@ -272,7 +352,8 @@ export class AgentDirector {
     }
     if (e.kind === 'hint') {
       const item = e.itemId ? menuItem(e.itemId) : undefined;
-      this.pendingNote ||= item ? this.note(`vous regardez ${definite(item)}`) : this.note(e.nth >= 1 ? 'je ralentis ?' : 'vous hésitez, petit indice');
+      // Real-life mode: no teaching notes, she just prompts in character.
+      if (!req.scene.realLife) this.pendingNote ||= item ? this.note(`vous regardez ${definite(item)}`) : this.note(e.nth >= 1 ? 'je ralentis ?' : 'vous hésitez, petit indice');
       return hintTurn(req, e);
     }
     return null;
@@ -311,12 +392,15 @@ export class AgentDirector {
       events.subtitle.emit({ who: 'learner', fr: event.text, en: '' });
       this.detectSayMistakes(event);
       const intent = parseIntent(event.text);
-      if (intent.kind === 'command' && intent.command === 'slower') this.store.setSetting('slowSpeech', true);
+      // Real-life mode never turns on slow speech: "plus lentement" slows one line (afterRealLife).
+      if (intent.kind === 'command' && intent.command === 'slower' && !this.store.profile.settings.realLife) this.store.setSetting('slowSpeech', true);
     }
     const req = this.buildRequest(event);
     // An offer stands for one learner answer; her own hints in between do not use it up.
     if (event.kind !== 'hint') this.offer = null;
-    const turn = this.localTurn(req) ?? (await this.transport(req, () => this.onSlow()));
+    let turn = this.inviteTurn(event) ?? this.localTurn(req) ?? (await this.transport(req, () => this.onSlow()));
+    if (req.scene.realLife) turn = this.afterRealLife(event, turn);
+    if (event.kind === 'paid') turn = this.withPaidExtra(turn);
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
     if (rejected.length) {
       this.rejectedLog.push(...rejected);
@@ -359,6 +443,7 @@ export class AgentDirector {
     req.profile = { name: guest.name.slice(0, 16), level: 'A1', sessions: 1, streakDays: 0, weakWords: [], memories: {}, lastVisit: '' };
     req.history = this.guestHistory.slice(-10);
     delete req.scene.tomorrow;
+    delete req.scene.realLife; // the guest keeps the training wheels
     req.scene.shoppingList = '';
     const turn = await this.transport(req, () => this.onSlow());
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
@@ -398,6 +483,14 @@ export class AgentDirector {
     }
     const total = orderTotal(res.state.lines);
     this.store.recordOrderPaid(res.state.changeCents === 0);
+    // "Vraie vie": an order paid with no help is celebrated and counted; the 5th order brings the invitation.
+    const clean = this.store.profile.settings.realLife && this.rlHelp === 0;
+    if (clean) this.store.recordRealLifeOrder();
+    this.rlHelp = 0;
+    this.inviting = false;
+    const invite = invitationDue(this.store.profile);
+    this.paidExtra = clean || invite ? { celebrate: clean, invite } : null;
+    if (this.rl) this.rl.stage = 'done'; // one curveball per visit
     for (const l of res.state.lines) {
       this.bought.add(l.itemId);
       const key = `${appState.place}:${l.itemId}`;

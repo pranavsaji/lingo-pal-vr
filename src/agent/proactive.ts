@@ -11,6 +11,7 @@
 
 import { menuItem, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn } from './menu.js';
 import type { AgentRequest, AgentTurn, ReplyOption } from './protocol.js';
+import { findCurveball } from './real-life.js';
 import { definite } from './script.js';
 import type { OrderPhase } from './tools.js';
 
@@ -135,6 +136,7 @@ const hintOut = (fr: string, en: string, actions: unknown[], replies: ReplyOptio
 
 /** What she says when she offers help unasked. */
 export function hintTurn(req: AgentRequest, t: { reason: 'hesitate' | 'gaze'; itemId?: string; nth: number }): AgentTurn {
+  if (req.scene.realLife) return realLifeHint(req, t);
   const { scene } = req;
   const tier = levelTier(req.profile.level);
   const item = t.itemId ? menuItem(t.itemId) : undefined;
@@ -217,4 +219,33 @@ export function hintTurn(req: AgentRequest, t: { reason: 'hesitate' | 'gaze'; it
     );
   }
   return hintOut('Alors, qu\'est-ce qui vous ferait plaisir ?', 'So, what would you like?', actions, [say, { fr: "Qu'est-ce que vous recommandez ?", en: 'What do you recommend?' }, SLOWER]);
+}
+
+/**
+ * "Vraie vie": no teaching hints. She prompts the way a Paris shopkeeper would
+ * ("Je vous écoute ?", "Et avec ceci ?"), or asks her pending question again.
+ */
+function realLifeHint(req: AgentRequest, t: { reason: 'hesitate' | 'gaze'; itemId?: string; nth: number }): AgentTurn {
+  const { scene } = req;
+  const item = t.itemId ? menuItem(t.itemId) : undefined;
+  const no: ReplyOption = { fr: 'Non, merci.', en: 'No, thank you.' };
+  if (t.reason === 'gaze' && item) {
+    const order: ReplyOption = { fr: `${cap(quantityPhrase(item, 1))}, s'il vous plaît.`, en: `${cap(quantityPhraseEn(item, 1))}, please.` };
+    return hintOut(`${cap(definite(item))}, ça vous tente ?`, `Fancy the ${item.en}?`, [{ type: 'point_at', itemId: item.id }], [order, { fr: `C'est combien, ${definite(item)} ?`, en: `How much is the ${item.en}?` }, no]);
+  }
+  const rl = scene.realLife;
+  const cb = rl && (rl.stage === 'asked' || rl.stage === 'again') ? findCurveball(scene.place, rl.curveball) : undefined;
+  if (cb) return hintOut(`Alors ? ${cb.fr}`, `So? ${cb.en}`, [{ type: 'emote', kind: 'think' }], cb.replies);
+  if (scene.phase === 'paying') {
+    const due = Math.max(0, scene.totalCents - scene.trayCents);
+    return hintOut(`Ça vous fait ${priceToFrench(due)}.`, `That comes to ${priceToEnglish(due)}.`, [{ type: 'emote', kind: 'nod' }], [{ fr: 'Voilà.', en: 'Here you go.' }, { fr: 'Ça fait combien ?', en: 'How much is it?' }, SLOWER]);
+  }
+  if (scene.phase === 'ordering') {
+    return hintOut('Et avec ceci ?', 'Anything else with that?', [{ type: 'emote', kind: 'nod' }], [DONE, { fr: "C'est combien ?", en: 'How much is it?' }, SLOWER]);
+  }
+  return hintOut(t.nth >= 1 ? 'Alors, je vous écoute ?' : 'Je vous écoute ?', t.nth >= 1 ? "So, I'm listening?" : "I'm listening?", [{ type: 'emote', kind: 'nod' }], [
+    { fr: 'Bonjour !', en: 'Hello!' },
+    { fr: "Qu'est-ce que vous recommandez ?", en: 'What do you recommend?' },
+    SLOWER,
+  ]);
 }

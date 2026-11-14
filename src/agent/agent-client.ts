@@ -40,9 +40,9 @@ export interface TurnOptions {
 }
 
 /** Fire-and-forget: wakes the server route and model connection at app start. */
-export function warmUpAgent(place = 'cafe'): void {
+export function warmUpAgent(place = 'cafe', realLife = false): void {
   if (typeof fetch === 'undefined') return;
-  fetch('./api/agent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ warmup: true, place }) })
+  fetch('./api/agent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ warmup: true, place, ...(realLife ? { realLife: true } : {}) }) })
     .then((res) => {
       if (res.status === 404 || res.status === 503) aiAvailable = false;
       else if (res.ok) aiAvailable = true;
@@ -54,7 +54,7 @@ export async function fetchAgentTurn(req: AgentRequest, opts: TurnOptions = {}):
   // The greeting must be instant (first impression, cold server): the scripted
   // greeting is personal (name, favorite order, plat du jour) and warms the AI meanwhile.
   if (req.event.kind === 'arrive') {
-    warmUpAgent(req.scene.place);
+    warmUpAgent(req.scene.place, !!req.scene.realLife);
     return scriptedTurn(req);
   }
   if (aiAvailable === false || typeof fetch === 'undefined') return scriptedTurn(req);

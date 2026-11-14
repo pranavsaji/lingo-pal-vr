@@ -13,6 +13,7 @@ import { PLACE_TEXT } from '../places/place-text.js';
 import { MENU, menuItem, PLACES, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn, type MenuItem } from './menu.js';
 import type { AgentRequest, AgentTurn, ReplyOption } from './protocol.js';
 import type { AgentAction, OrderLine } from './tools.js';
+import { realLifeScripted } from './real-life.js';
 
 const startsWithVowel = (s: string) => /^[aeiouhéèêàâîôû]/i.test(s);
 
@@ -74,6 +75,11 @@ const turn = (fr: string, en: string, actions: AgentAction[], points: number, re
 });
 
 export function scriptedTurn(req: AgentRequest): AgentTurn {
+  // "Vraie vie": French-only phrasing and one curveball per visit (src/agent/real-life.ts).
+  return req.scene.realLife ? realLifeScripted(req, baseTurn) : baseTurn(req);
+}
+
+function baseTurn(req: AgentRequest): AgentTurn {
   const { profile, scene, event } = req;
   const name = profile.name;
   const special = menuItem(scene.special.itemId);

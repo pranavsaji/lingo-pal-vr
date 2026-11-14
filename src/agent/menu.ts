@@ -29,6 +29,20 @@ export interface PlaceData {
   menu: MenuItem[];
   /** Non-menu words (pinchable objects) in this shop. */
   words: string[];
+  /** "Vraie vie" mode: this shop's everyday surprises (one per visit; src/agent/real-life.ts). */
+  realLife?: Curveball[];
+}
+
+/** A real-life service question ("Sur place ou à emporter ?") and how to answer it. */
+export interface Curveball {
+  fr: string;
+  en: string;
+  /** Normalized phrases that answer it ("sur place", "emporter"); "#spell" = letters spelled out. */
+  accept: string[];
+  /** Three reply chips (eyes-only learners, or after "aide"). */
+  replies: { fr: string; en: string }[];
+  /** Her short reaction to a good answer. */
+  ok: { fr: string; en: string };
 }
 
 /** Shop data shared with the AI server (shared/places.json). */

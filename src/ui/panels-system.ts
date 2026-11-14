@@ -37,7 +37,7 @@ const NARROW_TAN = Math.tan((42 * Math.PI) / 180);
 const NARROW_SCALE = 0.85;
 const NARROW_AZIMUTH_DEG: Record<string, number> = { 'lesson-panel': -21, 'carnet-panel': -21, 'settings-panel': -21, 'map-panel': -21, 'report-panel': -21, 'passport-panel': -21, 'chat-panel': 24 };
 
-const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst'];
+const TOGGLES: (keyof Settings)[] = ['highContrast', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'realLife'];
 
 /** Text that must stay readable in high contrast: [panel, element id, normal color]. */
 const CONTRAST_TEXT: [string, string, string][] = [
@@ -245,6 +245,11 @@ export class PanelsSystem extends createSystem({}) {
           : `${Math.round(((t.xp - prev) / prev) * 100)} % XP vs last week. A few minutes a day is enough.`;
     const best = r.bestDay && r.bestDay.xp > 0 ? ` Best day: ${r.bestDay.xp} XP.` : '';
     this.text('report-panel', 'week-note', `${trend}${best}`);
+    // "Vraie vie": orders paid with no English and no help this week.
+    const rl = t.realLifeOrders;
+    const showRl = rl > 0 || store.profile.settings.realLife;
+    this.style('report-panel', 'week-reallife', { display: showRl ? 'flex' : 'none' });
+    if (showRl) this.text('report-panel', 'week-reallife', `Vraie vie : ${rl} commande${rl === 1 ? '' : 's'} sans aide${rl ? ' · Real-life orders, no help' : ''}`);
     renderGoals(this.panels.get('report-panel'), r.days); // A1 > A2 ladder, rest days, tomorrow's teaser
   }
 

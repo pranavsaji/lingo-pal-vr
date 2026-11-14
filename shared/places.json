@@ -15,7 +15,14 @@
         { "id": "eau", "noun": "bouteille d'eau", "plural": "bouteilles d'eau", "gender": "f", "en": "bottle of water", "enPlural": "bottles of water", "priceCents": 150, "aliases": ["eau", "bouteille d eau", "bouteilles d eau", "bouteille"] },
         { "id": "gateau", "noun": "gâteau", "plural": "gâteaux", "gender": "m", "en": "cake", "enPlural": "cakes", "priceCents": 380, "aliases": ["gateau", "gateaux", "gateau au chocolat"] }
       ],
-      "words": ["assiette", "verre", "menu", "fleur"]
+      "words": ["assiette", "verre", "menu", "fleur"],
+      "realLife": [
+        {"fr": "En terrasse ou à l'intérieur ?", "en": "On the terrace or inside?", "accept": ["terrasse", "interieur", "dedans", "dehors", "salle"], "replies": [{"fr": "En terrasse, s'il vous plaît.", "en": "On the terrace, please."}, {"fr": "À l'intérieur, merci.", "en": "Inside, thanks."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien, installez-vous.", "en": "Very good, have a seat."}},
+        {"fr": "Vous le prenez au comptoir ou en salle ?", "en": "Will you have it at the counter or at a table?", "accept": ["comptoir", "salle", "table", "assis"], "replies": [{"fr": "Au comptoir.", "en": "At the counter."}, {"fr": "En salle, s'il vous plaît.", "en": "At a table, please."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "D'accord.", "en": "Okay."}},
+        {"fr": "C'est pour emporter ?", "en": "Is it to take away?", "accept": ["oui", "non", "emporter", "sur place", "ici"], "replies": [{"fr": "Non, sur place.", "en": "No, I'll have it here."}, {"fr": "Oui, à emporter.", "en": "Yes, to take away."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Entendu.", "en": "Understood."}},
+        {"fr": "Je n'ai plus de lait. Noir, ça vous va ?", "en": "I'm out of milk. Is black okay?", "accept": ["oui", "non", "d accord", "noir", "pas grave", "ca va", "pas de probleme"], "replies": [{"fr": "Oui, ça va.", "en": "Yes, that's fine."}, {"fr": "Pas de problème.", "en": "No problem."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Merci, c'est gentil.", "en": "Thanks, that's kind."}},
+        {"fr": "Je vous apporte un verre d'eau avec ?", "en": "Shall I bring you a glass of water with it?", "accept": ["oui", "non", "volontiers", "merci", "avec plaisir", "pas besoin"], "replies": [{"fr": "Oui, volontiers.", "en": "Yes, gladly."}, {"fr": "Non merci, ça va.", "en": "No thanks, I'm fine."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Entendu.", "en": "Understood."}}
+      ]
     },
     "boulangerie": {
       "fr": "La Boulangerie",
@@ -31,7 +38,14 @@
         { "id": "tarte", "noun": "tarte aux cerises", "plural": "tartes aux cerises", "gender": "f", "en": "cherry tart", "enPlural": "cherry tarts", "priceCents": 350, "aliases": ["tarte", "tartes", "tarte aux cerises", "tartes aux cerises"] },
         { "id": "gateau", "noun": "gâteau", "plural": "gâteaux", "gender": "m", "en": "cake", "enPlural": "cakes", "priceCents": 420, "aliases": ["gateau", "gateaux", "gateau au chocolat"] }
       ],
-      "words": ["panier", "planche"]
+      "words": ["panier", "planche"],
+      "realLife": [
+        {"fr": "Sur place ou à emporter ?", "en": "For here or to take away?", "accept": ["sur place", "emporter", "ici"], "replies": [{"fr": "À emporter, s'il vous plaît.", "en": "To take away, please."}, {"fr": "Sur place.", "en": "For here."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien.", "en": "Very good."}},
+        {"fr": "Vous voulez un sac ?", "en": "Do you want a bag?", "accept": ["oui", "non", "sac", "pas besoin", "volontiers", "merci"], "replies": [{"fr": "Oui, un sac, merci.", "en": "Yes, a bag, thanks."}, {"fr": "Non merci, pas besoin.", "en": "No thanks, no need."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Entendu.", "en": "Understood."}},
+        {"fr": "Ça sort du four dans deux minutes. Vous pouvez attendre ?", "en": "It comes out of the oven in two minutes. Can you wait?", "accept": ["oui", "non", "d accord", "attendre", "j attends", "pas de probleme", "ca va", "pas grave"], "replies": [{"fr": "Oui, j'attends.", "en": "Yes, I'll wait."}, {"fr": "Pas de problème.", "en": "No problem."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Parfait, ce sera tout chaud !", "en": "Perfect, it'll be nice and warm!"}},
+        {"fr": "C'est pour offrir ? Je vous fais un paquet ?", "en": "Is it a gift? Shall I wrap it?", "accept": ["oui", "non", "offrir", "cadeau", "pour moi", "pas besoin", "paquet"], "replies": [{"fr": "Non, c'est pour moi.", "en": "No, it's for me."}, {"fr": "Oui, c'est pour offrir.", "en": "Yes, it's a gift."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Entendu.", "en": "Understood."}},
+        {"fr": "Vous avez la carte de fidélité ?", "en": "Do you have the loyalty card?", "accept": ["oui", "non", "carte", "pas"], "replies": [{"fr": "Non, je n'ai pas de carte.", "en": "No, I don't have a card."}, {"fr": "Oui, la voilà.", "en": "Yes, here it is."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Pas de souci.", "en": "No worries."}}
+      ]
     },
     "marche": {
       "fr": "Le Marché",
@@ -48,7 +62,13 @@
         { "id": "patate_douce", "noun": "patate douce", "plural": "patates douces", "gender": "f", "en": "sweet potato", "enPlural": "sweet potatoes", "priceCents": 90, "aliases": ["patate douce", "patates douces", "patate", "patates"] },
         { "id": "grenade", "noun": "grenade", "plural": "grenades", "gender": "f", "en": "pomegranate", "enPlural": "pomegranates", "priceCents": 150, "aliases": ["grenade", "grenades"] }
       ],
-      "words": ["cageot", "panier"]
+      "words": ["cageot", "panier"],
+      "realLife": [
+        {"fr": "Je vous mets un sac ?", "en": "Shall I put it in a bag?", "accept": ["oui", "non", "sac", "merci", "pas besoin", "volontiers", "cabas"], "replies": [{"fr": "Oui, merci.", "en": "Yes, thanks."}, {"fr": "Non, j'ai un sac.", "en": "No, I have a bag."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Voilà.", "en": "There you go."}},
+        {"fr": "C'est pour manger quand ?", "en": "When are you going to eat them?", "accept": ["aujourd hui", "ce soir", "demain", "maintenant", "midi", "semaine", "tout de suite"], "replies": [{"fr": "Pour ce soir.", "en": "For tonight."}, {"fr": "Pour demain.", "en": "For tomorrow."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Alors je choisis bien pour vous.", "en": "Then I'll pick carefully for you."}},
+        {"fr": "Vous voulez goûter ? C'est de saison !", "en": "Do you want a taste? It's in season!", "accept": ["oui", "non", "volontiers", "merci", "avec plaisir", "gouter"], "replies": [{"fr": "Oui, avec plaisir !", "en": "Yes, with pleasure!"}, {"fr": "Non merci.", "en": "No thanks."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Comme vous voulez !", "en": "As you like!"}},
+        {"fr": "Vous habitez dans le quartier ?", "en": "Do you live in the neighbourhood?", "accept": ["oui", "non", "touriste", "visite", "quartier", "j habite", "vacances", "hotel"], "replies": [{"fr": "Non, je suis en vacances.", "en": "No, I'm on holiday."}, {"fr": "Oui, juste à côté.", "en": "Yes, just next door."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Bienvenue au marché, alors !", "en": "Welcome to the market, then!"}}
+      ]
     },
     "bistrot": {
       "fr": "Le Bistrot",
@@ -62,7 +82,14 @@
         { "id": "jus_orange", "noun": "jus d'orange", "plural": "jus d'orange", "gender": "m", "en": "orange juice", "enPlural": "orange juices", "priceCents": 380, "aliases": ["jus d orange", "jus d oranges", "jus", "ju d orange", "orange juice"] },
         { "id": "eau", "noun": "bouteille d'eau", "plural": "bouteilles d'eau", "gender": "f", "en": "bottle of water", "enPlural": "bottles of water", "priceCents": 300, "aliases": ["eau", "bouteille d eau", "bouteilles d eau", "bouteille", "eau minerale"] }
       ],
-      "words": ["carafe", "addition"]
+      "words": ["carafe", "addition"],
+      "realLife": [
+        {"fr": "Vous avez réservé ?", "en": "Do you have a reservation?", "accept": ["oui", "non", "reserve", "reservation", "pas"], "replies": [{"fr": "Non, je n'ai pas réservé.", "en": "No, I didn't book."}, {"fr": "Oui, j'ai réservé.", "en": "Yes, I booked."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien, suivez-moi.", "en": "Very good, follow me."}},
+        {"fr": "La cuisine ferme dans dix minutes. Ça vous va ?", "en": "The kitchen closes in ten minutes. Is that okay?", "accept": ["oui", "non", "d accord", "ca va", "pas de probleme", "vite", "parfait"], "replies": [{"fr": "Oui, ça va.", "en": "Yes, that's fine."}, {"fr": "D'accord, je commande vite.", "en": "Okay, I'll order quickly."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Alors on y va !", "en": "Then let's go!"}},
+        {"fr": "Vous êtes combien ?", "en": "How many of you are there?", "accept": ["un", "une", "seul", "seule", "deux", "trois", "quatre", "moi"], "replies": [{"fr": "Une personne.", "en": "One person."}, {"fr": "Nous sommes deux.", "en": "There are two of us."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Parfait, installez-vous ici.", "en": "Perfect, sit here."}},
+        {"fr": "En terrasse ou en salle ?", "en": "On the terrace or inside?", "accept": ["terrasse", "salle", "interieur", "dedans", "dehors"], "replies": [{"fr": "En terrasse, s'il vous plaît.", "en": "On the terrace, please."}, {"fr": "En salle.", "en": "Inside."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien.", "en": "Very good."}},
+        {"fr": "Je vous apporte la carte des desserts tout à l'heure ?", "en": "Shall I bring the dessert menu later?", "accept": ["oui", "non", "volontiers", "merci", "pas", "dessert"], "replies": [{"fr": "Oui, volontiers.", "en": "Yes, gladly."}, {"fr": "Non merci.", "en": "No thanks."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Entendu.", "en": "Understood."}}
+      ]
     },
     "metro": {
       "fr": "Le Métro",
@@ -74,7 +101,14 @@
         { "id": "forfait_jour", "noun": "forfait d'une journée", "plural": "forfaits d'une journée", "gender": "m", "en": "day pass", "enPlural": "day passes", "priceCents": 1200, "aliases": ["forfait d une journee", "forfaits d une journee", "forfait journee", "forfait", "forfaits", "pass journee", "pass", "ticket journee", "day pass"] },
         { "id": "plan_metro", "noun": "plan du métro", "plural": "plans du métro", "gender": "m", "en": "metro map", "enPlural": "metro maps", "priceCents": 150, "aliases": ["plan du metro", "plans du metro", "plan de metro", "plan des lignes", "metro map"] }
       ],
-      "words": []
+      "words": [],
+      "realLife": [
+        {"fr": "Le ticket, c'est pour quelle zone ?", "en": "The ticket, which zone is it for?", "accept": ["zone", "paris", "centre", "sais pas", "aeroport", "ville"], "replies": [{"fr": "Pour Paris, zone un.", "en": "For Paris, zone one."}, {"fr": "Je ne sais pas.", "en": "I don't know."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Pour Paris, c'est le ticket normal.", "en": "For Paris, it's the regular ticket."}},
+        {"fr": "La machine ne prend pas les billets, seulement les pièces.", "en": "The machine doesn't take notes, only coins.", "accept": ["d accord", "ok", "merci", "pas de probleme", "ca va", "entendu", "compris", "ici"], "replies": [{"fr": "D'accord, merci.", "en": "Okay, thanks."}, {"fr": "Je peux payer ici ?", "en": "Can I pay here?"}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Mais moi, je prends tout !", "en": "But I take everything!"}},
+        {"fr": "Attention, la ligne 4 est fermée ce week-end. Vous allez où ?", "en": "Careful, line 4 is closed this weekend. Where are you going?", "accept": ["montmartre", "louvre", "eiffel", "notre dame", "gare", "hotel", "musee", "centre", "je vais", "chez"], "replies": [{"fr": "Je vais au Louvre.", "en": "I'm going to the Louvre."}, {"fr": "Je vais à Montmartre.", "en": "I'm going to Montmartre."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Alors pas de souci pour vous.", "en": "Then no problem for you."}},
+        {"fr": "C'est votre premier jour à Paris ?", "en": "Is it your first day in Paris?", "accept": ["oui", "non", "premier", "deuxieme", "jours", "semaine", "depuis", "hier"], "replies": [{"fr": "Oui, c'est mon premier jour.", "en": "Yes, it's my first day."}, {"fr": "Non, je suis là depuis une semaine.", "en": "No, I've been here a week."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Bienvenue ! Paris, c'est petit, vous verrez.", "en": "Welcome! Paris is small, you'll see."}},
+        {"fr": "Gardez bien votre ticket jusqu'à la sortie, il y a des contrôles.", "en": "Keep your ticket until the exit, there are inspections.", "accept": ["d accord", "merci", "ok", "entendu", "compris", "oui"], "replies": [{"fr": "D'accord, merci.", "en": "Okay, thanks."}, {"fr": "Compris !", "en": "Understood!"}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Bon voyage !", "en": "Have a good trip!"}}
+      ]
     },
     "pharmacie": {
       "fr": "La Pharmacie",
@@ -87,7 +121,14 @@
         { "id": "sirop", "noun": "sirop pour la toux", "plural": "sirops pour la toux", "gender": "m", "en": "cough syrup", "enPlural": "bottles of cough syrup", "priceCents": 690, "aliases": ["sirop pour la toux", "sirops pour la toux", "sirop contre la toux", "sirop", "sirops", "cirop", "siro"] },
         { "id": "paracetamol", "noun": "boîte de paracétamol", "plural": "boîtes de paracétamol", "gender": "f", "en": "box of paracetamol", "enPlural": "boxes of paracetamol", "priceCents": 220, "aliases": ["paracetamol", "boite de paracetamol", "boites de paracetamol", "paracetamole", "parasetamol", "paracetamols"] }
       ],
-      "words": []
+      "words": [],
+      "realLife": [
+        {"fr": "Vous avez une ordonnance ?", "en": "Do you have a prescription?", "accept": ["oui", "non", "pas", "ordonnance"], "replies": [{"fr": "Non, pas d'ordonnance.", "en": "No, no prescription."}, {"fr": "Oui, la voilà.", "en": "Yes, here it is."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien.", "en": "Very good."}},
+        {"fr": "C'est pour un adulte ou un enfant ?", "en": "Is it for an adult or a child?", "accept": ["adulte", "enfant", "moi", "fils", "fille", "bebe"], "replies": [{"fr": "Pour un adulte, pour moi.", "en": "For an adult, for me."}, {"fr": "Pour un enfant.", "en": "For a child."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien, c'est noté.", "en": "Very good, noted."}},
+        {"fr": "Vous avez des allergies ?", "en": "Do you have any allergies?", "accept": ["oui", "non", "pas", "aucune", "allergique", "allergie"], "replies": [{"fr": "Non, aucune.", "en": "No, none."}, {"fr": "Oui, à la pénicilline.", "en": "Yes, to penicillin."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Bien noté.", "en": "Noted."}},
+        {"fr": "Vous prenez déjà un autre médicament ?", "en": "Are you already taking another medicine?", "accept": ["oui", "non", "pas", "rien", "aucun"], "replies": [{"fr": "Non, rien.", "en": "No, nothing."}, {"fr": "Oui, un médicament pour le cœur.", "en": "Yes, a heart medicine."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien, merci.", "en": "Very good, thanks."}},
+        {"fr": "Vous avez votre carte Vitale ?", "en": "Do you have your French health card (carte Vitale)?", "accept": ["oui", "non", "pas", "touriste", "etranger", "carte"], "replies": [{"fr": "Non, je suis touriste.", "en": "No, I'm a tourist."}, {"fr": "Oui, la voilà.", "en": "Yes, here it is."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Pas de souci.", "en": "No worries."}}
+      ]
     },
     "hotel": {
       "fr": "L'Hôtel",
@@ -100,7 +141,14 @@
         { "id": "carte_postale", "noun": "carte postale", "plural": "cartes postales", "gender": "f", "en": "postcard", "enPlural": "postcards", "priceCents": 120, "aliases": ["carte postale", "cartes postales", "carte postal", "postcard"] },
         { "id": "parapluie", "noun": "parapluie", "plural": "parapluies", "gender": "m", "en": "umbrella", "enPlural": "umbrellas", "priceCents": 1500, "aliases": ["parapluie", "parapluies", "para pluie", "umbrella"] }
       ],
-      "words": ["sonnette"]
+      "words": ["sonnette"],
+      "realLife": [
+        {"fr": "Vous pouvez épeler votre nom ?", "en": "Can you spell your name?", "accept": ["#spell"], "replies": [{"fr": "A, L, E, X.", "en": "A, L, E, X."}, {"fr": "S, A, M.", "en": "S, A, M."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Merci, je vous ai trouvé.", "en": "Thank you, I've found you."}},
+        {"fr": "Le petit-déjeuner est servi jusqu'à dix heures, d'accord ?", "en": "Breakfast is served until ten, okay?", "accept": ["d accord", "oui", "merci", "ok", "parfait", "entendu", "compris"], "replies": [{"fr": "D'accord, merci.", "en": "Okay, thanks."}, {"fr": "À quelle heure il commence ?", "en": "What time does it start?"}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Parfait.", "en": "Perfect."}},
+        {"fr": "Vous êtes là pour le travail ou en vacances ?", "en": "Are you here for work or on holiday?", "accept": ["travail", "vacances", "tourisme", "visite", "boulot", "conference", "touriste"], "replies": [{"fr": "En vacances.", "en": "On holiday."}, {"fr": "Pour le travail.", "en": "For work."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Très bien, bon séjour !", "en": "Very good, enjoy your stay!"}},
+        {"fr": "Vous préférez une chambre calme, côté cour ?", "en": "Would you prefer a quiet room, on the courtyard side?", "accept": ["oui", "non", "calme", "cour", "rue", "volontiers", "merci"], "replies": [{"fr": "Oui, une chambre calme.", "en": "Yes, a quiet room."}, {"fr": "Non, côté rue, ça va.", "en": "No, the street side is fine."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "C'est noté.", "en": "Noted."}},
+        {"fr": "Je peux voir une pièce d'identité, s'il vous plaît ?", "en": "May I see some ID, please?", "accept": ["voila", "oui", "passeport", "carte", "tenez", "bien sur"], "replies": [{"fr": "Voilà mon passeport.", "en": "Here's my passport."}, {"fr": "Oui, bien sûr.", "en": "Yes, of course."}, {"fr": "Pardon, vous pouvez répéter plus lentement ?", "en": "Sorry, can you repeat more slowly?"}], "ok": {"fr": "Merci, c'est parfait.", "en": "Thank you, that's perfect."}}
+      ]
     }
   }
 }

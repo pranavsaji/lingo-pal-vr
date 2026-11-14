@@ -42,6 +42,59 @@
     font-size: 15px;
   }
 
+  .header-right {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rl-badge {
+    color: #7a2e2e;
+    font-size: 13px;
+    font-weight: bold;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    background-color: #f5d90a;
+  }
+
+  .rl-row {
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 4px;
+    padding-bottom: 16px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .rl-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 18px;
+    padding-right: 18px;
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: #4a4c55;
+    background-color: #2b2d33;
+    cursor: pointer;
+  }
+
+  .rl-button:hover {
+    background-color: #3d5a80;
+    border-color: #98c1d9;
+  }
+
+  .rl-text {
+    color: #fafaf7;
+    font-size: 17px;
+    font-weight: bold;
+  }
+
   .content {
     flex-direction: column;
     gap: 6px;
@@ -189,7 +242,10 @@
 <Panel class="root">
   <div class="header">
     <span class="name" id="keeper-name">Madame Lune, la serveuse</span>
-    <span class="status" id="status">en ligne</span>
+    <div class="header-right">
+      <span class="rl-badge" id="rl-badge" style="display: none">VRAIE VIE</span>
+      <span class="status" id="status">en ligne</span>
+    </div>
   </div>
   <div class="content">
     <span class="npc" id="npc-line">Bonjour ! Bienvenue au café.</span>
@@ -209,6 +265,14 @@
     <div class="option" id="opt-2">
       <span class="option-fr" id="opt-2-fr">Je voudrais un croissant.</span>
       <span class="option-en" id="opt-2-en">I would like a croissant.</span>
+    </div>
+  </div>
+  <div class="rl-row" id="rl-row" style="display: none">
+    <div class="rl-button" id="rl-translate">
+      <span class="rl-text">Traduire</span>
+    </div>
+    <div class="rl-button" id="rl-aide">
+      <span class="rl-text">Aide</span>
     </div>
   </div>
   <div class="voice" id="voice-row">

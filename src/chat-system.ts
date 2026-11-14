@@ -9,6 +9,7 @@ import { createSystem, type UIKit, type UIKitMLAsset } from '@iwsdk/core';
 import { aiStatus } from './agent/agent-client.js';
 import { menuItem, PLACES, priceToDigits, priceToFrench } from './agent/menu.js';
 import type { AgentTurn, ReplyOption } from './agent/protocol.js';
+import { chatGate } from './agent/real-life.js';
 import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
 import { appState, events, type PlaceId } from './game-state.js';
@@ -41,10 +42,16 @@ export class ChatSystem extends createSystem({}) {
   private pending = 0; // turns in flight
   private firstTurn = true;
   private el: Record<string, UIKit.Text | undefined> = {};
+  private panel: UIKitMLAsset | null = null;
+  /** "Vraie vie": this turn's English / reply chips were revealed ("Traduire" / "Aide"). */
+  private translated = false;
+  private aide = false;
+  private label = '';
 
   init(): void {
     const panel = this.world.getSceneObject<UIKitMLAsset>('chat-panel');
     if (panel == null) return;
+    this.panel = panel;
     applyFrenchFont(panel.document.rootElement);
     for (const id of ['keeper-name', 'status', 'npc-line', 'npc-en', 'label', 'opt-0-fr', 'opt-0-en', 'opt-1-fr', 'opt-1-en', 'opt-2-fr', 'opt-2-en']) {
       this.el[id] = panel.getElementById<UIKit.Text>(id) ?? undefined;
@@ -54,6 +61,10 @@ export class ChatSystem extends createSystem({}) {
       const option = panel.getElementById(`opt-${i}`);
       if (option) this.cleanupFuncs.push(onActivate(option, () => this.choose(i)));
     }
+    const translate = panel.getElementById('rl-translate');
+    if (translate) this.cleanupFuncs.push(onActivate(translate, () => this.reveal('translate')));
+    const aide = panel.getElementById('rl-aide');
+    if (aide) this.cleanupFuncs.push(onActivate(aide, () => this.reveal('aide')));
 
     director.onSlow = () => {
       this.set('status', 'Alors... (réfléchit)');
@@ -71,7 +82,8 @@ export class ChatSystem extends createSystem({}) {
         const k = PLACES[place].shopkeeper;
         this.set('keeper-name', `${k.name}, ${KEEPER_ROLE[place]}`);
       }),
-      events.settings.on(() => this.set('npc-en', store.profile.settings.subtitles ? this.lastEn : '')),
+      events.settings.on(() => this.applyGate()),
+      events.realLifeHelp.on((kind) => this.reveal(kind)),
       events.agentNote.on((note) => this.showNote(note)),
       () => {
         if (this.noteTimer) clearTimeout(this.noteTimer);
@@ -111,7 +123,9 @@ export class ChatSystem extends createSystem({}) {
     appState.lastLuneLine = turn.fr;
     const delay = this.firstTurn ? 0 : 500;
     this.firstTurn = false;
-    setTimeout(() => speakFrench(turn.fr, undefined, 'lune'), delay);
+    // "Vraie vie": normal pace even with slow speech on; "plus lentement" slows just that one line.
+    const rate = store.profile.settings.realLife ? (turn.slow ? 0.7 : 0.9) : undefined;
+    setTimeout(() => speakFrench(turn.fr, rate, 'lune'), delay);
   }
 
   private renderStatus(): void {
@@ -147,19 +161,55 @@ export class ChatSystem extends createSystem({}) {
 
   private render(turn: AgentTurn): void {
     this.lastEn = turn.en;
+    this.translated = false;
+    this.aide = false;
     this.set('npc-line', turn.fr);
-    this.set('npc-en', store.profile.settings.subtitles ? turn.en : '');
     const paying = store.order.phase === 'paying';
     this.choices = paying ? this.paymentChoices() : turn.replies;
-    appState.replies = this.choices;
-    this.set('label', paying ? 'PAYEZ : PIÈCES SUR LE PLATEAU, OU PINCEZ' : 'PINCEZ OU DITES UNE RÉPONSE');
+    this.label = paying ? 'PAYEZ : PIÈCES SUR LE PLATEAU, OU PINCEZ' : 'PINCEZ OU DITES UNE RÉPONSE';
     this.choices.forEach((o, i) => {
       this.set(`opt-${i}-fr`, o.fr);
-      this.set(`opt-${i}-en`, o.en);
       // Fetch the learner-voice audio of each reply while Madame Lune talks: pinching one plays instantly.
       setTimeout(() => prefetchFrench(o.fr, 'learner'), 1200 + i * 300);
     });
+    this.applyGate();
     this.renderStatus();
+  }
+
+  /**
+   * English, reply chips, the Traduire/Aide buttons and the VRAIE VIE badge
+   * (src/agent/real-life.ts chatGate). Event-driven: turns, settings, help.
+   */
+  private applyGate(): void {
+    const s = store.profile.settings;
+    const g = chatGate(s, { translated: this.translated, aide: this.aide });
+    this.set('npc-en', g.english ? this.lastEn : '');
+    this.choices.forEach((o, i) => this.set(`opt-${i}-en`, g.chipEnglish ? o.en : ''));
+    for (let i = 0; i < 3; i++) this.show(`opt-${i}`, g.chips);
+    // Hidden chips are not pronunciation targets either: in real life nobody hands you the line.
+    appState.replies = g.chips ? this.choices : [];
+    this.show('rl-row', g.translateButton || g.aideButton);
+    this.show('rl-translate', g.translateButton);
+    this.show('rl-aide', g.aideButton);
+    this.show('rl-badge', g.badge);
+    this.set('label', s.realLife && !g.chips ? 'À VOUS ! PARLEZ, COMME À PARIS' : this.label || 'PINCEZ OU DITES UNE RÉPONSE');
+  }
+
+  private show(id: string, on: boolean): void {
+    this.panel?.getElementById(id)?.setProperties({ display: on ? 'flex' : 'none' } as never);
+  }
+
+  /** "Traduire" / "Aide" (button or voice): reveal for this line; in real-life mode it counts as help. */
+  private reveal(kind: 'translate' | 'aide'): void {
+    if (kind === 'translate') {
+      if (this.translated || !this.lastEn) return;
+      this.translated = true;
+    } else {
+      if (this.aide || !store.profile.settings.realLife) return;
+      this.aide = true;
+    }
+    director.noteHelp();
+    this.applyGate();
   }
 
   private choose(i: number): void {

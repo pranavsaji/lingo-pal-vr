@@ -295,6 +295,7 @@
     <div class="stat"><span class="num" id="stat-days">0 / 7</span><span class="lbl">Jours actifs · série</span></div>
   </div>
   <span class="note" id="week-note">Come back tomorrow to start your week.</span>
+  <span class="note" id="week-reallife" style="display: none">Vraie vie : 0 commande sans aide</span>
   <div class="goal">
     <div class="goal-head">
       <span class="goal-title" id="goal-title">OBJECTIF · A1 > A2</span>

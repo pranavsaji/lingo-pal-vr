@@ -17,7 +17,7 @@ import { normalizeFrench } from './pronunciation.js';
 
 export type PanelId = 'home' | 'carnet' | 'settings' | 'map' | 'report';
 export type InputMode = 'hands' | 'eyes' | 'voice';
-export type ToggleSetting = 'highContrast' | 'subtitles' | 'gazeDwell' | 'leftHanded' | 'reduceMotion' | 'voiceFirst';
+export type ToggleSetting = 'highContrast' | 'subtitles' | 'gazeDwell' | 'leftHanded' | 'reduceMotion' | 'voiceFirst' | 'realLife';
 
 export type VoiceCommand =
   | { kind: 'open'; panel: PanelId }
@@ -33,7 +33,9 @@ export type VoiceCommand =
   | { kind: 'toggle'; setting: ToggleSetting }
   | { kind: 'mission' }
   | { kind: 'review' }
-  | { kind: 'tutorial' };
+  | { kind: 'tutorial' }
+  /** "Traduire": show the English of her last line (help, in "vraie vie" mode). */
+  | { kind: 'translate' };
 
 export interface CommandContext {
   /** The order is waiting for payment. */
@@ -68,6 +70,8 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
   if (!n) return null;
   const words = n.split(' ').length;
 
+  // "Vraie vie" (real-life mode): "vraie vie", "real life", "mode réel".
+  if (words <= MAX_WORDS && /\b(vraie vie|vrai vie|real life|mode reel|reel mode)\b/.test(n)) return { kind: 'toggle', setting: 'realLife' };
   // Explicit mode switches work at any time: "mode yeux", "eyes mode", "mode voix".
   if (/\bmode\b/.test(n)) {
     const mode = findMode(n);
@@ -98,8 +102,10 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
     return { kind: 'pay_exact' };
   }
 
-  if (/\b(repete|repeter|repetez|repeat|again|encore une fois|say it again)\b/.test(n)) return { kind: 'repeat' };
+  // "Répéter plus lentement" asks to slow down (checked before a plain repeat).
   if (/\b(plus lentement|moins vite|lentement|slower|slow down|slowly)\b/.test(n)) return { kind: 'slower' };
+  if (/\b(repete|repeter|repetez|repeat|again|encore une fois|say it again)\b/.test(n)) return { kind: 'repeat' };
+  if (/\b(traduire|traduis|traduisez|translate|en anglais|in english)\b/.test(n)) return { kind: 'translate' };
   if (/\b(aide|help|au secours|comment faire)\b/.test(n)) return { kind: 'help' };
   if (/\b(passer|skip)\b/.test(n)) return { kind: 'skip' };
 
@@ -150,7 +156,9 @@ export function commandFeedback(cmd: VoiceCommand): string {
     case 'text':
       return cmd.bigger ? 'Texte plus grand' : 'Texte plus petit';
     case 'toggle':
-      return 'Réglage changé';
+      return cmd.setting === 'realLife' ? 'Vraie vie' : 'Réglage changé';
+    case 'translate':
+      return 'Traduire';
     case 'mission':
       return 'Mission';
     case 'review':

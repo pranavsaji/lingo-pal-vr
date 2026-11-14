@@ -22,6 +22,8 @@ export interface Settings {
   mixedReality: boolean;
   /** Hands-free voice: Lune listens after each line she speaks (no pinch to talk). */
   voiceFirst: boolean;
+  /** "Vraie vie": natural-pace French, no English, no reply chips (src/agent/real-life.ts). */
+  realLife: boolean;
 }
 
 export interface Profile {
@@ -54,6 +56,8 @@ export interface Profile {
   demo: string;
   /** The shopkeepers' notes on this learner: mistakes to reuse, tomorrow's plan, change tests. */
   coach: CoachMemory;
+  /** The shopkeeper has invited this learner to "vraie vie" mode (once, after the 5th order). */
+  realLifeInvited: boolean;
 }
 
 export interface CoachMemory {
@@ -80,6 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reduceMotion: false,
   mixedReality: false,
   voiceFirst: false,
+  realLife: false,
 };
 
 export function defaultProfile(): Profile {
@@ -106,6 +111,7 @@ export function defaultProfile(): Profile {
     restUsed: [],
     demo: '',
     coach: defaultCoach(),
+    realLifeInvited: false,
   };
 }
 
@@ -174,6 +180,7 @@ export function loadProfile(kv: KV | null): Profile {
         restUsed: Array.isArray(stored.restUsed) ? stored.restUsed.filter((d): d is string => typeof d === 'string') : [],
         demo: typeof stored.demo === 'string' ? stored.demo : '',
         coach: { ...defaultCoach(), ...(stored.coach ?? {}) },
+        realLifeInvited: stored.realLifeInvited === true,
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

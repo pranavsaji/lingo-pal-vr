@@ -29,7 +29,7 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
   ...['choose-hands', 'choose-eyes', 'choose-voice', 'choose-text'].map(
     (id) => ['lesson-panel', id, { color: '#4a4c55', width: 2 }] as [string, string, { color: string; width: number }],
   ),
-  ...['highContrast', 'textSize', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'tutorial'].map(
+  ...['highContrast', 'textSize', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'realLife', 'tutorial'].map(
     (k) => ['settings-panel', `set-${k}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }],
   ),
   ['settings-panel', 'settings-back', { color: '#000000', width: 0 }],
@@ -39,6 +39,8 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
   ...PLACE_ORDER.map((p) => ['map-panel', `place-${p}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }]),
   ['report-panel', 'week-back', { color: '#000000', width: 0 }],
   ['chat-panel', 'mic-button', { color: '#000000', width: 0 }],
+  ['chat-panel', 'rl-translate', { color: '#4a4c55', width: 1 }],
+  ['chat-panel', 'rl-aide', { color: '#4a4c55', width: 1 }],
 ];
 
 export class AccessibilitySystem extends createSystem({}) {
@@ -94,9 +96,15 @@ export class AccessibilitySystem extends createSystem({}) {
         events.openPanel.emit('home');
         return;
       case 'repeat':
-        if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, 0.7, 'lune');
+        // "Vraie vie": she repeats at her normal pace; only "plus lentement" slows down.
+        if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, s.realLife ? 0.9 : 0.7, 'lune');
         return;
       case 'slower':
+        if (s.realLife && !onboardingState.running) {
+          // She repeats her last line once, slowly and more simply (no lasting slow-speech setting).
+          void director.handle({ kind: 'say', text: 'Pardon, vous pouvez répéter plus lentement ?', fingers: 0 });
+          return;
+        }
         store.setSetting('slowSpeech', true);
         if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, 0.7, 'lune');
         return;
@@ -104,7 +112,11 @@ export class AccessibilitySystem extends createSystem({}) {
         // In the tutorial, help = hear the current instruction again (slowly); otherwise Lune offers help.
         if (onboardingState.running) {
           if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, 0.7, 'lune');
-        } else void director.handle({ kind: 'idle' });
+        } else if (s.realLife) events.realLifeHelp.emit('aide'); // "Vraie vie": show the reply chips (counted as help)
+        else void director.handle({ kind: 'idle' });
+        return;
+      case 'translate':
+        events.realLifeHelp.emit('translate');
         return;
       case 'skip':
         if (onboardingState.running) events.tutorial.emit(); // onboarding treats this as "skip"

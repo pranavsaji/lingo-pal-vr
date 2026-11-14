@@ -59,6 +59,19 @@ export interface AgentScene {
   canUpsell?: boolean;
   /** Tomorrow's planned theme, said on goodbye ("les fruits"). */
   tomorrow?: string;
+  /**
+   * "Vraie vie" mode (absent = off): natural-pace French, no English shown, and
+   * this visit's one curveball (a line from shared/places.json realLife) and its stage.
+   */
+  realLife?: RealLifeScene;
+}
+
+/** todo: not asked yet; asked: waiting for the answer; again: asked twice; done: answered or dropped. */
+export type CurveStage = 'todo' | 'asked' | 'again' | 'done';
+
+export interface RealLifeScene {
+  curveball: string;
+  stage: CurveStage;
 }
 
 export interface AgentRequest {
@@ -76,4 +89,6 @@ export interface AgentTurn {
   actions: unknown[];
   points: number;
   source: 'ai' | 'script';
+  /** Real-life mode: the learner asked her to slow down, so this one line is spoken slowly. */
+  slow?: boolean;
 }

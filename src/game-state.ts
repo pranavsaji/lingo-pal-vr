@@ -92,6 +92,8 @@ export const events = {
   panelShown: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport'>(),
   /** Frame-rate guard: the power level changed (0 = everything on; see src/world/power.ts). */
   power: new Emitter<number>(),
+  /** "Vraie vie" help asked for (button or voice): reveal the English, or the reply chips (ChatSystem). */
+  realLifeHelp: new Emitter<'translate' | 'aide'>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

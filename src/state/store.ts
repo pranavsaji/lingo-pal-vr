@@ -316,6 +316,21 @@ export class Store {
     this.save();
   }
 
+  // ---- "Vraie vie" mode -----------------------------------------------------------
+
+  /** An order paid in real-life mode with no help: counted in the weekly report. */
+  recordRealLifeOrder(): void {
+    const log = logFor(this.profile.history, this.today);
+    log.realLife = (log.realLife ?? 0) + 1;
+    this.save();
+  }
+
+  /** The once-only invitation to real-life mode was given. */
+  markRealLifeInvited(): void {
+    this.profile.realLifeInvited = true;
+    this.save();
+  }
+
   recordTrick(caught: boolean): void {
     this.profile.coach.tricks += 1;
     if (caught) this.profile.coach.caught += 1;

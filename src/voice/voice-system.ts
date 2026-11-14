@@ -166,9 +166,12 @@ export class VoiceSystem extends createSystem({}) {
     if (intent.kind === 'command') {
       switch (intent.command) {
         case 'repeat':
+          // "Vraie vie": a plain "pardon ?" goes to the shopkeeper, who repeats it her way.
+          if (store.profile.settings.realLife) break;
           if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, 0.7, 'lune');
           return;
         case 'slower':
+          if (store.profile.settings.realLife) break; // she repeats once, slowly (AgentDirector)
           store.setSetting('slowSpeech', true);
           if (appState.lastLuneLine) speakFrench(appState.lastLuneLine, 0.7, 'lune');
           return;
@@ -182,7 +185,8 @@ export class VoiceSystem extends createSystem({}) {
           events.tutorial.emit(); // onboarding treats a replay request while running as skip
           return;
         case 'help':
-          void director.handle({ kind: 'idle' });
+          if (store.profile.settings.realLife) events.realLifeHelp.emit('aide');
+          else void director.handle({ kind: 'idle' });
           return;
         case 'map':
           events.openPanel.emit('map');

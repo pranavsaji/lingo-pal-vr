@@ -151,6 +151,7 @@
     <div class="row" id="set-reduceMotion"><div class="labels"><span class="label">Moins d'animations</span><span class="help">Reduce motion and confetti</span></div><span class="value" id="set-reduceMotion-val">OFF</span></div>
     <div class="row" id="set-mixedReality"><div class="labels"><span class="label">Réalité mixte</span><span class="help">The cafe on your real table (passthrough)</span></div><span class="value" id="set-mixedReality-val">OFF</span></div>
     <div class="row" id="set-voiceFirst"><div class="labels"><span class="label">Mains libres (voix)</span><span class="help">Lune listens after she speaks: no pinch needed</span></div><span class="value" id="set-voiceFirst-val">OFF</span></div>
+    <div class="row" id="set-realLife"><div class="labels"><span class="label">Vraie vie</span><span class="help">Like real Paris: natural pace, no English, no hints</span></div><span class="value" id="set-realLife-val">OFF</span></div>
     <div class="row" id="set-tutorial"><div class="labels"><span class="label">Revoir le tutoriel</span><span class="help">Replay the hand tutorial</span></div><span class="value" id="set-tutorial-val">GO</span></div>
   </div>
   <div class="actions">

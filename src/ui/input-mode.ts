@@ -50,5 +50,6 @@ export function a11ySummary(s: Settings): string {
   if (s.slowSpeech) parts.push('lent');
   if (s.reduceMotion) parts.push('calme');
   if (s.leftHanded) parts.push('gaucher');
+  if (s.realLife) parts.push('vraie vie');
   return `Accessibilité : ${parts.join(' · ')}`;
 }
