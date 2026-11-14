@@ -30,7 +30,9 @@ export default async function handler(req, res) {
   try {
     const audio = req.method === 'POST' ? await readBody(req) : null;
     const ip = String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() || 'unknown';
-    const { status, body } = await handleStt(req.method, audio, req.headers['content-type'], process.env, ip);
+    // ?lang=en (or x-stt-lang: en): English for Pal; handleStt whitelists it (anything else is French).
+    const lang = new URL(req.url ?? '/', 'http://local').searchParams.get('lang') ?? req.headers['x-stt-lang'];
+    const { status, body } = await handleStt(req.method, audio, req.headers['content-type'], process.env, ip, lang);
     res.status(status).json(body);
   } catch (err) {
     res.status(500).json({ error: String(err) });

@@ -27,8 +27,24 @@ export function sttProvider(env = process.env) {
   return null;
 }
 
-/** @param {Buffer} audio @param {string} contentType */
-export async function handleStt(method, audio, contentType, env = process.env, ip = 'unknown') {
+/** Recognition languages: French for the shopkeepers, English for Pal (anything else is French). */
+export const STT_LANGS = ['fr', 'en'];
+export function sttLang(lang) {
+  return STT_LANGS.includes(lang) ? lang : 'fr';
+}
+
+/** Bias prompts so short utterances transcribe correctly. */
+const PROMPTS = {
+  fr: "Bonjour madame. Deux croissants, s'il vous plaît. Un café. C'est combien ? Voilà cinq euros. Merci, au revoir.",
+  en: 'Pal, how do I say two coffees? What did she say? How much is it? Help me order a croissant, please.',
+};
+
+/**
+ * @param {Buffer} audio @param {string} contentType
+ * @param {string} [lang] 'fr' (default) or 'en' (questions for Pal); anything else is French.
+ */
+export async function handleStt(method, audio, contentType, env = process.env, ip = 'unknown', lang = 'fr') {
+  const language = sttLang(lang);
   const provider = sttProvider(env);
   // The client probes with GET; "not configured" is a normal answer, not an error (clean console).
   if (method === 'GET') return { status: 200, body: { provider } };
@@ -45,9 +61,9 @@ export async function handleStt(method, audio, contentType, env = process.env, i
       const form = new FormData();
       form.append('file', new Blob([audio], { type }), type.includes('mp4') ? 'speech.mp4' : 'speech.webm');
       form.append('model', env.STT_MODEL || 'whisper-1');
-      form.append('language', 'fr');
-      // Bias toward cafe vocabulary so short utterances transcribe correctly.
-      form.append('prompt', "Bonjour madame. Deux croissants, s'il vous plaît. Un café. C'est combien ? Voilà cinq euros. Merci, au revoir.");
+      form.append('language', language);
+      // Bias toward cafe vocabulary (or Pal questions) so short utterances transcribe correctly.
+      form.append('prompt', PROMPTS[language]);
       const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}` },
@@ -59,7 +75,7 @@ export async function handleStt(method, audio, contentType, env = process.env, i
       return { status: 200, body: { text: String(data.text ?? '').slice(0, 300) } };
     }
     const model = env.STT_MODEL || 'nova-3';
-    const res = await fetch(`https://api.deepgram.com/v1/listen?model=${encodeURIComponent(model)}&language=fr&smart_format=true`, {
+    const res = await fetch(`https://api.deepgram.com/v1/listen?model=${encodeURIComponent(model)}&language=${language}&smart_format=true`, {
       method: 'POST',
       headers: { Authorization: `Token ${env.DEEPGRAM_API_KEY}`, 'Content-Type': type },
       body: audio,

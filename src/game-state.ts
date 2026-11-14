@@ -94,6 +94,14 @@ export const events = {
   power: new Emitter<number>(),
   /** "Vraie vie" help asked for (button or voice): reveal the English, or the reply chips (ChatSystem). */
   realLifeHelp: new Emitter<'translate' | 'aide'>(),
+  /** Pal (the English-speaking companion): start listening in English (VoiceSystem owns the mic). */
+  palListen: new Emitter<void>(),
+  /** Pal: a question in English (heard, routed from the French recognizer, or a quick-ask chip). */
+  palAsk: new Emitter<string>(),
+  /** Pal: listening / thinking / talking state (PalSystem animates and labels it). */
+  palState: new Emitter<'idle' | 'listening' | 'thinking' | 'talking'>(),
+  /** The coach is about to give a hesitation or gaze hint (PalSystem may add a beginner hint in English). */
+  coachHint: new Emitter<void>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

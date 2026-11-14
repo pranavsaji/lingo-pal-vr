@@ -18,6 +18,8 @@ import { needsCard, WALLET } from './interaction/pick-coins.js';
 import { prefetchFrench, speakFrench } from './speech.js';
 import { store } from './state/store.js';
 import { onActivate } from './ui/dwell.js';
+import { isBeginner, showSoundsLike } from './pal/pal-brain.js';
+import { soundsLike } from './pal/sounds-like.js';
 
 interface Choice extends ReplyOption {
   /** When set, choosing this pays this many cents instead of speaking. */
@@ -53,7 +55,7 @@ export class ChatSystem extends createSystem({}) {
     if (panel == null) return;
     this.panel = panel;
     applyFrenchFont(panel.document.rootElement);
-    for (const id of ['keeper-name', 'status', 'npc-line', 'npc-en', 'label', 'opt-0-fr', 'opt-0-en', 'opt-1-fr', 'opt-1-en', 'opt-2-fr', 'opt-2-en']) {
+    for (const id of ['keeper-name', 'status', 'npc-line', 'npc-en', 'label', 'opt-0-fr', 'opt-0-en', 'opt-1-fr', 'opt-1-en', 'opt-2-fr', 'opt-2-en', 'opt-0-sd', 'opt-1-sd', 'opt-2-sd']) {
       this.el[id] = panel.getElementById<UIKit.Text>(id) ?? undefined;
     }
 
@@ -186,6 +188,14 @@ export class ChatSystem extends createSystem({}) {
     this.set('npc-en', g.english ? this.lastEn : '');
     this.choices.forEach((o, i) => this.set(`opt-${i}-en`, g.chipEnglish ? o.en : ''));
     for (let i = 0; i < 3; i++) this.show(`opt-${i}`, g.chips);
+    // Sounds-like for English speakers ("duh ka-FAY"): beginners or "Aide à la prononciation"; not in vraie vie unless "Aide".
+    const sounds = g.chips && showSoundsLike(s, isBeginner(store.profile, store.level.id), this.aide);
+    for (let i = 0; i < 3; i++) {
+      const o = this.choices[i];
+      const line = sounds && o ? o.sounds || soundsLike(o.fr) : '';
+      this.set(`opt-${i}-sd`, line);
+      this.show(`opt-${i}-sd`, !!line);
+    }
     // Hidden chips are not pronunciation targets either: in real life nobody hands you the line.
     appState.replies = g.chips ? this.choices : [];
     this.show('rl-row', g.translateButton || g.aideButton);

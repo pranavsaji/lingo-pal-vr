@@ -29,6 +29,18 @@ const MAX_RECORD_MS = 7000;
 
 export type Engine = 'server' | 'browser' | 'local' | 'none';
 
+/** Recognition language: French for the shopkeepers, English for Pal (whitelisted; anything else is French). */
+export type SttLang = 'fr' | 'en';
+export function sttLang(lang: unknown): SttLang {
+  return lang === 'en' ? 'en' : 'fr';
+}
+/** Browser recognizer locale for a recognition language. */
+export const BROWSER_LOCALE: Record<SttLang, string> = { fr: 'fr-FR', en: 'en-US' };
+/** Server route for a recognition language (French keeps the plain route). */
+export function sttUrl(lang: SttLang): string {
+  return lang === 'en' ? './api/stt?lang=en' : './api/stt';
+}
+
 export class SpeechInput {
   engine: Engine = 'none';
   listening = false;
@@ -39,6 +51,8 @@ export class SpeechInput {
   private browserText = '';
   private autoStop: ReturnType<typeof setTimeout> | null = null;
   private resolveStop: ((text: string) => void) | null = null;
+  /** The language of the current (or last) recording. */
+  lang: SttLang = 'fr';
   /** Called when recording stops on its own (time limit). */
   onAutoStop: (() => void) | null = null;
 
@@ -74,9 +88,10 @@ export class SpeechInput {
     return this.engine !== 'none';
   }
 
-  async start(): Promise<boolean> {
+  async start(lang: SttLang = 'fr'): Promise<boolean> {
     if (this.listening || this.engine === 'none') return false;
     this.listening = true;
+    this.lang = sttLang(lang);
     try {
       if (this.engine === 'server' || this.engine === 'local') await this.startRecorder();
       else this.startBrowser();
@@ -130,7 +145,7 @@ export class SpeechInput {
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 8000);
-      const res = await fetch('./api/stt', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob, signal: ctrl.signal });
+      const res = await fetch(sttUrl(this.lang), { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob, signal: ctrl.signal });
       clearTimeout(t);
       const data = (await res.json()) as { text?: string };
       done?.(res.ok && typeof data.text === 'string' ? data.text.trim() : '');
@@ -146,7 +161,7 @@ export class SpeechInput {
     const decoded = await new OfflineAudioContext(1, 16000, 16000).decodeAudioData(data);
     const speech = trimSilence(decoded.getChannelData(0), 16000);
     if (speech.length < 16000 * 0.3) return '';
-    const text = await localVoice.transcribe(speech);
+    const text = await localVoice.transcribe(speech, this.lang);
     return isHallucination(text) ? '' : text.trim();
   }
 
@@ -154,7 +169,7 @@ export class SpeechInput {
     const w = window as unknown as { SpeechRecognition?: new () => Recognizer; webkitSpeechRecognition?: new () => Recognizer };
     const Ctor = (w.SpeechRecognition ?? w.webkitSpeechRecognition)!;
     const r = new Ctor();
-    r.lang = 'fr-FR';
+    r.lang = BROWSER_LOCALE[this.lang];
     r.interimResults = false;
     r.maxAlternatives = 1;
     r.continuous = false;

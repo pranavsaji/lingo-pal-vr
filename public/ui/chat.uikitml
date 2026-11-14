@@ -183,6 +183,136 @@
     font-size: 15px;
   }
 
+  .option-sd {
+    color: #9aa0aa;
+    font-size: 13px;
+  }
+
+  .pal-box {
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 22px;
+    margin-right: 22px;
+    margin-bottom: 16px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 16px;
+    border-width: 2px;
+    border-color: #6f9be8;
+    background-color: #1d3566;
+  }
+
+  .pal-head {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pal-badge {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    background-color: #2f5fb3;
+  }
+
+  .pal-line {
+    color: #ffffff;
+    font-size: 17px;
+    flex-shrink: 1;
+  }
+
+  .pal-say {
+    flex-direction: column;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: #2f5fb3;
+    background-color: #dce8ff;
+    cursor: pointer;
+  }
+
+  .pal-say:hover {
+    background-color: #ffffff;
+  }
+
+  .pal-say-label {
+    color: #2f5fb3;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .pal-say-fr {
+    color: #1c1d20;
+    font-size: 19px;
+    font-weight: bold;
+  }
+
+  .pal-say-sd {
+    color: #4a4c55;
+    font-size: 13px;
+  }
+
+  .pal-tip {
+    color: #cfe0ff;
+    font-size: 13px;
+  }
+
+  .pal-asks {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .pal-ask {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: #6f9be8;
+    background-color: #2b4f94;
+    cursor: pointer;
+  }
+
+  .pal-ask:hover {
+    background-color: #3d6fd1;
+  }
+
+  .pal-ask-text {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .pal-button {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-radius: 18px;
+    background-color: #2f5fb3;
+    cursor: pointer;
+  }
+
+  .pal-button:hover {
+    background-color: #3d6fd1;
+  }
+
   .voice {
     flex-direction: row;
     align-items: center;
@@ -257,14 +387,17 @@
     <div class="option" id="opt-0">
       <span class="option-fr" id="opt-0-fr">Bonjour, madame !</span>
       <span class="option-en" id="opt-0-en">Hello, ma'am!</span>
+      <span class="option-sd" id="opt-0-sd" style="display: none"></span>
     </div>
     <div class="option" id="opt-1">
       <span class="option-fr" id="opt-1-fr">Un café, s'il vous plaît.</span>
       <span class="option-en" id="opt-1-en">A coffee, please.</span>
+      <span class="option-sd" id="opt-1-sd" style="display: none"></span>
     </div>
     <div class="option" id="opt-2">
       <span class="option-fr" id="opt-2-fr">Je voudrais un croissant.</span>
       <span class="option-en" id="opt-2-en">I would like a croissant.</span>
+      <span class="option-sd" id="opt-2-sd" style="display: none"></span>
     </div>
   </div>
   <div class="rl-row" id="rl-row" style="display: none">
@@ -275,9 +408,35 @@
       <span class="rl-text">Aide</span>
     </div>
   </div>
+  <div class="pal-box" id="pal-box" style="display: none">
+    <div class="pal-head">
+      <span class="pal-badge" id="pal-badge">PAL (EN)</span>
+      <span class="pal-line" id="pal-line">Hi, I'm Pal! Ask me anything in English.</span>
+    </div>
+    <div class="pal-say" id="pal-say" style="display: none">
+      <span class="pal-say-label">SAY / DITES :</span>
+      <span class="pal-say-fr" id="pal-say-fr">Un café, s'il vous plaît.</span>
+      <span class="pal-say-sd" id="pal-say-sd">uhn ka-FAY, seel voo PLAY</span>
+    </div>
+    <span class="pal-tip" id="pal-tip" style="display: none"></span>
+    <div class="pal-asks" id="pal-asks">
+      <div class="pal-ask" id="pal-ask-0">
+        <span class="pal-ask-text">What did she say?</span>
+      </div>
+      <div class="pal-ask" id="pal-ask-1">
+        <span class="pal-ask-text">What do I say?</span>
+      </div>
+      <div class="pal-ask" id="pal-ask-2">
+        <span class="pal-ask-text">How much?</span>
+      </div>
+    </div>
+  </div>
   <div class="voice" id="voice-row">
     <div class="mic" id="mic-button">
       <span class="mic-text" id="mic-label">Parler</span>
+    </div>
+    <div class="pal-button" id="pal-button">
+      <span class="mic-text" id="pal-button-label">Ask Pal (EN)</span>
     </div>
     <div class="heard-box">
       <span class="heard" id="heard">Pinch "Parler" or turn your palm up, then speak French.</span>

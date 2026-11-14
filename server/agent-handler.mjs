@@ -15,6 +15,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { createRateLimiter } from './limits.mjs';
+import { handlePal } from './pal-handler.mjs';
 import placesData from '../shared/places.json' with { type: 'json' };
 
 /** Shops on the Paris map (shared with the client so menus and prices never drift). */
@@ -43,6 +44,7 @@ How you act:
 - speak.fr: simple, natural spoken French for an A1-A2 learner. At most 18 words. One idea per line. Use the learner's name now and then.
 - speak.en: the English translation.
 - speak.replies: exactly 3 short things the learner could say next, useful and varied (one moves the order forward, one is polite small talk, one practices a weak word when it fits).
+- speak.replies[].sounds: how that French sounds to an English speaker, in English-style syllables with hyphens and the stressed syllable in capitals, e.g. "Deux cafés, s'il vous plaît." -> "duh ka-FAY, seel voo PLAY".
 - speak.points: 0-20 for the learner's last action (correct French, politeness, using numbers/fingers, good pronunciation).
 
 The game engine owns money and inventory:
@@ -119,8 +121,8 @@ export function systemPrompt(placeId, realLife = false) {
 
 const replySchema = {
   type: 'object',
-  properties: { fr: { type: 'string' }, en: { type: 'string' } },
-  required: ['fr', 'en'],
+  properties: { fr: { type: 'string' }, en: { type: 'string' }, sounds: { type: 'string' } },
+  required: ['fr', 'en', 'sounds'],
   additionalProperties: false,
 };
 
@@ -279,7 +281,11 @@ export function toTurn(content) {
   return {
     fr: String(fr).slice(0, 200),
     en: String(speak?.en ?? '').slice(0, 240),
-    replies: replies.map((r) => ({ fr: String(r.fr).slice(0, 80), en: String(r.en ?? '').slice(0, 100) })),
+    replies: replies.map((r) => ({
+      fr: String(r.fr).slice(0, 80),
+      en: String(r.en ?? '').slice(0, 100),
+      ...(typeof r.sounds === 'string' && r.sounds.trim() ? { sounds: r.sounds.trim().slice(0, 120) } : {}),
+    })),
     actions: actions.slice(0, 8),
     points: Math.max(0, Math.min(20, Math.round(Number(speak?.points) || 0))),
   };
@@ -289,6 +295,8 @@ export function toTurn(content) {
 export async function handleAgent(payload, env = process.env, ip = 'local') {
   const key = env.ANTHROPIC_API_KEY;
   if (!key) return { status: 503, body: { error: 'ANTHROPIC_API_KEY not set; client uses offline script' } };
+  // Pal, the English-speaking companion: its own prompt, one text-only tool, its own limits.
+  if (payload?.mode === 'pal') return handlePal(payload, env, ip);
   if (rateLimited(ip)) return { status: 429, body: { error: 'slow down' } };
 
   // Warm-up ping at app start: open the connection and wake the function so the

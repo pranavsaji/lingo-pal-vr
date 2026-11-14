@@ -24,6 +24,8 @@ export interface Settings {
   voiceFirst: boolean;
   /** "Vraie vie": natural-pace French, no English, no reply chips (src/agent/real-life.ts). */
   realLife: boolean;
+  /** Sounds-like lines for English speakers under the reply chips ("duh ka-FAY"). */
+  pronunciationHelp: boolean;
 }
 
 export interface Profile {
@@ -58,6 +60,8 @@ export interface Profile {
   coach: CoachMemory;
   /** The shopkeeper has invited this learner to "vraie vie" mode (once, after the 5th order). */
   realLifeInvited: boolean;
+  /** Pal, the English-speaking companion, has introduced itself (once). */
+  palIntroduced: boolean;
 }
 
 export interface CoachMemory {
@@ -85,6 +89,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mixedReality: false,
   voiceFirst: false,
   realLife: false,
+  pronunciationHelp: true,
 };
 
 export function defaultProfile(): Profile {
@@ -112,6 +117,7 @@ export function defaultProfile(): Profile {
     demo: '',
     coach: defaultCoach(),
     realLifeInvited: false,
+    palIntroduced: false,
   };
 }
 
@@ -181,6 +187,7 @@ export function loadProfile(kv: KV | null): Profile {
         demo: typeof stored.demo === 'string' ? stored.demo : '',
         coach: { ...defaultCoach(), ...(stored.coach ?? {}) },
         realLifeInvited: stored.realLifeInvited === true,
+        palIntroduced: stored.palIntroduced === true,
       };
     }
     // Migrate v1 progress (bestScore, wordsHeard, lastPlayedDay, streakDays).

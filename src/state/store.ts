@@ -331,6 +331,12 @@ export class Store {
     this.save();
   }
 
+  /** Pal has introduced itself (once per learner). */
+  markPalIntroduced(): void {
+    this.profile.palIntroduced = true;
+    this.save();
+  }
+
   recordTrick(caught: boolean): void {
     this.profile.coach.tricks += 1;
     if (caught) this.profile.coach.caught += 1;
