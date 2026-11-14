@@ -34,6 +34,11 @@ export interface TurnResult {
   rejected: Rejection[];
 }
 
+/** A reply that arrived after the learner left the shop: nothing is applied, said or shown. */
+function staleTurn(): TurnResult {
+  return { turn: { fr: '', en: '', replies: [], actions: [], points: 0, source: 'script' }, effects: [], rejected: [] };
+}
+
 /**
  * A turn taken for someone else at the counter (Café à deux guest): the request
  * carries only their name, none of this learner's profile, memories, mistakes
@@ -80,6 +85,8 @@ export class AgentDirector {
   private guestHistory: AgentRequest['history'] = [];
   private queue: Promise<unknown> = Promise.resolve();
   private inFlight = 0;
+  /** Bumped by resetConversation: a turn begun for the previous shop is dropped, never applied here. */
+  private epoch = 0;
   perception: Perception = { lookingAt: null, holding: null };
   onSlow: () => void = () => {};
   rejectedLog: Rejection[] = [];
@@ -255,6 +262,7 @@ export class AgentDirector {
 
   /** A new shop: a new shopkeeper does not know the previous conversation. */
   resetConversation(): void {
+    this.epoch++;
     this.history = [];
     this.guestHistory = [];
     this.offer = null;
@@ -269,7 +277,10 @@ export class AgentDirector {
   /** Serialized: one turn at a time, in order. */
   handle(event: AgentEvent, guest?: GuestScope): Promise<TurnResult> {
     this.inFlight++;
-    const run = this.queue.then(() => (guest ? this.runGuest(event, guest) : this.run(event)));
+    const epoch = this.epoch;
+    const run = this.queue.then(() =>
+      epoch !== this.epoch ? staleTurn() : guest ? this.runGuest(event, guest, epoch) : this.run(event, epoch),
+    );
     this.queue = run.catch(() => undefined);
     void run.finally(() => {
       this.inFlight = Math.max(0, this.inFlight - 1);
@@ -385,7 +396,7 @@ export class AgentDirector {
     return '';
   }
 
-  private async run(event: AgentEvent): Promise<TurnResult> {
+  private async run(event: AgentEvent, epoch = this.epoch): Promise<TurnResult> {
     this.pendingNote = '';
     if (event.kind === 'say') {
       this.history.push({ role: 'learner', text: event.text });
@@ -399,6 +410,7 @@ export class AgentDirector {
     // An offer stands for one learner answer; her own hints in between do not use it up.
     if (event.kind !== 'hint') this.offer = null;
     let turn = this.inviteTurn(event) ?? this.localTurn(req) ?? (await this.transport(req, () => this.onSlow()));
+    if (epoch !== this.epoch) return staleTurn(); // the learner travelled while this reply was on its way
     if (req.scene.realLife) turn = this.afterRealLife(event, turn);
     if (event.kind === 'paid') turn = this.withPaidExtra(turn);
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
@@ -434,7 +446,7 @@ export class AgentDirector {
    * to the guest. No memories, mistakes, XP, plans or notes touch this
    * learner's profile, so nothing the guest says can read or write it.
    */
-  private async runGuest(event: AgentEvent, guest: GuestScope): Promise<TurnResult> {
+  private async runGuest(event: AgentEvent, guest: GuestScope, epoch = this.epoch): Promise<TurnResult> {
     if (event.kind === 'say') {
       this.guestHistory.push({ role: 'learner', text: event.text });
       events.subtitle.emit({ who: 'learner', fr: event.text, en: '' });
@@ -446,6 +458,7 @@ export class AgentDirector {
     delete req.scene.realLife; // the guest keeps the training wheels
     req.scene.shoppingList = '';
     const turn = await this.transport(req, () => this.onSlow());
+    if (epoch !== this.epoch) return staleTurn();
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
     if (rejected.length) this.rejectedLog.push(...rejected);
     this.store.setOrder(state);
