@@ -21,31 +21,32 @@
   }
 
   .header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 14px;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 12px;
     padding-bottom: 14px;
     padding-left: 22px;
     padding-right: 22px;
     background-color: #7a2e2e;
   }
 
+  .header-top {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
   .name {
     color: #fafaf7;
     font-size: 20px;
     font-weight: bold;
+    flex-shrink: 1;
   }
 
   .status {
     color: #ffd6a5;
     font-size: 15px;
-  }
-
-  .header-right {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
   }
 
   .rl-badge {
@@ -58,6 +59,7 @@
     padding-right: 10px;
     border-radius: 10px;
     background-color: #f5d90a;
+    flex-shrink: 0;
   }
 
   .rl-row {
@@ -298,12 +300,13 @@
 
   .pal-button {
     flex-direction: row;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
     padding-top: 12px;
     padding-bottom: 12px;
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left: 18px;
+    padding-right: 18px;
     border-radius: 18px;
     background-color: #2f5fb3;
     cursor: pointer;
@@ -314,16 +317,22 @@
   }
 
   .voice {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 10px;
     padding-bottom: 18px;
     padding-left: 22px;
     padding-right: 22px;
   }
 
+  .voice-buttons {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
   .mic {
     flex-direction: row;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
     padding-top: 12px;
@@ -347,7 +356,7 @@
 
   .heard-box {
     flex-direction: column;
-    flex-shrink: 1;
+    gap: 2px;
   }
 
   .heard {
@@ -371,11 +380,11 @@
 </style>
 <Panel class="root">
   <div class="header">
-    <span class="name" id="keeper-name">Madame Lune, la serveuse</span>
-    <div class="header-right">
+    <div class="header-top">
+      <span class="name" id="keeper-name">Madame Lune, la serveuse</span>
       <span class="rl-badge" id="rl-badge" style="display: none">VRAIE VIE</span>
-      <span class="status" id="status">en ligne</span>
     </div>
+    <span class="status" id="status">en ligne</span>
   </div>
   <div class="content">
     <span class="npc" id="npc-line">Bonjour ! Bienvenue au café.</span>
@@ -432,11 +441,13 @@
     </div>
   </div>
   <div class="voice" id="voice-row">
-    <div class="mic" id="mic-button">
-      <span class="mic-text" id="mic-label">Parler</span>
-    </div>
-    <div class="pal-button" id="pal-button">
-      <span class="mic-text" id="pal-button-label">Ask Pal (EN)</span>
+    <div class="voice-buttons">
+      <div class="mic" id="mic-button">
+        <span class="mic-text" id="mic-label">Parler</span>
+      </div>
+      <div class="pal-button" id="pal-button">
+        <span class="mic-text" id="pal-button-label">Ask Pal (EN)</span>
+      </div>
     </div>
     <div class="heard-box">
       <span class="heard" id="heard">Pinch "Parler" or turn your palm up, then speak French.</span>
