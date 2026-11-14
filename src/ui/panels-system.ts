@@ -24,7 +24,14 @@ const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-pane
 const CARNET_ROWS = 12;
 const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
-const HIDDEN_OFFSET = 100; // hidden panels move far away so rays cannot hit them
+const HIDDEN_OFFSET = 100;
+/**
+ * The chat panel's bottom edge (world y). Its height changes a lot (one line of
+ * greeting vs. three reply chips plus Pal's box, at large text), so it grows
+ * upward from here instead of around its center: grown downward, it slid behind
+ * the cash register (top at y = 1.29) in a seated learner's view.
+ */
+const CHAT_BOTTOM_Y = 1.34; // hidden panels move far away so rays cannot hit them
 const XP_TRACK_PX = 400;
 
 /**
@@ -80,6 +87,12 @@ export class PanelsSystem extends createSystem({}) {
       this.basePos.set(id, obj.position.clone());
       this.baseQuat.set(id, obj.quaternion.clone());
       if (id !== 'lesson-panel' && id !== 'chat-panel') applyFrenchFont(panel.document.rootElement);
+    }
+    const chat = this.panels.get('chat-panel');
+    const chatObj = this.objects.get('chat-panel');
+    if (chat && chatObj) {
+      chat.document.rootElement.setProperties({ anchorY: 'bottom' } as never);
+      chatObj.position.y = CHAT_BOTTOM_Y;
     }
 
     this.click('lesson-panel', 'carnet-button', () => this.show('carnet'));
