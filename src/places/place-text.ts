@@ -106,4 +106,16 @@ export const PLACE_TEXT: Record<PlaceId, PlaceText> = {
     bill: HOW_MUCH,
     talk: { fr: "J'ai mal à la tête.", en: 'I have a headache.' },
   },
+  hotel: {
+    to: { fr: "à l'Hôtel", en: 'to the hotel' },
+    at: { fr: "à l'hôtel", en: 'at the hotel' },
+    go: "À l'hôtel",
+    words: /\b(hotel|reception)\b/,
+    count: { fr: "Deux nuits, s'il vous plaît.", en: 'Two nights, please.' },
+    more: { fr: 'Avec le petit-déjeuner.', en: 'With breakfast.' },
+    again: { fr: "Un plan de la ville, s'il vous plaît.", en: 'A city map, please.' },
+    example: { fr: "une nuit, s'il vous plaît", en: 'one night, please' },
+    bill: HOW_MUCH,
+    talk: { fr: "J'ai une réservation.", en: 'I have a booking.' },
+  },
 };

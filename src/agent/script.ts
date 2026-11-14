@@ -8,6 +8,7 @@ import { NUMBER_WORDS } from '../state/mistakes.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { findElsewhere, substituteFor, upsellFor } from './agency.js';
 import { parseIntent } from './intent.js';
+import { needsCard, WALLET } from '../interaction/pick-coins.js';
 import { PLACE_TEXT } from '../places/place-text.js';
 import { MENU, menuItem, PLACES, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn, type MenuItem } from './menu.js';
 import type { AgentRequest, AgentTurn, ReplyOption } from './protocol.js';
@@ -83,6 +84,19 @@ export function scriptedTurn(req: AgentRequest): AgentTurn {
       const keeper = place.shopkeeper;
       const welcome = textFor(req).to;
       const sir = keeper.gender === 'm' ? 'monsieur' : 'madame';
+      if (scene.place === 'hotel') {
+        return turn(
+          `Bonjour ! Bienvenue ${welcome.fr}. Je suis ${keeper.name}. Vous avez une réservation ? C'est à quel nom ?`,
+          `Hello! Welcome ${welcome.en}. I'm ${keeper.name}. Do you have a booking? What name is it under?`,
+          [{ type: 'emote', kind: 'wave' }],
+          0,
+          [
+            { fr: `Au nom de ${name || 'Alex'}.`, en: `Under ${name || 'Alex'}.` },
+            { fr: "J'ai une réservation.", en: 'I have a booking.' },
+            { fr: "Une chambre, s'il vous plaît.", en: 'A room, please.' },
+          ],
+        );
+      }
       if (!name) {
         const intro = scene.place === 'cafe' ? '' : ` Je suis ${keeper.name}.`;
         const introEn = scene.place === 'cafe' ? '' : ` I'm ${keeper.name}.`;
@@ -241,6 +255,9 @@ function withPractice(reps: ReplyOption[], pr: { reply: ReplyOption | null } | n
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** A bill paid by card (the hotel, or more than a purse of coins). */
+const WALLET_CENTS = WALLET.reduce((a, b) => a + b, 0);
+const byCard = (req: AgentRequest) => needsCard(req.scene.place, req.scene.totalCents, WALLET_CENTS);
 const isMan = (req: AgentRequest) => (PLACES[req.scene.place] ?? PLACES.cafe).shopkeeper.gender === 'm';
 const sorry = (req: AgentRequest) => (isMan(req) ? 'Désolé' : 'Désolée');
 const OFFER_REPLIES: ReplyOption[] = [
@@ -388,6 +405,15 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
 
   switch (intent.kind) {
     case 'name':
+      if (scene.place === 'hotel') {
+        return turn(
+          `Merci, ${intent.name}. Votre chambre est prête ! Pour combien de nuits ?`,
+          `Thank you, ${intent.name}. Your room is ready! For how many nights?`,
+          [{ type: 'remember', key: 'name', value: intent.name }, { type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'nuit' }],
+          10,
+          NIGHTS,
+        );
+      }
       return turn(
         `${isMan(req) ? 'Enchanté' : 'Enchantée'}, ${intent.name} ! Qu'est-ce que je vous sers ?`,
         `Nice to meet you, ${intent.name}! What can I get you?`,
@@ -402,6 +428,15 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
       if (scene.order.length === 0) {
         const ex = textFor(req).example;
         return turn(`Vous n'avez rien commandé ! ${cap(ex.fr.replace(/, s'il vous plaît$/, ''))}, peut-être ?`, `You haven't ordered anything! ${cap(ex.en.replace(/, please$/, ''))}, maybe?`, [{ type: 'emote', kind: 'laugh' }], 2, replies(req, 'browsing'));
+      }
+      if (byCard(req)) {
+        return turn(
+          `Ça fait ${priceToFrench(scene.totalCents)}, s'il vous plaît. Posez votre carte sur le plateau.`,
+          `That comes to ${priceToEnglish(scene.totalCents)}, please. Put your card on the tray.`,
+          [{ type: 'quote_total', totalCents: scene.totalCents }],
+          10 + polite,
+          replies(req, 'paying'),
+        );
       }
       return turn(
         `Ça fait ${priceToFrench(scene.totalCents)}, s'il vous plaît. Posez les pièces sur le plateau.`,
@@ -482,6 +517,13 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
 
 // ---- Small talk: each shop's everyday questions, answered offline too ----------------
 
+/** "Pour combien de nuits ?": the learner can also just hold up fingers and say "nuits". */
+const NIGHTS: ReplyOption[] = [
+  { fr: "Une nuit, s'il vous plaît.", en: 'One night, please.' },
+  { fr: "Deux nuits, s'il vous plaît.", en: 'Two nights, please.' },
+  { fr: 'Trois nuits, avec le petit-déjeuner.', en: 'Three nights, with breakfast.' },
+];
+
 /** Metro directions (real lines and stops; no brand names). */
 const DIRECTIONS: { re: RegExp; fr: string; en: string }[] = [
   { re: /\b(montmartre|sacre coeur|abbesses)\b/, fr: 'Montmartre ? Ligne 12, station Abbesses. Bonne visite !', en: 'Montmartre? Line 12, Abbesses station. Enjoy!' },
@@ -527,6 +569,24 @@ function smallTalk(req: AgentRequest, norm: string): AgentTurn | null {
     if (/\b(pour aller|comment aller|ou est|c est ou)\b/.test(norm)) {
       return offer('plan_metro', 'Regardez le plan du métro : tout est dessus !', "Look at the metro map: it's all on there!");
     }
+  }
+  if (place === 'hotel') {
+    if (/\b(reservation|reserve)\b/.test(norm)) {
+      return turn("Très bien. C'est à quel nom ?", 'Very good. What name is it under?', [{ type: 'emote', kind: 'nod' }], 5, [
+        { fr: `Au nom de ${req.profile.name || 'Alex'}.`, en: `Under ${req.profile.name || 'Alex'}.` },
+        { fr: 'Au nom de Sam.', en: 'Under Sam.' },
+        { fr: 'Pardon ?', en: 'Sorry?' },
+      ]);
+    }
+    if (/\bchambres?\b/.test(norm)) {
+      return turn('Une chambre ? Bien sûr. Pour combien de nuits ?', 'A room? Of course. For how many nights?', [{ type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'nuit' }], 5, NIGHTS);
+    }
+    if (/\bpetit dejeuner\b/.test(norm)) {
+      return turn('Le petit-déjeuner, c\'est de sept heures à dix heures. Croissant, café, confiture !', 'Breakfast is from seven to ten. Croissant, coffee, jam!', [{ type: 'point_at', itemId: 'petit_dejeuner' }], 5, replies(req));
+    }
+    if (/\bascenseur\b/.test(norm)) return turn("L'ascenseur est à droite.", 'The lift is on the right.', [{ type: 'emote', kind: 'nod' }], 5, replies(req));
+    if (/\b(wifi|wi fi|internet)\b/.test(norm)) return turn('Le code wifi est sur votre clé.', 'The wifi code is on your key.', [{ type: 'point_at', itemId: 'nuit' }], 5, replies(req));
+    if (/\b(pleut|pluie)\b/.test(norm)) return offer('parapluie', 'Il pleut ? Un parapluie, peut-être.', 'Is it raining? An umbrella, maybe.');
   }
   if (place === 'pharmacie') {
     if (/\b(urgence|tres mal|fievre|saigne|allergie)\b/.test(norm)) {

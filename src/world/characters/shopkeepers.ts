@@ -24,6 +24,7 @@ export const SHOPKEEPERS: Record<PlaceId, ShopkeeperSpec> = {
   bistrot: { assetId: 'shopkeeper-marcel', name: 'Monsieur Marcel', source: 'Business_Male_04', rig: {} },
   metro: { assetId: 'shopkeeper-karim', name: 'Monsieur Karim', source: 'Male_Adult_07', rig: { armClearance: 0.11 } },
   pharmacie: { assetId: 'shopkeeper-ines', name: 'Madame Inès', source: 'Medical_Female_01', rig: {} },
+  hotel: { assetId: 'shopkeeper-claire', name: 'Madame Claire', source: 'Business_Female_04', rig: {} },
 };
 
 /** Where every shopkeeper stands (behind the counter, facing the learner along +Z). */

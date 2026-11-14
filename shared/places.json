@@ -88,6 +88,19 @@
         { "id": "paracetamol", "noun": "boîte de paracétamol", "plural": "boîtes de paracétamol", "gender": "f", "en": "box of paracetamol", "enPlural": "boxes of paracetamol", "priceCents": 220, "aliases": ["paracetamol", "boite de paracetamol", "boites de paracetamol", "paracetamole", "parasetamol", "paracetamols"] }
       ],
       "words": []
+    },
+    "hotel": {
+      "fr": "L'Hôtel",
+      "en": "The Hotel",
+      "shopkeeper": { "name": "Madame Claire", "gender": "f", "role": "the polished, welcoming receptionist of a small family hotel in Paris", "notes": "Reception desk. Check the learner in: ask \"C'est à quel nom ?\" and \"Pour combien de nuits ?\" (the learner may hold up fingers for the number of nights). A night is the nuit item; breakfast is served from 7 to 10. Rooms are paid by card: the learner taps the bank card on the tray (coins work for small things). Small talk: the lift (l'ascenseur) is on the right, the wifi code is on the key tag." },
+      "menu": [
+        { "id": "nuit", "noun": "nuit", "plural": "nuits", "gender": "f", "en": "night", "enPlural": "nights", "priceCents": 9000, "aliases": ["nuit", "nuits", "nuitee", "nuitees", "nui"] },
+        { "id": "petit_dejeuner", "noun": "petit-déjeuner", "plural": "petits-déjeuners", "gender": "m", "en": "breakfast", "enPlural": "breakfasts", "priceCents": 1200, "aliases": ["petit dejeuner", "petits dejeuners", "petit dej", "petits dej", "dejeuner", "breakfast"] },
+        { "id": "plan_ville", "noun": "plan de la ville", "plural": "plans de la ville", "gender": "m", "en": "city map", "enPlural": "city maps", "priceCents": 100, "aliases": ["plan de la ville", "plans de la ville", "plan de ville", "plan du quartier", "city map"] },
+        { "id": "carte_postale", "noun": "carte postale", "plural": "cartes postales", "gender": "f", "en": "postcard", "enPlural": "postcards", "priceCents": 120, "aliases": ["carte postale", "cartes postales", "carte postal", "postcard"] },
+        { "id": "parapluie", "noun": "parapluie", "plural": "parapluies", "gender": "m", "en": "umbrella", "enPlural": "umbrellas", "priceCents": 1500, "aliases": ["parapluie", "parapluies", "para pluie", "umbrella"] }
+      ],
+      "words": ["sonnette"]
     }
   }
 }

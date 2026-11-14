@@ -53,6 +53,10 @@ const SUBSTITUTES: Record<string, string[]> = {
   mouchoirs: ['pansements'],
   sirop: ['paracetamol', 'mouchoirs'],
   paracetamol: ['sirop'],
+  petit_dejeuner: ['plan_ville'],
+  plan_ville: ['carte_postale'],
+  carte_postale: ['plan_ville'],
+  parapluie: ['plan_ville'],
 };
 
 /** "Goes well with": what she suggests on top of an order. */
@@ -88,6 +92,9 @@ const PAIRINGS: Record<string, string[]> = {
   sirop: ['mouchoirs'],
   paracetamol: ['mouchoirs'],
   pansements: ['creme_solaire'],
+  nuit: ['petit_dejeuner'],
+  plan_ville: ['carte_postale'],
+  parapluie: ['plan_ville'],
 };
 
 /**

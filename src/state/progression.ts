@@ -94,6 +94,7 @@ export const UNLOCKS: Unlock[] = [
   { id: 'bistrot', kind: 'scenario', fr: 'le bistrot', en: 'the bistro', orders: 2 },
   { id: 'metro', kind: 'scenario', fr: 'le métro', en: 'the metro', orders: 3 },
   { id: 'pharmacie', kind: 'scenario', fr: 'la pharmacie', en: 'the pharmacy', orders: 4 },
+  { id: 'hotel', kind: 'scenario', fr: "l'hôtel", en: 'the hotel', orders: 5 },
   { id: 'terrasse', kind: 'decor', fr: 'la terrasse', en: 'the terrace', streak: 7 },
   // Visible growth in every shop (Reason to Come Back): each milestone changes the room.
   { id: 'lanternes', kind: 'decor', fr: 'les lanternes', en: 'the lanterns', streak: 5 },
@@ -103,6 +104,7 @@ export const UNLOCKS: Unlock[] = [
   { id: 'guirlandes-bistrot', kind: 'decor', fr: 'les guirlandes du bistrot', en: 'the bistro lights', placeOrders: { place: 'bistrot', count: 3 }, place: 'bistrot' },
   { id: 'plantes-metro', kind: 'decor', fr: 'les plantes du métro', en: 'the metro plants', placeOrders: { place: 'metro', count: 3 }, place: 'metro' },
   { id: 'fleurs-pharmacie', kind: 'decor', fr: 'les fleurs de la pharmacie', en: 'the pharmacy flowers', placeOrders: { place: 'pharmacie', count: 3 }, place: 'pharmacie' },
+  { id: 'plantes-hotel', kind: 'decor', fr: "les plantes de l'hôtel", en: 'the hotel plants', placeOrders: { place: 'hotel', count: 3 }, place: 'hotel' },
 ];
 
 export interface UnlockInputs {

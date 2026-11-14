@@ -18,7 +18,7 @@ describe('shopkeeper voices route', () => {
     expect((await handleTts({ s: 'lune', t: '[shout] Bonjour' }, env)).status).toBe(400);
   });
   it('gives each shopkeeper a voice and returns cacheable MP3', async () => {
-    expect(Object.keys(SPEAKERS)).toEqual(['lune', 'paul', 'rose', 'marcel', 'karim', 'ines', 'learner']);
+    expect(Object.keys(SPEAKERS)).toEqual(['lune', 'paul', 'rose', 'marcel', 'karim', 'ines', 'claire', 'learner']);
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ audioContent: Buffer.alloc(4000, 1).toString('base64') })));
     vi.stubGlobal('fetch', fetchMock);
     const r = await handleTts({ s: 'paul', t: 'Voilà votre baguette.', slow: '1' }, env, 'ip-test');

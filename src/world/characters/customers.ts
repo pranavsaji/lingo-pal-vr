@@ -132,6 +132,17 @@ export const CUSTOMERS: Record<PlaceId, CustomerSpec[]> = {
       pos: [2.0, -1.5], yaw: yawToward(2.0, -1.5, 0.4, -0.9), posture: 'standing', activity: 'wait', seed: 37,
     },
   ],
+  // Hotel: a guest waits to check in, another reads the key board.
+  hotel: [
+    {
+      assetId: 'customer-f09', name: 'Customer (hotel, waiting)', source: 'Female_Adult_09',
+      pos: [2.0, -1.5], yaw: yawToward(2.0, -1.5, 0.4, -0.9), posture: 'standing', activity: 'wait', seed: 19,
+    },
+    {
+      assetId: 'customer-m12', name: 'Customer (hotel, key board)', source: 'Male_Adult_12',
+      pos: [-2.05, -1.85], yaw: yawToward(-2.05, -1.85, -0.85, -2.42), posture: 'standing', activity: 'browse', seed: 67,
+    },
+  ],
 };
 
 /** Café à deux seats (src/social/protocol.ts SEAT_LEFT / SEAT_RIGHT: x ±0.95, z -0.62). */

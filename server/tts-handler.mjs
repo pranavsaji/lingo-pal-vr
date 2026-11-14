@@ -30,6 +30,7 @@ export const SPEAKERS = {
   marcel: { voiceId: 'Étienne', style: '[relaxed, warm Paris waiter, unhurried and friendly, clear for a learner]', rate: 0.92 },
   karim: { voiceId: 'Alain', style: '[brisk but kind metro ticket agent, crisp and efficient, clear for a learner]', rate: 1.05 },
   ines: { voiceId: 'Hélène', style: '[calm, soft-spoken, reassuring pharmacist, gentle and clear]', rate: 0.9 },
+  claire: { voiceId: 'Hélène', style: '[polished, welcoming hotel receptionist, bright and professional, clear for a learner]', rate: 1.0 },
   learner: { voiceId: 'Étienne', style: '', rate: 0.95 },
 };
 

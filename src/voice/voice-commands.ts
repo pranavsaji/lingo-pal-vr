@@ -94,7 +94,7 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
   }
 
   // Payment: "je paie" with no amount places the exact coins on the tray.
-  if (ctx.paying && /\b(je paie|je paye|je vais payer|payer|pay|i ll pay|c est juste|exact)\b/.test(n) && !/\d|\beuros?\b|\bcentimes?\b|\bbillet\b/.test(n)) {
+  if (ctx.paying && /\b(je paie|je paye|je vais payer|payer|pay|i ll pay|c est juste|exact|par carte|by card)\b/.test(n) && !/\d|\beuros?\b|\bcentimes?\b|\bbillet\b/.test(n)) {
     return { kind: 'pay_exact' };
   }
 

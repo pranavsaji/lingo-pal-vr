@@ -1,6 +1,6 @@
 /**
- * Procedural counter items and set dressing for the bistrot, the metro and the
- * pharmacie: everyday things the learner pinches and names (a ticket, a crêpe,
+ * Procedural counter items and set dressing for the bistrot, the metro, the
+ * pharmacie and the hotel: everyday things the learner pinches and names (a ticket, a crêpe,
  * a box of plasters...). Each item is ONE merged, vertex-coloured mesh (plus one
  * glass mesh for drinks), so a whole shop's items cost about one draw call each.
  * "Printed" labels are thin coloured slabs: no textures, nothing to load.
@@ -46,6 +46,12 @@ export const PLACE_ITEM_SHAPES = [
   'mouchoirs',
   'sirop',
   'paracetamol',
+  'nuit',
+  'petit_dej',
+  'plan_ville',
+  'carte_postale',
+  'parapluie',
+  'sonnette',
 ] as const;
 export type PlaceItemShape = (typeof PLACE_ITEM_SHAPES)[number];
 
@@ -390,6 +396,12 @@ const BUILDERS: Record<PlaceItemShape, () => Group> = {
   mouchoirs: buildMouchoirs,
   sirop: buildSirop,
   paracetamol: buildParacetamol,
+  nuit: buildNuit,
+  petit_dej: buildPetitDejeuner,
+  plan_ville: buildPlanVille,
+  carte_postale: buildCartePostale,
+  parapluie: buildParapluie,
+  sonnette: buildSonnette,
 };
 
 /** Build one pinchable counter item (base at y = 0). */
@@ -535,5 +547,164 @@ export function buildPlaceDressing(place: PlaceId): Group | null {
   if (place === 'bistrot') return bistrotDressing();
   if (place === 'metro') return metroDressing();
   if (place === 'pharmacie') return pharmacieDressing();
+  if (place === 'hotel') return hotelDressing();
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// L'Hôtel
+// ---------------------------------------------------------------------------
+
+/** Une nuit: the room key on its big brass tag, lying on a little leather tray. */
+function buildNuit(): Group {
+  const p: Part[] = [];
+  p.push({ g: new BoxGeometry(0.15, 0.006, 0.1), m: T(0, 0.003), c: 0x5a2e1c });
+  const M = T(0, 0.006, 0, 0, 0.25);
+  // Tag: a rounded brass slab with the room number engraved as dark bars ("12").
+  p.push({ g: new CylinderGeometry(0.026, 0.026, 0.006, 20), m: M.clone().multiply(T(-0.03, 0.003, 0, 0, 0, 0, 1, 1, 0.75)), c: 0xc9a227 });
+  p.push({ g: new BoxGeometry(0.04, 0.006, 0.039), m: M.clone().multiply(T(-0.012, 0.003, 0)), c: 0xc9a227 });
+  p.push({ g: new BoxGeometry(0.003, 0.0015, 0.016), m: M.clone().multiply(T(-0.036, 0.0065, 0)), c: 0x3b2416 });
+  for (const [x, z, w, d] of [[-0.024, -0.006, 0.01, 0.003], [-0.02, 0, 0.003, 0.012], [-0.024, 0.006, 0.01, 0.003], [-0.028, 0.003, 0.003, 0.006]] as const) {
+    p.push({ g: new BoxGeometry(w, 0.0015, d), m: M.clone().multiply(T(x, 0.0065, z)), c: 0x3b2416 });
+  }
+  // Ring and key.
+  p.push({ g: new CylinderGeometry(0.009, 0.009, 0.002, 16, 1, true), m: M.clone().multiply(T(0.012, 0.004, 0)), c: 0xb8b8b8 });
+  p.push({ g: new CylinderGeometry(0.0035, 0.0035, 0.05, 8), m: M.clone().multiply(T(0.04, 0.004, 0, 0, 0, Math.PI / 2)), c: 0xd9b54a });
+  p.push({ g: new CylinderGeometry(0.009, 0.009, 0.004, 14), m: M.clone().multiply(T(0.018, 0.004, 0)), c: 0xd9b54a });
+  p.push({ g: new BoxGeometry(0.01, 0.003, 0.008), m: M.clone().multiply(T(0.061, 0.004, 0.004)), c: 0xd9b54a });
+  return one('Nuit', p, 0.35);
+}
+
+/** Le petit-déjeuner: a tray with a croissant, a cup of coffee and a little jam pot. */
+function buildPetitDejeuner(): Group {
+  const p: Part[] = [];
+  p.push({ g: new BoxGeometry(0.2, 0.008, 0.13), m: T(0, 0.004), c: 0x8a5a35 });
+  for (const s of [-1, 1]) p.push({ g: new BoxGeometry(0.2, 0.016, 0.006), m: T(0, 0.01, s * 0.062), c: 0x6b4226 });
+  p.push({ g: lathe([[0, 0], [0.018, 0], [0.024, 0.005], [0.04, 0.008], [0, 0.008]], 20), m: T(0.05, 0.008), c: K.porcelain });
+  p.push({ g: lathe([[0, 0], [0.018, 0], [0.024, 0.04], [0.021, 0.04], [0.015, 0.004], [0, 0.004]], 18), m: T(0.05, 0.014), c: K.porcelain });
+  p.push({ g: new CylinderGeometry(0.0205, 0.0205, 0.002, 18), m: T(0.05, 0.048), c: 0x4b2e1e });
+  // Croissant: a fat crescent of three tapered lobes.
+  for (const [x, z, r, ry] of [[-0.045, 0, 0.018, 0], [-0.065, 0.016, 0.013, 0.7], [-0.065, -0.016, 0.013, -0.7]] as const) {
+    p.push({ g: new SphereGeometry(r, 12, 8), m: T(x, 0.008 + r * 0.7, z, 0, ry, 0, 1.6, 0.8, 1), c: K.crepe });
+  }
+  p.push({ g: new CylinderGeometry(0.012, 0.012, 0.018, 14), m: T(0.0, 0.017, 0.035), c: 0xf2f2f2 });
+  p.push({ g: new CylinderGeometry(0.0125, 0.0125, 0.004, 14), m: T(0.0, 0.028, 0.035), c: K.red });
+  return one('Petit-dejeuner', p, 0.5);
+}
+
+/** Le plan de la ville: a folded city map, streets and a park in print. */
+function buildPlanVille(): Group {
+  const p: Part[] = [];
+  p.push({ g: new BoxGeometry(0.14, 0.003, 0.15), m: T(0, 0.0015, 0, 0, 0.12), c: 0xf6f1e4 });
+  const M = T(0, 0.0034, 0, 0, 0.12);
+  const at = (x: number, z: number, w: number, d: number, c: number, ry = 0): Part => ({ g: new BoxGeometry(w, 0.0012, d), m: M.clone().multiply(T(x, 0, z, 0, ry)), c });
+  p.push(at(0.03, -0.02, 0.04, 0.035, 0x9fd17f)); // a park
+  p.push(at(0, 0.02, 0.14, 0.008, 0x9fc6e0, 0.25)); // the river
+  for (const x of [-0.045, -0.01, 0.025]) p.push(at(x, 0, 0.004, 0.14, 0xe0b04c));
+  for (const z of [-0.05, 0.05]) p.push(at(0, z, 0.13, 0.004, 0xe0b04c));
+  p.push(at(-0.035, -0.04, 0.012, 0.012, K.red)); // you are here
+  p.push(at(0, -0.068, 0.14, 0.014, 0x6d2e46)); // title band
+  return one('Plan de la ville', p, 0.6);
+}
+
+/** La carte postale: a postcard of the tower at sunset on a little wire stand. */
+function buildCartePostale(): Group {
+  const p: Part[] = [];
+  p.push({ g: new BoxGeometry(0.06, 0.006, 0.03), m: T(0, 0.003), c: 0x2b2d33 });
+  const M = T(0, 0.006, -0.002, -0.3);
+  const at = (w: number, h: number, x: number, y: number, c: number, rz = 0): Part => ({ g: new BoxGeometry(w, h, 0.0008), m: M.clone().multiply(T(x, y, 0.0012, 0, 0, rz)), c });
+  p.push({ g: new BoxGeometry(0.13, 0.09, 0.0015), m: M.clone().multiply(T(0, 0.045, 0)), c: 0xf2a65a });
+  p.push(at(0.13, 0.035, 0, 0.0725, 0x7fb3d5)); // sky
+  p.push(at(0.13, 0.02, 0, 0.01, 0x3d6fb6)); // the Seine
+  // The tower: two legs and a spire.
+  p.push(at(0.005, 0.06, -0.006, 0.045, 0x3a3b40, -0.2), at(0.005, 0.06, 0.006, 0.045, 0x3a3b40, 0.2), at(0.003, 0.03, 0, 0.083, 0x3a3b40), at(0.018, 0.003, 0, 0.04, 0x3a3b40));
+  p.push(at(0.02, 0.02, 0.045, 0.07, K.sun)); // the sun
+  return one('Carte postale', p, 0.5);
+}
+
+/** Le parapluie: a folded umbrella lying on the counter, its crook handle toward the learner. */
+function buildParapluie(): Group {
+  const p: Part[] = [];
+  const M = T(0, 0.016, 0, 0, 0.5, Math.PI / 2);
+  p.push({ g: lathe([[0, -0.1], [0.004, -0.098], [0.016, -0.04], [0.016, 0.06], [0.006, 0.07], [0, 0.07]], 10), m: M, c: 0x1f3b63 });
+  p.push({ g: new CylinderGeometry(0.0168, 0.0168, 0.006, 10, 1, true), m: M.clone().multiply(T(0, 0.02)), c: 0xc9a227 }); // strap
+  p.push({ g: new CylinderGeometry(0.0025, 0.0025, 0.04, 6), m: M.clone().multiply(T(0, -0.12)), c: 0x9a9da6 }); // tip
+  p.push({ g: new CylinderGeometry(0.006, 0.006, 0.05, 8), m: M.clone().multiply(T(0, 0.095)), c: 0x5a3b22 }); // handle
+  p.push({ g: new CylinderGeometry(0.02, 0.02, 0.012, 14, 1, false, 0, Math.PI), m: M.clone().multiply(T(0.014, 0.12, 0, Math.PI / 2, 0, 0)), c: 0x5a3b22 }); // the crook
+  return one('Parapluie', p, 0.5);
+}
+
+/** La sonnette: the reception desk bell. */
+function buildSonnette(): Group {
+  const p: Part[] = [];
+  p.push({ g: new CylinderGeometry(0.04, 0.042, 0.012, 22), m: T(0, 0.006), c: 0x2b2d33 });
+  p.push({ g: new SphereGeometry(0.034, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), m: T(0, 0.012), c: 0xd9b54a });
+  p.push({ g: new CylinderGeometry(0.0025, 0.0025, 0.012, 6), m: T(0, 0.05), c: 0xd9b54a });
+  p.push({ g: new SphereGeometry(0.006, 10, 6), m: T(0, 0.058, 0, 0, 0, 0, 1, 0.6, 1), c: 0xd9b54a });
+  return g1('Sonnette', p);
+}
+
+const g1 = (name: string, p: Part[]): Group => {
+  const g = new Group();
+  g.name = name;
+  g.add(mesh(`${name} Body`, merge(p), vc(0.25, 0.6)));
+  return g;
+};
+
+/**
+ * A bank card (paying a hotel night by card): 1.4x real size, lying flat, chip up.
+ * Used by CoinSystem when the bill is larger than the coins in the dish.
+ */
+export function buildBankCard(): Group {
+  const p: Part[] = [];
+  const W = 0.12;
+  const D = 0.076;
+  p.push({ g: new BoxGeometry(W, 0.0012, D), m: T(0, 0.0006), c: 0x1f4e8c });
+  const at = (w: number, d: number, x: number, z: number, c: number): Part => ({ g: new BoxGeometry(w, 0.0006, d), m: T(x, 0.0014, z), c });
+  p.push(at(W, 0.012, 0, -0.022, 0x2a9d8f));
+  p.push(at(0.018, 0.014, -0.034, 0.004, 0xd9b54a)); // chip
+  p.push(at(0.06, 0.004, -0.012, 0.022, 0xe8e4dc));
+  p.push(at(0.03, 0.003, 0.03, 0.03, 0xe8e4dc));
+  p.push({ g: new CylinderGeometry(0.008, 0.008, 0.0006, 14), m: T(0.042, 0.0014, 0.012), c: 0xf28c28 });
+  p.push({ g: new CylinderGeometry(0.008, 0.008, 0.0006, 14), m: T(0.032, 0.0015, 0.012), c: 0xd1495b });
+  const g = new Group();
+  g.name = 'Bank Card';
+  g.add(mesh('Bank Card Body', merge(p), vc(0.35, 0.1), false));
+  return g;
+}
+
+/** The reception: a wooden key board with brass tags behind the desk, and its sign. */
+function hotelDressing(): Group {
+  const g = new Group();
+  g.name = 'Hotel Dressing';
+  const board: Part[] = [];
+  const Z = -2.42;
+  board.push({ g: new BoxGeometry(1.0, 0.7, 0.04), m: T(-0.85, 1.55, Z), c: 0x5a2e1c });
+  board.push({ g: new BoxGeometry(1.04, 0.03, 0.06), m: T(-0.85, 1.915, Z + 0.01), c: 0xc9a227 });
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 5; c++) {
+      const x = -1.21 + c * 0.18;
+      const y = 1.78 - r * 0.21;
+      board.push({ g: new CylinderGeometry(0.006, 0.006, 0.03, 6), m: T(x, y, Z + 0.035, Math.PI / 2, 0, 0), c: 0xd9b54a }); // hook
+      if ((r * 5 + c) % 4 === 3) continue; // a few rooms are taken: no key
+      board.push({ g: new BoxGeometry(0.035, 0.07, 0.008), m: T(x, y - 0.05, Z + 0.035), c: 0xc9a227 }); // brass tag
+      board.push({ g: new BoxGeometry(0.012, 0.02, 0.002), m: T(x, y - 0.05, Z + 0.04), c: 0x3b2416 }); // room number
+    }
+  }
+  g.add(mesh('Key Board', merge(board), vc(0.45, 0.25), false));
+  const plate = sign('Reception Sign', 0.7, 0.16, 512, (c, w, h) => {
+    c.fillStyle = '#6d2e46';
+    c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#d9b54a';
+    c.lineWidth = 6;
+    c.strokeRect(8, 8, w - 16, h - 16);
+    c.fillStyle = '#f5e6c8';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.font = `bold ${Math.round(h * 0.5)}px Georgia, 'Times New Roman', serif`;
+    c.fillText('RÉCEPTION', w / 2, h * 0.54);
+  }, 0x6d2e46);
+  plate.position.set(0.55, 1.75, -2.43);
+  g.add(plate);
+  return g;
 }

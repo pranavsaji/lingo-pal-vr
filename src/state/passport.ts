@@ -60,6 +60,7 @@ export const STAMPS: Stamp[] = [
   { id: 'bistrot', kind: 'shop', fr: 'Bistrot', en: 'The bistro', how: 'Pay for a lunch at the bistro', progress: orders('bistrot') },
   { id: 'metro', kind: 'shop', fr: 'Métro', en: 'The metro', how: 'Buy a ticket at the metro', progress: orders('metro') },
   { id: 'pharmacie', kind: 'shop', fr: 'Pharmacie', en: 'The pharmacy', how: 'Pay for an order at the pharmacy', progress: orders('pharmacie') },
+  { id: 'hotel', kind: 'shop', fr: 'Hôtel', en: 'The hotel', how: 'Book a night at the hotel', progress: orders('hotel') },
   { id: 'croissant', kind: 'skill', fr: 'Premier croissant', en: 'First croissant', how: 'Buy a croissant', progress: (f) => ({ have: f.passport.croissants, need: 1 }) },
   { id: 'appoint', kind: 'skill', fr: "L'appoint", en: 'Exact change', how: 'Pay the exact amount 3 times', progress: (f) => ({ have: f.passport.exactPayments, need: 3 }) },
   { id: 'liste', kind: 'skill', fr: 'Liste complète', en: 'Full list', how: 'Finish a daily shopping list', progress: (f) => ({ have: f.passport.listsDone, need: 1 }) },

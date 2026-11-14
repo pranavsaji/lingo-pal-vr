@@ -13,6 +13,7 @@ import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
 import { appState, events, type PlaceId } from './game-state.js';
 import { applyFrenchFont } from './fonts.js';
+import { needsCard, WALLET } from './interaction/pick-coins.js';
 import { prefetchFrench, speakFrench } from './speech.js';
 import { store } from './state/store.js';
 import { onActivate } from './ui/dwell.js';
@@ -22,6 +23,8 @@ interface Choice extends ReplyOption {
   payCents?: number;
 }
 
+const WALLET_CENTS = WALLET.reduce((a, b) => a + b, 0);
+
 /** Job title under each shopkeeper's name on the chat panel. */
 const KEEPER_ROLE: Record<PlaceId, string> = {
   cafe: 'la serveuse',
@@ -30,6 +33,7 @@ const KEEPER_ROLE: Record<PlaceId, string> = {
   bistrot: 'le serveur',
   metro: 'le guichetier',
   pharmacie: 'la pharmacienne',
+  hotel: 'la réceptionniste',
 };
 
 export class ChatSystem extends createSystem({}) {
@@ -126,6 +130,14 @@ export class ChatSystem extends createSystem({}) {
   private paymentChoices(): Choice[] {
     const due = orderTotal(store.order.lines) - store.order.trayCents;
     const note = due <= 500 ? 500 : 1000;
+    // A night at the hotel (or any bill bigger than the purse) is paid by card.
+    if (needsCard(appState.place, due, WALLET_CENTS)) {
+      return [
+        { fr: 'Je paie par carte.', en: `Pay by card (${priceToDigits(due)}).`, payCents: due },
+        { fr: "C'est combien, s'il vous plaît ?", en: 'How much is it, please?' },
+        { fr: "Voilà, c'est juste.", en: `Pay the exact amount (${priceToDigits(due)}).`, payCents: due },
+      ];
+    }
     return [
       { fr: `Voilà ${priceToFrench(note)}.`, en: `Hand over a ${note / 100} euro note.`, payCents: note },
       { fr: 'Voilà deux euros.', en: 'Hand over a 2 euro coin.', payCents: 200 },

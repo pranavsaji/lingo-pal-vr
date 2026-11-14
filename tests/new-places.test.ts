@@ -1,5 +1,5 @@
 /**
- * Le Bistrot, Le Métro, La Pharmacie: every shop on the map is a complete scenario.
+ * Le Bistrot, Le Métro, La Pharmacie, L'Hôtel: every shop on the map is a complete scenario.
  * One test per contract (data, look, words, models, shopkeeper, voice, stamp, travel
  * words), then the shop-specific language and a full offline order in each new shop.
  */
@@ -30,6 +30,7 @@ import { dailyQuest } from '../src/state/quest';
 import { Store } from '../src/state/store';
 import { PLACE_VOCAB, setVocabPlace } from '../src/vocab';
 import { parseVoiceCommand } from '../src/voice/voice-commands';
+import { needsCard, WALLET } from '../src/interaction/pick-coins';
 import { CUSTOMERS } from '../src/world/characters/customers';
 import { SHOPKEEPERS } from '../src/world/characters/shopkeepers';
 // @ts-expect-error plain ESM server module
@@ -41,7 +42,7 @@ const root = resolve(__dirname, '..');
 const assetsSrc = readFileSync(resolve(root, 'src/assets.ts'), 'utf8');
 const speechSrc = readFileSync(resolve(root, 'src/speech.ts'), 'utf8');
 const mapUi = readFileSync(resolve(root, 'public/ui/map.uikitml'), 'utf8');
-const NEW: PlaceId[] = ['bistrot', 'metro', 'pharmacie'];
+const NEW: PlaceId[] = ['bistrot', 'metro', 'pharmacie', 'hotel'];
 const idle = { paying: false, choosing: false };
 
 function memoryKV(): KV {
@@ -61,13 +62,15 @@ function triangles(o: Object3D): number {
 
 describe('every shop on the map is complete', () => {
   it('opens in map order, the new shops one paid order apart', () => {
-    expect(PLACE_ORDER).toEqual(['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie']);
+    expect(PLACE_ORDER).toEqual(['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel']);
     const at = (orders: number) => PLACE_ORDER.filter((p) => placeUnlocked(p, { onboarded: true, stats: { orders } } as never));
     expect(at(1)).toEqual(['cafe', 'boulangerie', 'marche']);
     expect(at(2)).toContain('bistrot');
     expect(at(2)).not.toContain('metro');
     expect(at(3)).toContain('metro');
-    expect(at(4)).toEqual(PLACE_ORDER);
+    expect(at(4)).toContain('pharmacie');
+    expect(at(4)).not.toContain('hotel');
+    expect(at(5)).toEqual(PLACE_ORDER);
     expect(placeUnlocked('bistrot', { onboarded: false, stats: { orders: 9 } } as never)).toBe(false);
     expect(unlockHint('metro').en).toBe('Opens after your third paid order');
     // ?demo=week opens every shop (and their scenario unlocks).
@@ -236,7 +239,7 @@ describe('offline shopkeepers (no API key)', () => {
       expect(t.replies).toHaveLength(3);
       expect(t.replies.some((r) => /café/.test(r.fr))).toBe(false); // no café lines outside the café
       const name = scriptedTurn(req(p, "Je m'appelle Sam"));
-      expect(name.fr).toMatch(PLACES[p].shopkeeper.gender === 'm' ? /^Enchanté,/ : /^Enchantée,/);
+      expect(name.fr).toMatch(p === 'hotel' ? /^Merci, Sam/ : PLACES[p].shopkeeper.gender === 'm' ? /^Enchanté,/ : /^Enchantée,/);
     }
     setMenuPlace('cafe');
   });
@@ -283,12 +286,60 @@ describe('offline shopkeepers (no API key)', () => {
   }
 });
 
+describe("l'hôtel: check-in, nights on the fingers, pay by card", () => {
+  it('asks the name, then how many nights', () => {
+    setMenuPlace('hotel');
+    const hello = scriptedTurn({ ...req('hotel', ''), event: { kind: 'arrive' } } as AgentRequest);
+    expect(hello.fr).toMatch(/C'est à quel nom \?/);
+    expect(parseIntent('Au nom de Sam')).toEqual({ kind: 'name', name: 'Sam' });
+    const name = scriptedTurn(req('hotel', 'Au nom de Sam.'));
+    expect(name.fr).toMatch(/Pour combien de nuits \?/);
+    expect(name.actions).toContainEqual({ type: 'remember', key: 'name', value: 'Sam' });
+    expect(scriptedTurn(req('hotel', "J'ai une réservation.")).fr).toMatch(/C'est à quel nom/);
+    expect(scriptedTurn(req('hotel', "Une chambre, s'il vous plaît")).fr).toMatch(/Pour combien de nuits/);
+    expect(scriptedTurn(req('hotel', 'À quelle heure est le petit-déjeuner ?')).fr).toMatch(/sept heures à dix heures/);
+    // Two fingers up + "nuits".
+    expect(parseIntent('nuits', 2)).toEqual({ kind: 'order', items: [{ itemId: 'nuit', qty: 2 }] });
+    expect(parseIntent('Deux nuits avec le petit-déjeuner')).toEqual({ kind: 'order', items: [{ itemId: 'nuit', qty: 2 }, { itemId: 'petit_dejeuner', qty: 1 }] });
+    const quote = scriptedTurn(req('hotel', "C'est combien ?", { order: [{ itemId: 'nuit', qty: 2 }], totalCents: 18000, totalWords: 'cent quatre-vingts euros', phase: 'ordering' }));
+    expect(quote.fr).toMatch(/cent quatre-vingts euros.*carte/);
+    setMenuPlace('cafe');
+  });
+
+  it('brings out the bank card at the hotel or when the purse cannot cover the bill', () => {
+    const purse = WALLET.reduce((a, b) => a + b, 0);
+    expect(purse).toBe(2200);
+    expect(needsCard('hotel', 120, purse)).toBe(true);
+    expect(needsCard('cafe', 340, purse)).toBe(false);
+    expect(needsCard('bistrot', 2900, purse)).toBe(true); // two plats du jour
+  });
+
+  it('books two nights offline and pays by card (exact, no change)', async () => {
+    const store = new Store(memoryKV(), '2026-11-13');
+    store.startSession();
+    appState.place = 'hotel';
+    setMenuPlace('hotel');
+    setVocabPlace('hotel');
+    const d = new AgentDirector(store, async (r) => scriptedTurn(r), new Set(PLACE_VOCAB.hotel.map((v) => v.id)));
+    await d.handle({ kind: 'say', text: 'nuits', fingers: 2 });
+    expect(store.order.lines).toContainEqual({ itemId: 'nuit', qty: 2 });
+    await d.handle({ kind: 'say', text: "C'est combien ?", fingers: 0 });
+    const due = store.order.lines.reduce((a, l) => a + MENU.find((m) => m.id === l.itemId)!.priceCents * l.qty, 0);
+    const paid = await d.pay(due, true); // the card pays exactly what is due
+    expect(paid?.turn.fr).toMatch(/C'est juste/);
+    expect(store.profile.passport.stamps.hotel).toBe('2026-11-13');
+    appState.place = 'cafe';
+    setMenuPlace('cafe');
+    setVocabPlace('cafe');
+  });
+});
+
 describe('la liste de courses visits the newer shops once they are open', () => {
   it('keeps café, bakery, market for a beginner and rotates the others in later', () => {
     expect(dailyQuest('2026-11-13').tasks.map((t) => t.place)).toEqual(['cafe', 'boulangerie', 'marche']);
     const seen = new Set<string>();
     for (let i = 10; i < 30; i++) {
-      const q = dailyQuest(`2026-11-${i}`, undefined, ['bistrot', 'metro', 'pharmacie']);
+      const q = dailyQuest(`2026-11-${i}`, undefined, ['bistrot', 'metro', 'pharmacie', 'hotel']);
       expect(q.tasks).toHaveLength(3);
       expect(q.tasks[0].place).toBe('cafe');
       expect(new Set(q.tasks.map((t) => t.place)).size).toBe(3);

@@ -84,6 +84,7 @@ const PLACE_NAMES: [string, PlaceId][] = [
   ['restaurant', 'bistrot'],
   ['metro', 'metro'],
   ['pharmacie', 'pharmacie'],
+  ['hotel', 'hotel'],
 ];
 /**
  * "allons à la boulangerie", "je vais au marché", "retour au café", "je vais prendre le métro":
@@ -171,11 +172,11 @@ export function parseIntent(text: string, fingers = 0): Intent {
   if (has(n, /\b(plan de paris|le plan|la carte de paris)\b/) && items.length === 0) return { kind: 'command', command: 'map' };
   if (has(n, /\b(inviter|invitez|invite un ami|invite une amie)\b/)) return { kind: 'command', command: 'invite' };
 
-  const nameMatch = n.match(/\b(?:je m appelle|mon nom est|moi c est)\s+([a-z]+)/);
+  const nameMatch = n.match(/\b(?:je m appelle|mon nom est|moi c est|au nom de)\s+([a-z]+)/);
   if (nameMatch) return { kind: 'name', name: nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) };
 
   // "C'est quoi, le plat du jour ?" asks about an item; it does not order it.
-  const asking = has(n, /\b(quel est|quelle est|c est quoi|qu est ce que c est)\b/);
+  const asking = has(n, /\b(quel est|quelle est|c est quoi|qu est ce que c est|a quelle heure)\b/);
   if (items.length > 0 && !asking && !has(n, /\bcombien\b/)) return { kind: 'order', items };
 
   if (has(n, /\b(combien|ca fait combien|l addition|prix)\b/)) return { kind: 'ask_price' };

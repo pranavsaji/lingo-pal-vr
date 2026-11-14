@@ -30,7 +30,7 @@ export const QUEST_XP = 60;
 /** The starter shops: always eligible, so a beginner's list is café, bakery, market. */
 const STARTERS: PlaceId[] = ['cafe', 'boulangerie', 'marche'];
 /** Every shop in map order (src/places/places.ts PLACE_ORDER; kept here so this module stays light). */
-const ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie'];
+const ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel'];
 const menus = placesData.places as unknown as Record<PlaceId, { menu: { id: string }[] }>;
 
 /**

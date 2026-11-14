@@ -192,6 +192,13 @@
         <span class="status" id="place-pharmacie-status">Bientôt</span>
       </div>
     </div>
+    <div class="shop" id="place-hotel">
+      <span class="name">L'Hôtel</span>
+      <span class="who" id="place-hotel-who">Madame Claire · réception</span>
+      <div class="top">
+        <span class="status" id="place-hotel-status">Bientôt</span>
+      </div>
+    </div>
   </div>
   <span class="hint" id="map-hint">Pinch a shop (or say its name) to go there.</span>
   <div class="actions">

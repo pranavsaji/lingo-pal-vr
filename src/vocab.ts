@@ -120,6 +120,14 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
     { id: 'sirop', fr: 'le sirop pour la toux', en: 'the cough syrup', tip: 'see-RO poor la TOO, silent p and x', shape: 'sirop', color: 0x7a3d12, position: SLOTS[4] },
     { id: 'paracetamol', fr: 'la boîte de paracétamol', en: 'the box of paracetamol', tip: 'pa-ra-say-ta-MOL', shape: 'paracetamol', color: 0xf7f7f4, position: SLOTS[5] },
   ],
+  hotel: [
+    { id: 'nuit', fr: 'la nuit', en: 'the night (the room key)', tip: 'NWEE. "Deux nuits": hold up two fingers', shape: 'nuit', color: 0xc9a227, position: SLOTS[1] },
+    { id: 'petit_dejeuner', fr: 'le petit-déjeuner', en: 'the breakfast', tip: 'puh-tee day-zhuh-NAY', shape: 'petit_dej', color: 0xe0a95b, position: SLOTS[2] },
+    { id: 'plan_ville', fr: 'le plan de la ville', en: 'the city map', tip: 'plahn duh la VEEL', shape: 'plan_ville', color: 0xf6f1e4, position: SLOTS[3] },
+    { id: 'carte_postale', fr: 'la carte postale', en: 'the postcard', tip: 'kart pos-TAL', shape: 'carte_postale', color: 0xf2a65a, position: SLOTS[4] },
+    { id: 'parapluie', fr: 'le parapluie', en: 'the umbrella', tip: 'pa-ra-PLWEE', shape: 'parapluie', color: 0x1f3b63, position: SLOTS[5] },
+    { id: 'sonnette', fr: 'la sonnette', en: 'the desk bell', tip: 'so-NET. Ding!', shape: 'sonnette', color: 0xd9b54a, position: SLOTS[6] },
+  ],
 };
 
 /** The words of the shop the learner is in (mutated in place by setVocabPlace). */
@@ -133,6 +141,7 @@ const PLACE_MISSIONS: Record<PlaceId, string[]> = {
   bistrot: ['plat_du_jour', 'soupe', 'crepe', 'carafe', 'addition'],
   metro: ['ticket', 'carnet', 'forfait_jour', 'plan_metro'],
   pharmacie: ['pansements', 'mouchoirs', 'sirop', 'creme_solaire', 'paracetamol'],
+  hotel: ['sonnette', 'nuit', 'petit_dejeuner', 'plan_ville', 'parapluie'],
 };
 export const MISSIONS: string[] = [...PLACE_MISSIONS.cafe];
 

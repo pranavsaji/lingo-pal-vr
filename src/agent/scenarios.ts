@@ -24,6 +24,7 @@ export const SCENARIOS: Scenario[] = [
   { id: 'bistrot', fr: 'Le Bistrot', en: 'The Bistro', sells: ['plat_du_jour', 'soupe', 'salade', 'crepe'], unlock: 'bistrot' },
   { id: 'metro', fr: 'Le Métro', en: 'The Metro', sells: ['ticket', 'carnet', 'forfait_jour'], unlock: 'metro' },
   { id: 'pharmacie', fr: 'La Pharmacie', en: 'The Pharmacy', sells: ['pansements', 'mouchoirs', 'creme_solaire', 'sirop'], unlock: 'pharmacie' },
+  { id: 'hotel', fr: "L'Hôtel", en: 'The Hotel', sells: ['petit_dejeuner', 'carte_postale', 'parapluie'], unlock: 'hotel' },
 ];
 
 export interface DailySpecial {

@@ -10,7 +10,7 @@
 import type { PlaceId } from '../game-state.js';
 import type { Profile } from '../state/profile.js';
 
-export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie'];
+export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel'];
 
 /**
  * Paid orders (any shop) that open each shop after the tutorial. Shops open fast
@@ -18,7 +18,7 @@ export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot
  * minutes: the bakery after the first-run tutorial, the market after the first
  * paid order, then one more shop per order. `?demo=week` (10 orders) opens all.
  */
-export const PLACE_UNLOCK_ORDERS: Record<PlaceId, number> = { cafe: 0, boulangerie: 0, marche: 1, bistrot: 2, metro: 3, pharmacie: 4 };
+export const PLACE_UNLOCK_ORDERS: Record<PlaceId, number> = { cafe: 0, boulangerie: 0, marche: 1, bistrot: 2, metro: 3, pharmacie: 4, hotel: 5 };
 
 export function placeUnlocked(place: PlaceId, p: Pick<Profile, 'onboarded' | 'stats'>): boolean {
   if (place === 'cafe') return true;
@@ -218,6 +218,25 @@ export const PLACE_LOOKS: Record<PlaceId, PlaceLook> = {
       { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
     ],
     dressing: 'pharmacie',
+  },
+  hotel: {
+    hdri: 'entrance_hall',
+    hdriYawDeg: 133, // through the open double doors to the chandelier salon
+    backdropIntensity: 0.9,
+    iblIntensity: 0.95,
+    floor: { tex: 'old_wood_floor', perMeter: 0.6, roughness: 0.6 },
+    counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    counterFront: { tex: 'dark_wood', perMeter: 0.9 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    backFront: { tex: 'dark_wood', perMeter: 0.9 },
+    accent: 0xc9a227,
+    props: [
+      { model: p('ceramic_vase_01'), pos: [1.15, B, BZ], scale: 0.7 },
+      { model: p('orchid'), pos: [-0.3, B, BZ], scale: 1.1 },
+      { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
+      { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
+    ],
+    dressing: 'hotel',
   },
 };
 

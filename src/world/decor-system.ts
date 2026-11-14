@@ -97,7 +97,7 @@ export class DecorSystem extends createSystem({}) {
     const bistroLights = buildStringLights();
     bistroLights.position.set(0, 2.42, -1.55);
     this.add('guirlandes-bistrot', bistroLights, 'Bistro Lights', 'bistrot');
-    for (const [id, place, name] of [['plantes-metro', 'metro', 'Metro Plant'], ['fleurs-pharmacie', 'pharmacie', 'Pharmacy Plant']] as const) {
+    for (const [id, place, name] of [['plantes-metro', 'metro', 'Metro Plant'], ['fleurs-pharmacie', 'pharmacie', 'Pharmacy Plant'], ['plantes-hotel', 'hotel', 'Hotel Plant']] as const) {
       for (const [x, z] of [[-2.05, -1.95], [2.05, -1.95]] as const) {
         const plant = buildPlant();
         plant.position.set(x, 0, z);

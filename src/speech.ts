@@ -165,7 +165,7 @@ async function speakLocal(text: string, slow: boolean, who: 'lune' | 'other'): P
 // ---- cloud voices ----------------------------------------------------------
 
 /** Each shop's shopkeeper voice (server/tts-handler.mjs SPEAKERS). */
-const KEEPER: Record<PlaceId, string> = { cafe: 'lune', boulangerie: 'paul', marche: 'rose', bistrot: 'marcel', metro: 'karim', pharmacie: 'ines' };
+const KEEPER: Record<PlaceId, string> = { cafe: 'lune', boulangerie: 'paul', marche: 'rose', bistrot: 'marcel', metro: 'karim', pharmacie: 'ines', hotel: 'claire' };
 const cloudCache = new Map<string, Promise<AudioBuffer | null>>();
 
 function fetchCloud(speaker: string, text: string, slow: boolean, ctx: AudioContext): Promise<AudioBuffer | null> {
