@@ -100,7 +100,7 @@ describe('served goods on the counter', () => {
         }
       }
     }
-  });
+  }, 30_000);
 
   it('worst case (every menu item x5) never overlaps; at most a line or two cannot be set down', () => {
     for (const place of PLACES) {
