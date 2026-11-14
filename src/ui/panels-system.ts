@@ -26,12 +26,24 @@ const BASE_SCALE = 0.14;
 const TEXT_SCALE: Record<Settings['textSize'], number> = { s: 0.86, m: 1, l: 1.22 };
 const HIDDEN_OFFSET = 100;
 /**
- * The chat panel's bottom edge (world y). Its height changes a lot (one line of
- * greeting vs. three reply chips plus Pal's box, at large text), so it grows
- * upward from here instead of around its center: grown downward, it slid behind
- * the cash register (top at y = 1.29) in a seated learner's view.
+ * Lowest each panel's bottom edge may sit (world y). Panels are centered on
+ * their authored height, so a tall state (reply chips with sounds-like lines and
+ * Pal's box; the settings list; large text) used to reach down behind the cash
+ * register (top y = 1.29) or the goods on the counter (about 1.07) and, for the
+ * left panels, into the counter itself. A panel taller than its authored spot
+ * allows rises just enough to keep its bottom here, clear in a seated view.
  */
-const CHAT_BOTTOM_Y = 1.34; // hidden panels move far away so rays cannot hit them
+const MIN_BOTTOM_Y: Record<string, number> = {
+  'chat-panel': 1.34,
+  'lesson-panel': 1.14,
+  'carnet-panel': 1.14,
+  'settings-panel': 1.14,
+  'map-panel': 1.14,
+  'report-panel': 1.14,
+  'passport-panel': 1.14,
+};
+const UIKIT_UNIT = 0.01; // UIKit sizes are centimeters
+const LIFT_EVERY_FRAMES = 6; // hidden panels move far away so rays cannot hit them
 const XP_TRACK_PX = 400;
 
 /**
@@ -74,6 +86,7 @@ export class PanelsSystem extends createSystem({}) {
   private yawQ = new Quaternion();
   private up = new Vector3(0, 1, 0);
   private forcedLayout: string | null = null;
+  private liftFrame = 0;
 
   init(): void {
     this.forcedLayout = new URLSearchParams(location.search).get('layout'); // ?layout=glasses|wide
@@ -87,12 +100,6 @@ export class PanelsSystem extends createSystem({}) {
       this.basePos.set(id, obj.position.clone());
       this.baseQuat.set(id, obj.quaternion.clone());
       if (id !== 'lesson-panel' && id !== 'chat-panel') applyFrenchFont(panel.document.rootElement);
-    }
-    const chat = this.panels.get('chat-panel');
-    const chatObj = this.objects.get('chat-panel');
-    if (chat && chatObj) {
-      chat.document.rootElement.setProperties({ anchorY: 'bottom' } as never);
-      chatObj.position.y = CHAT_BOTTOM_Y;
     }
 
     this.click('lesson-panel', 'carnet-button', () => this.show('carnet'));
@@ -191,7 +198,7 @@ export class PanelsSystem extends createSystem({}) {
       if (!obj) continue;
       const visible = s === slot;
       obj.visible = visible;
-      obj.position.y = (this.homeY.get(SLOT_NODE[s]) ?? 0) + (visible ? 0 : HIDDEN_OFFSET);
+      obj.position.y = this.restY(SLOT_NODE[s]) + (visible ? 0 : HIDDEN_OFFSET);
       // Pointer hit-testing ignores visibility: without this, every hidden panel's
       // whole element tree is ray- and touch-tested by both hands every frame
       // (measured ~2.5 ms/frame in the emulator with five hidden panels).
@@ -321,7 +328,29 @@ export class PanelsSystem extends createSystem({}) {
     renderPassportStrip(this.panels.get('lesson-panel'));
   }
 
+  /** Authored height, raised when the panel is tall enough to reach below MIN_BOTTOM_Y. */
+  private restY(id: string): number {
+    const home = this.homeY.get(id) ?? 0;
+    const min = MIN_BOTTOM_Y[id];
+    const obj = this.objects.get(id);
+    const size = min === undefined || !obj ? null : this.panels.get(id)?.document.computedSize;
+    if (!size || !obj) return home;
+    return Math.max(home, min + (size.height * UIKIT_UNIT * obj.scale.y) / 2);
+  }
+
+  /** Keep the shown panels clear of the counter as their content (and text size) changes. */
+  private liftPanels(): void {
+    for (const [id, obj] of this.objects) {
+      if (!obj.visible || MIN_BOTTOM_Y[id] === undefined) continue;
+      obj.position.y = this.restY(id);
+    }
+  }
+
   update(): void {
+    if (++this.liftFrame >= LIFT_EVERY_FRAMES) {
+      this.liftFrame = 0;
+      this.liftPanels();
+    }
     if (this.fitChecked) return;
     const forced = this.forcedLayout;
     let narrow: boolean | null = forced === 'glasses' ? true : forced === 'wide' ? false : null;
