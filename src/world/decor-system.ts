@@ -20,6 +20,9 @@ import { buildChalkboard, buildGramophone, buildPlant, buildStreakFlame, buildSt
 import { STAMPS } from '../state/passport.js';
 import { store } from '../state/store.js';
 
+/** Floor spots for the bakery, metro, pharmacy and hotel plants, clear of their customers. */
+const SHOP_PLANT_SPOTS = [[-2.2, -2.45], [2.2, -2.45]] as const;
+
 interface DecorPiece {
   unlock: string;
   root: Group;
@@ -91,7 +94,9 @@ export class DecorSystem extends createSystem({}) {
     this.add('mur-tampons', this.stampBoard.root, 'Stamp Board');
     this.renderStampBoard();
 
-    for (const [x, z] of [[-2.05, -1.95], [2.05, -1.95]] as const) {
+    // Shop plants stand behind the back counter's ends: at (+-2.05, -1.95) the standing
+    // customers of the bakery, metro, pharmacy and hotel (see characters/customers.ts) stood in them.
+    for (const [x, z] of SHOP_PLANT_SPOTS) {
       const plant = buildPlant();
       plant.position.set(x, 0, z);
       this.add('fleurs-boulangerie', plant, 'Bakery Plant', 'boulangerie');
@@ -103,7 +108,7 @@ export class DecorSystem extends createSystem({}) {
     bistroLights.position.set(0, 2.42, -1.55);
     this.add('guirlandes-bistrot', bistroLights, 'Bistro Lights', 'bistrot');
     for (const [id, place, name] of [['plantes-metro', 'metro', 'Metro Plant'], ['fleurs-pharmacie', 'pharmacie', 'Pharmacy Plant'], ['plantes-hotel', 'hotel', 'Hotel Plant']] as const) {
-      for (const [x, z] of [[-2.05, -1.95], [2.05, -1.95]] as const) {
+      for (const [x, z] of SHOP_PLANT_SPOTS) {
         const plant = buildPlant();
         plant.position.set(x, 0, z);
         this.add(id, plant, name, place);

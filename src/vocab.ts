@@ -52,7 +52,8 @@ const T = 0.765; // side tables: top of the bistro table (0.75 + half its 0.03 t
 export const SLOTS: [number, number, number][] = [
   [-0.62, C, -0.95], [-0.36, C, -0.9], [-0.08, C, -0.9], [0.18, C, -0.88],
   [0.36, C, -0.96], [0.58, C, -0.93], [0.98, C, -0.94], [-0.86, C, -1.02],
-  [1.32, T, -0.62], [1.08, T, -0.78], [1.18, T, -0.42], [-1.25, T, -0.62],
+  // Side tables: the cafe and bistro customers' coffee sits on the outer side of each table.
+  [1.25, T, -0.6], [1.08, T, -0.78], [1.18, T, -0.42], [-1.2, T, -0.66],
 ];
 
 const prop = (id: string) => `prop-${id}`;
