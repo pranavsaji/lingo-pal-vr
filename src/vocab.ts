@@ -45,13 +45,13 @@ export interface VocabEntry {
 }
 
 // Counter top sits at y = 1.0 m, about 0.9 m in front of the player.
-const C = 1.02;
-const T = 0.78; // side tables
+const C = 1.0; // models are grounded (lowest point on the counter top) in item-system
+const T = 0.765; // side tables: top of the bistro table (0.75 + half its 0.03 thickness)
 
 /** Display spots shared by every shop: eight along the counter, four on the side tables. */
 export const SLOTS: [number, number, number][] = [
   [-0.62, C, -0.95], [-0.36, C, -0.9], [-0.08, C, -0.9], [0.18, C, -0.88],
-  [0.36, C, -0.96], [0.58, C, -0.93], [0.82, C, -1.0], [-0.86, C, -1.02],
+  [0.36, C, -0.96], [0.58, C, -0.93], [0.98, C, -0.94], [-0.86, C, -1.02],
   [1.32, T, -0.62], [1.08, T, -0.78], [1.18, T, -0.42], [-1.25, T, -0.62],
 ];
 

@@ -5,6 +5,7 @@
 
 import {
   AssetManager,
+  Box3,
   createSystem,
   type Entity,
   Group,
@@ -16,19 +17,40 @@ import {
   RingGeometry,
   MeshBasicMaterial,
   DoubleSide,
+  PlaneGeometry,
 } from '@iwsdk/core';
 import { director } from './agent/runtime.js';
 import { emptyOrder, type OrderState } from './agent/tools.js';
 import { buildHitArea, buildItem } from './cafe-builder.js';
 import { VocabItem } from './components.js';
 import { events } from './game-state.js';
-import { SERVE } from './layout.js';
+import { COUNTER_Y, counterKeepOuts } from './layout.js';
+import { makeCanvasTexture } from './models/model-kit.js';
+import { layoutServed, type Rect, type ServeGroupIn, type ServeGroupOut } from './serve-layout.js';
+import { store } from './state/store.js';
 import { addDwellTarget } from './ui/dwell.js';
 import { VOCAB, vocabById, type VocabEntry } from './vocab.js';
 import { mergeStaticMeshes, stripTransmission } from './world/static-merge.js';
 
-/** The realistic model when it has loaded, otherwise the procedural stand-in. */
-function itemModel(entry: VocabEntry): Group {
+const _box = new Box3();
+/** Lift that keeps flat goods (tickets, maps) from z-fighting with the counter top. */
+const REST_LIFT = 0.002;
+
+/** Stand the model on y = 0 (its lowest point just touches the counter): no floating, no sinking. */
+function grounded(model: Group): Group {
+  model.updateMatrixWorld(true);
+  _box.setFromObject(model);
+  if (!_box.isEmpty()) model.position.y += REST_LIFT - _box.min.y;
+  return model;
+}
+
+/** The realistic model when it has loaded, otherwise the procedural stand-in, resting on y = 0. */
+function itemModel(entry: VocabEntry, served = false): Group {
+  return grounded(rawItemModel(entry, served));
+}
+
+/** `served`: the model's own yaw is dropped; the item system turns served copies to lie along the counter edge. */
+function rawItemModel(entry: VocabEntry, served: boolean): Group {
   const gltf = entry.model ? AssetManager.getGLTF(entry.model) : null;
   if (!gltf) {
     const built = buildItem(entry.shape, entry.color);
@@ -39,7 +61,8 @@ function itemModel(entry: VocabEntry): Group {
   const scene = gltf.scene;
   scene.scale.setScalar(entry.modelScale ?? 1);
   scene.position.y = entry.modelY ?? 0;
-  scene.rotation.y = entry.rotY ?? 0;
+  scene.rotation.y = served ? 0 : (entry.rotY ?? 0);
+  g.userData.inner = scene;
   scene.traverse((o) => {
     if (o instanceof Mesh) {
       o.castShadow = true;
@@ -63,13 +86,31 @@ interface ItemVisual {
 const BOUNCE_SECONDS = 0.45;
 const POP_SECONDS = 0.35;
 
-const MAX_SERVED = SERVE.perRow * SERVE.z.length;
+/** One item's footprint on the counter, measured from its model (meters, model space). */
+interface Footprint {
+  w: number;
+  d: number;
+  h: number;
+  /** Footprint center offset from the model origin. */
+  cx: number;
+  cz: number;
+  /** Served copies turn a quarter so their long side runs along the counter edge. */
+  yaw: number;
+}
 
 interface ServedVisual {
+  key: string;
   itemId: string;
   entity: Entity;
   root: Group;
   popStart: number;
+  size: number;
+}
+
+interface ServedBadge {
+  key: string;
+  entity: Entity;
+  root: Mesh;
 }
 
 export class ItemSystem extends createSystem({
@@ -82,6 +123,10 @@ export class ItemSystem extends createSystem({
   private targetIndex = -1;
   private ring!: Mesh;
   private served: ServedVisual[] = [];
+  private badges: ServedBadge[] = [];
+  /** Per shop: measured footprints, and the display goods' rectangles that served goods keep clear of. */
+  private footprints = new Map<string, Footprint>();
+  private displayRects: Rect[] = [];
 
   private itemEntities: Entity[] = [];
   private itemCleanups: (() => void)[] = [];
@@ -110,10 +155,13 @@ export class ItemSystem extends createSystem({
     for (const e of this.itemEntities) e.dispose();
     this.itemEntities = [];
     this.visuals = [];
+    this.footprints.clear();
+    this.displayRects = [];
     VOCAB.forEach((entry, index) => {
       const root = new Group();
       root.name = `Item ${entry.fr}`;
       const model = itemModel(entry);
+      this.measure(entry, model);
       // Only counter items cast shadows (each caster is an extra draw call per frame).
       if (entry.position[1] < 0.9) model.traverse((o) => (o.castShadow = false));
       root.add(model);
@@ -142,6 +190,39 @@ export class ItemSystem extends createSystem({
       entity.addComponent(RayInteractable);
       this.itemEntities.push(entity);
       this.visuals[index] = { root, baseY: entry.position[1], glowMaterials, bounceStart: -1 };
+    });
+  }
+
+  /** Record the item's footprint and, for goods on the counter, the rectangle they occupy. */
+  private measure(entry: VocabEntry, model: Group): void {
+    const [x, y, z] = entry.position;
+    model.updateMatrixWorld(true);
+    _box.setFromObject(model);
+    if (_box.isEmpty()) return;
+    if (y > COUNTER_Y - 0.1) this.displayRects.push({ x0: x + _box.min.x, x1: x + _box.max.x, z0: z + _box.min.z, z1: z + _box.max.z });
+    // Served copies drop the display yaw (see rawItemModel): measure them unturned.
+    const inner = model.userData.inner as Group | undefined;
+    if (inner && inner.rotation.y !== 0) {
+      const yaw = inner.rotation.y;
+      inner.rotation.y = 0;
+      model.updateMatrixWorld(true);
+      _box.setFromObject(model);
+      inner.rotation.y = yaw;
+      model.updateMatrixWorld(true);
+    }
+    const w = _box.max.x - _box.min.x;
+    const d = _box.max.z - _box.min.z;
+    const cx = (_box.max.x + _box.min.x) / 2;
+    const cz = (_box.max.z + _box.min.z) / 2;
+    const turn = d > w * 1.15;
+    this.footprints.set(entry.id, {
+      w: turn ? d : w,
+      d: turn ? w : d,
+      h: _box.max.y - _box.min.y,
+      // A quarter turn maps the offset (cx, cz) to (cz, -cx).
+      cx: turn ? cz : cx,
+      cz: turn ? -cx : cz,
+      yaw: turn ? Math.PI / 2 : 0,
     });
   }
 
@@ -180,6 +261,8 @@ export class ItemSystem extends createSystem({
     // Agent effects: serve food, gesture at items.
     this.cleanupFuncs.push(
       events.order.on((o) => this.reconcileServed(o)),
+      // Left-hand mode mirrors the money dish and Pal: re-pack around them.
+      events.settings.on(() => this.reconcileServed(store.order)),
       events.effects.on((effects) => {
         for (const fx of effects) {
           if (fx.kind === 'point') {
@@ -208,32 +291,87 @@ export class ItemSystem extends createSystem({
     }
   }
 
-  /** Make the food on the counter match the order: add missing, dispose extra. */
+  /**
+   * Make the goods on the counter match the order: one tidy group per line,
+   * packed clear of the register, tray, money, Pal, candle and display goods
+   * (see serve-layout.ts). Copies already on the counter stay; new ones pop in.
+   */
   private reconcileServed(order: OrderState): void {
-    const wanted: string[] = [];
-    for (const l of order.lines) for (let k = 0; k < l.qty; k++) wanted.push(l.itemId);
-    wanted.length = Math.min(wanted.length, MAX_SERVED);
+    const groups: ServeGroupIn[] = [];
+    for (const l of order.lines) {
+      const f = this.footprints.get(l.itemId);
+      if (f && l.qty > 0) groups.push({ id: l.itemId, qty: l.qty, w: f.w, d: f.d, h: f.h });
+    }
+    const keepOuts = [...counterKeepOuts(store.profile.settings.leftHanded), ...this.displayRects];
+    const { placed } = layoutServed(groups, keepOuts);
 
-    // Keep visuals that still match their slot; dispose the rest.
-    const keep: ServedVisual[] = [];
-    for (let i = 0; i < this.served.length; i++) {
-      const v = this.served[i];
-      if (wanted[i] === v.itemId && keep.length === i) keep.push(v);
-      else v.entity.dispose();
+    const old = new Map<string, ServedVisual>();
+    for (const v of this.served) old.set(v.key, v);
+    const next: ServedVisual[] = [];
+    let fresh = 0;
+    for (const g of placed) {
+      const entry = vocabById(g.id);
+      const f = this.footprints.get(g.id);
+      if (!entry || !f) continue;
+      g.copies.forEach((c, k) => {
+        const key = `${g.id}#${k}`;
+        let v = old.get(key);
+        old.delete(key);
+        if (!v) {
+          const root = new Group();
+          root.name = `Served ${entry.fr} ${k + 1}`;
+          root.add(itemModel(entry, true));
+          root.scale.setScalar(0.001);
+          const entity = this.world.createTransformEntity(root);
+          v = { key, itemId: g.id, entity, root, popStart: this.clock + fresh++ * 0.12, size: g.scale };
+        }
+        v.size = g.scale;
+        if (v.popStart < 0) v.root.scale.setScalar(g.scale);
+        v.root.rotation.y = f.yaw;
+        v.root.position.set(c.x - f.cx * g.scale, COUNTER_Y + c.y, c.z - f.cz * g.scale);
+        next.push(v);
+      });
     }
-    const firstNew = keep.length;
-    for (let i = firstNew; i < wanted.length; i++) {
-      const entry = vocabById(wanted[i]);
-      if (!entry) continue;
-      const root = new Group();
-      root.name = `Served ${entry.fr} ${i + 1}`;
-      root.add(itemModel(entry));
-      root.position.set(SERVE.x0 + (i % SERVE.perRow) * SERVE.dx, SERVE.y, SERVE.z[Math.floor(i / SERVE.perRow)]);
-      root.scale.setScalar(0.001);
+    for (const v of old.values()) v.entity.dispose();
+    this.served = next;
+    this.syncBadges(placed);
+  }
+
+  /** "x5" tags for groups that show fewer copies than were ordered. */
+  private syncBadges(placed: ServeGroupOut[]): void {
+    for (const b of this.badges) {
+      const mat = b.root.material as MeshBasicMaterial;
+      mat.map?.dispose();
+      b.entity.dispose();
+    }
+    this.badges = [];
+    for (const g of placed) {
+      if (!g.badge) continue;
+      const ct = makeCanvasTexture(128, 80);
+      if (!ct) continue;
+      const { ctx, tex } = ct;
+      ctx.fillStyle = '#1d1f27';
+      ctx.beginPath();
+      ctx.roundRect(4, 4, 120, 72, 30);
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#f5d90a';
+      ctx.stroke();
+      ctx.fillStyle = '#fafaf7';
+      ctx.font = 'bold 50px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`\u00d7${g.qty}`, 64, 43);
+      tex.needsUpdate = true;
+      const root = new Mesh(new PlaneGeometry(0.064, 0.04), new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+      root.name = `Served badge ${g.id}`;
+      // Front-right corner of the group, just above it, turned toward the learner.
+      root.position.set(Math.min(g.rect.x1, g.rect.x0 + 0.05 + (g.rect.x1 - g.rect.x0) * 0.7), COUNTER_Y + g.top * g.scale + 0.035, g.rect.z1 - 0.02);
+      root.lookAt(0, 1.25, 0);
+      root.renderOrder = 2;
       const entity = this.world.createTransformEntity(root);
-      keep.push({ itemId: entry.id, entity, root, popStart: this.clock + (i - firstNew) * 0.12 });
+      this.badges.push({ key: g.id, entity, root });
     }
-    this.served = keep;
   }
 
   update(delta: number): void {
@@ -243,13 +381,13 @@ export class ItemSystem extends createSystem({
       const t = (this.clock - s.popStart) / POP_SECONDS;
       if (t < 0) continue;
       if (t >= 1) {
-        s.root.scale.setScalar(1);
+        s.root.scale.setScalar(s.size);
         s.popStart = -1;
       } else {
         // Ease-out-back pop so each item "lands" on the counter.
         const k = 1.70158;
         const u = t - 1;
-        s.root.scale.setScalar(Math.max(0.001, 1 + (k + 1) * u * u * u + k * u * u));
+        s.root.scale.setScalar(s.size * Math.max(0.001, 1 + (k + 1) * u * u * u + k * u * u));
       }
     }
     for (const v of this.visuals) {
