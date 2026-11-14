@@ -118,6 +118,7 @@ export class PlaceSystem extends createSystem({
       // Cached model instances share geometry and materials with the asset cache: detach, then dispose the rest.
       for (const prop of this.set.shop.props) prop.removeFromParent();
       this.set.entity.dispose();
+      for (const g of this.set.shop.geometries) g.dispose(); // merged prop meshes (static-merge.ts)
     }
     this.set = { entity: this.world.createTransformEntity(shop.root), shop };
   }

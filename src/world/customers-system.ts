@@ -28,6 +28,7 @@ import {
   Vector3,
 } from '@iwsdk/core';
 import { appState, events, type PlaceId } from '../game-state.js';
+import { POWER } from './power.js';
 import { type CharacterPose, createPose } from './characters/character-pose.js';
 import { buildCoffeeCup, buildSaucer, HeldCup } from './characters/coffee-cup.js';
 import { CustomerBehaviour, type GazeTargets, relativeGaze } from './characters/customer-behaviour.js';
@@ -273,8 +274,10 @@ export class CustomersSystem extends createSystem({}) {
   update(delta: number): void {
     const mode = this.world.xrSession?.environmentBlendMode;
     const passthrough = mode === 'alpha-blend' || mode === 'additive';
-    this.anchor.visible = !passthrough;
-    if (passthrough || this.active.length === 0) return;
+    // Frame-rate guard: background customers are the first big extra to go (src/world/power.ts).
+    const shed = appState.powerLevel >= POWER.customers;
+    this.anchor.visible = !passthrough && !shed;
+    if (passthrough || shed || this.active.length === 0) return;
     this.player.head.getWorldPosition(this.learner);
     const dt = Math.min(delta, 0.1);
     for (let i = 0; i < this.active.length; i++) this.stepCustomer(this.active[i], dt);

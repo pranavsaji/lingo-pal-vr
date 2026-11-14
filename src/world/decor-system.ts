@@ -15,6 +15,7 @@ import { dailySpecial } from '../agent/scenarios.js';
 import { definite } from '../agent/script.js';
 import { appState, events, type PlaceId } from '../game-state.js';
 import { FLAME } from '../layout.js';
+import { POWER } from './power.js';
 import { buildChalkboard, buildGramophone, buildPlant, buildStreakFlame, buildStringLights } from '../models/cafe-models.js';
 import { STAMPS } from '../state/passport.js';
 import { store } from '../state/store.js';
@@ -38,6 +39,8 @@ export class DecorSystem extends createSystem({}) {
   private board!: ReturnType<typeof buildChalkboard>;
   private stampBoard!: ReturnType<typeof buildChalkboard>;
   private t = 0;
+  /** Hidden by the frame-rate guard. */
+  private shed = false;
 
   init(): void {
     this.flame = buildStreakFlame();
@@ -118,7 +121,14 @@ export class DecorSystem extends createSystem({}) {
       events.unlocked.on((id) => this.reveal(id)),
       // Each piece belongs to its shop: hidden in the others (the streak candle travels with you).
       events.place.on((place) => {
-        for (const p of this.pieces) p.root.visible = place === p.place && store.profile.unlocks.includes(p.unlock);
+        for (const p of this.pieces) p.root.visible = !this.shed && place === p.place && store.profile.unlocks.includes(p.unlock);
+      }),
+      // Frame-rate guard (src/world/power.ts): decor extras go at level 4, return when it relaxes.
+      events.power.on((level) => {
+        const shed = level >= POWER.decor;
+        if (shed === this.shed) return;
+        this.shed = shed;
+        for (const p of this.pieces) p.root.visible = !shed && appState.place === p.place && store.profile.unlocks.includes(p.unlock);
       }),
       events.stamp.on(() => this.renderStampBoard()),
       events.profile.on((p) => this.flame.setLevel(p.streakDays)),
@@ -135,7 +145,7 @@ export class DecorSystem extends createSystem({}) {
 
   private reveal(id: string): void {
     for (const p of this.pieces) {
-      if (p.unlock !== id || p.root.visible || appState.place !== p.place) continue;
+      if (this.shed || p.unlock !== id || p.root.visible || appState.place !== p.place) continue;
       p.root.visible = true;
       p.popStart = store.profile.settings.reduceMotion ? -1 : this.t;
       if (p.popStart >= 0) p.root.scale.multiplyScalar(0.01);
