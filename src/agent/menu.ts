@@ -24,7 +24,8 @@ export interface MenuItem {
 export interface PlaceData {
   fr: string;
   en: string;
-  shopkeeper: { name: string; gender: Gender; role: string };
+  /** `notes`: shop-specific guidance for the AI prompt (small talk, what not to say). */
+  shopkeeper: { name: string; gender: Gender; role: string; notes?: string };
   menu: MenuItem[];
   /** Non-menu words (pinchable objects) in this shop. */
   words: string[];

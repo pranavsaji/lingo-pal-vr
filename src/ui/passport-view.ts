@@ -5,7 +5,7 @@
  */
 
 import type { UIKit, UIKitMLAsset } from '@iwsdk/core';
-import { nextStamp, STAMPS, stampDate, type StampKind } from '../state/passport.js';
+import { nextStamp, STAMP_SLOTS, STAMPS, stampDate, type StampKind } from '../state/passport.js';
 import { daysToNextRest, MAX_REST } from '../state/rest-days.js';
 import { store } from '../state/store.js';
 
@@ -40,6 +40,8 @@ export function renderPassport(panel: Panel): void {
   const demo = p.demo ? ' · DEMO: simulated week' : '';
   text(panel, 'passport-owner', `${who}Série : ${p.streakDays} j · Niveau ${store.level.id}${demo}`);
 
+  // The panel has STAMP_SLOTS slots (4 rows of 4); slots without a stamp are hidden.
+  for (let i = STAMPS.length; i < STAMP_SLOTS; i++) style(panel, `st-${i}`, { display: 'none' });
   STAMPS.forEach((s, i) => {
     const day = p.passport.stamps[s.id];
     const id = `st-${i}`;

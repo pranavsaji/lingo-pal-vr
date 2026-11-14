@@ -4,6 +4,7 @@
  * has a spoken alternative).
  */
 
+import type { PlaceId } from '../game-state.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { MENU, MAX_QUANTITY, numberToFrench } from './menu.js';
 
@@ -20,7 +21,7 @@ export type Intent =
   | { kind: 'recommend' }
   | { kind: 'name'; name: string }
   | { kind: 'command'; command: VoiceCommand }
-  | { kind: 'travel'; place: 'cafe' | 'boulangerie' | 'marche' }
+  | { kind: 'travel'; place: PlaceId }
   | { kind: 'unknown' };
 
 export type VoiceCommand = 'repeat' | 'help' | 'settings' | 'skip' | 'carnet' | 'slower' | 'map' | 'passport' | 'place' | 'invite';
@@ -72,6 +73,37 @@ function findItems(norm: string, fingers: number): { itemId: string; qty: number
 }
 
 const has = (norm: string, re: RegExp) => re.test(norm);
+
+/** Shop names (normalized) said after a travel verb. */
+const PLACE_NAMES: [string, PlaceId][] = [
+  ['boulangerie', 'boulangerie'],
+  ['marche', 'marche'],
+  ['cafe', 'cafe'],
+  ['bistrot', 'bistrot'],
+  ['bistro', 'bistrot'],
+  ['restaurant', 'bistrot'],
+  ['metro', 'metro'],
+  ['pharmacie', 'pharmacie'],
+];
+/**
+ * "allons à la boulangerie", "je vais au marché", "retour au café", "je vais prendre le métro":
+ * the shop name follows the verb (at most one word, a preposition and an article in between),
+ * so "je vais prendre un ticket de métro" stays an order.
+ */
+const TRAVEL = new RegExp(
+  `\\b(?:allons|aller|allez|vais|va|retour|retourner|direction)(?: [a-z]+)??(?: (?:a|au|aux|en|vers|chez))?(?: (?:la|le|l|les))? (${PLACE_NAMES.map(([w]) => w).join('|')})\\b`,
+);
+
+/** The shop a travel sentence names, or null. */
+export function travelPlace(norm: string): PlaceId | null {
+  const m = norm.match(TRAVEL);
+  return m ? (PLACE_NAMES.find(([w]) => w === m[1])?.[1] ?? null) : null;
+}
+
+/** True when the sentence names something sold in the current shop ("un carnet de tickets"). */
+export function namesMenuItem(text: string): boolean {
+  return findItems(normalizeFrench(text), 0).length > 0;
+}
 
 /** Normalized French words for 0 to 99, longest first, for greedy matching. */
 const NUMBER_PHRASES: { toks: string[]; value: number }[] = Array.from({ length: 100 }, (_, n) => [
@@ -127,22 +159,24 @@ export function parseIntent(text: string, fingers = 0): Intent {
   if (has(n, /\b(aide|help|au secours)\b/)) return { kind: 'command', command: 'help' };
   if (has(n, /\b(reglages|parametres|settings)\b/)) return { kind: 'command', command: 'settings' };
   if (has(n, /\b(passer|skip)\b/)) return { kind: 'command', command: 'skip' };
-  if (has(n, /\b(carnet|mes mots)\b/)) return { kind: 'command', command: 'carnet' };
+  // A shop item that sounds like a command ("un carnet de tickets", "un plan du métro") is an order.
+  const items = findItems(n, fingers);
+  if (has(n, /\b(carnet|mes mots)\b/) && (items.length === 0 || has(n, /\bmon carnet\b/))) return { kind: 'command', command: 'carnet' };
   if (has(n, /\b(passeport|passport|mes tampons)\b/)) return { kind: 'command', command: 'passport' };
   if (has(n, /\b(plus lentement|moins vite|lentement)\b/)) return { kind: 'command', command: 'slower' };
   // Mixed reality: "placer le café", "déplacez le comptoir".
   if (has(n, /\b(placer|placez|deplacer|deplacez|bouger|bougez|installer|installez) (le |la |votre )?(cafe|comptoir|boutique|magasin)\b/)) return { kind: 'command', command: 'place' };
-  // Travel: "allons à la boulangerie", "je vais au marché", "retour au café".
-  const go = n.match(/\b(?:allons|aller|allez|vais|va|retour|retourner|direction)\b.*\b(boulangerie|marche|cafe)\b/);
-  if (go) return { kind: 'travel', place: go[1] as 'cafe' | 'boulangerie' | 'marche' };
-  if (has(n, /\b(plan de paris|le plan|la carte de paris)\b/)) return { kind: 'command', command: 'map' };
+  const go = travelPlace(n);
+  if (go) return { kind: 'travel', place: go };
+  if (has(n, /\b(plan de paris|le plan|la carte de paris)\b/) && items.length === 0) return { kind: 'command', command: 'map' };
   if (has(n, /\b(inviter|invitez|invite un ami|invite une amie)\b/)) return { kind: 'command', command: 'invite' };
 
   const nameMatch = n.match(/\b(?:je m appelle|mon nom est|moi c est)\s+([a-z]+)/);
   if (nameMatch) return { kind: 'name', name: nameMatch[1].charAt(0).toUpperCase() + nameMatch[1].slice(1) };
 
-  const items = findItems(n, fingers);
-  if (items.length > 0 && !has(n, /\bcombien\b/)) return { kind: 'order', items };
+  // "C'est quoi, le plat du jour ?" asks about an item; it does not order it.
+  const asking = has(n, /\b(quel est|quelle est|c est quoi|qu est ce que c est)\b/);
+  if (items.length > 0 && !asking && !has(n, /\bcombien\b/)) return { kind: 'order', items };
 
   if (has(n, /\b(combien|ca fait combien|l addition|prix)\b/)) return { kind: 'ask_price' };
   const cents = parseAmountCents(text);

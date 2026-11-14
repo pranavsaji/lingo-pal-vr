@@ -13,6 +13,7 @@
 import { createSystem, type Object3D, type UIKitMLAsset } from '@iwsdk/core';
 import { director } from '../agent/runtime.js';
 import { appState, events } from '../game-state.js';
+import { PLACE_ORDER } from '../places/places.js';
 import { luneSpeaking, speakFrench } from '../speech.js';
 import type { Settings } from '../state/profile.js';
 import { store } from '../state/store.js';
@@ -35,9 +36,7 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
   ['carnet-panel', 'carnet-back', { color: '#000000', width: 0 }],
   ['carnet-panel', 'review-button', { color: '#000000', width: 0 }],
   ['map-panel', 'map-back', { color: '#000000', width: 0 }],
-  ['map-panel', 'place-cafe', { color: '#000000', width: 0 }],
-  ['map-panel', 'place-boulangerie', { color: '#000000', width: 0 }],
-  ['map-panel', 'place-marche', { color: '#000000', width: 0 }],
+  ...PLACE_ORDER.map((p) => ['map-panel', `place-${p}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }]),
   ['report-panel', 'week-back', { color: '#000000', width: 0 }],
   ['chat-panel', 'mic-button', { color: '#000000', width: 0 }],
 ];

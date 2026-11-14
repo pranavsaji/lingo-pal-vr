@@ -5,6 +5,8 @@ Background customers (customer-*.glb): customer-m03 = Male_Adult_03, customer-f1
 customer-m08 = Male_Adult_08, customer-f09 = Female_Adult_09, customer-m12 = Male_Adult_12,
 customer-f07 = Female_Adult_07. Same conversion with a lighter texture set (body color 1024px,
 head color 1024px, head normal 512px, hair opacity 512px); hair cards removed on m03 and m08.
+More shopkeepers (same conversion; body/head color+normal 1024px, hair 512px): marcel.glb = Business_Male_04,
+karim.glb = Male_Adult_07, ines.glb = Medical_Female_01, claire.glb = Business_Female_04.
 
 MIT License
 

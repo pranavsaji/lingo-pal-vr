@@ -91,7 +91,7 @@ export const events = {
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */
-export type PlaceId = 'cafe' | 'boulangerie' | 'marche';
+export type PlaceId = 'cafe' | 'boulangerie' | 'marche' | 'bistrot' | 'metro' | 'pharmacie';
 
 /** Small shared UI state read by several systems (no rendering here). */
 export const appState = {

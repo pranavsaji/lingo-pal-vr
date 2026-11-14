@@ -4,12 +4,12 @@ import { MENU, PLACES, setMenuPlace, type MenuItem } from '../src/agent/menu.js'
 import { dailySpecial } from '../src/agent/scenarios.js';
 import { scriptedTurn } from '../src/agent/script.js';
 import type { AgentRequest } from '../src/agent/protocol.js';
-import { placeUnlocked } from '../src/places/places.js';
+import { PLACE_ORDER, placeUnlocked } from '../src/places/places.js';
 import { PLACE_VOCAB, setVocabPlace, VOCAB } from '../src/vocab.js';
 // @ts-expect-error plain ESM server module
 import { PLACE_IDS, systemPrompt, toolsFor } from '../server/agent-handler.mjs';
 
-const places = ['cafe', 'boulangerie', 'marche'] as const;
+const places = PLACE_ORDER;
 
 describe('shops share one source of truth', () => {
   it('every menu item has a word on display, prices are payable in 10c coins', () => {

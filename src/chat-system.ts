@@ -11,7 +11,7 @@ import { menuItem, PLACES, priceToDigits, priceToFrench } from './agent/menu.js'
 import type { AgentTurn, ReplyOption } from './agent/protocol.js';
 import { director } from './agent/runtime.js';
 import { orderTotal } from './agent/tools.js';
-import { appState, events } from './game-state.js';
+import { appState, events, type PlaceId } from './game-state.js';
 import { applyFrenchFont } from './fonts.js';
 import { prefetchFrench, speakFrench } from './speech.js';
 import { store } from './state/store.js';
@@ -23,7 +23,14 @@ interface Choice extends ReplyOption {
 }
 
 /** Job title under each shopkeeper's name on the chat panel. */
-const KEEPER_ROLE = { cafe: 'la serveuse', boulangerie: 'le boulanger', marche: 'la marchande' } as const;
+const KEEPER_ROLE: Record<PlaceId, string> = {
+  cafe: 'la serveuse',
+  boulangerie: 'le boulanger',
+  marche: 'la marchande',
+  bistrot: 'le serveur',
+  metro: 'le guichetier',
+  pharmacie: 'la pharmacienne',
+};
 
 export class ChatSystem extends createSystem({}) {
   private choices: Choice[] = [];

@@ -98,6 +98,40 @@ export const CUSTOMERS: Record<PlaceId, CustomerSpec[]> = {
       pos: [1.85, -1.3], yaw: yawToward(1.85, -1.3, 1.05, -1.6), posture: 'standing', activity: 'browse', seed: 43,
     },
   ],
+  // The regulars come along to the newer shops (same six people, never in step).
+  // Bistrot: lunch at the two side tables, on the chairs from places.ts.
+  bistrot: [
+    {
+      assetId: 'customer-m12', name: 'Customer (bistro, right table)', source: 'Male_Adult_12',
+      pos: [1.8, -0.41], yaw: -1.9, posture: 'seated', activity: 'sip', seat: CHAIR_SEAT, table: [1.2, -0.6], seed: 61,
+    },
+    {
+      assetId: 'customer-f09', name: 'Customer (bistro, left table)', source: 'Female_Adult_09',
+      pos: [-1.84, -0.41], yaw: 1.9, posture: 'seated', activity: 'linger', seat: CHAIR_SEAT, table: [-1.25, -0.62], seed: 83,
+    },
+  ],
+  // Metro: one waits for the window, one reads the network poster.
+  metro: [
+    {
+      assetId: 'customer-m08', name: 'Customer (metro, waiting)', source: 'Male_Adult_08',
+      pos: [2.0, -1.5], yaw: yawToward(2.0, -1.5, 0.4, -0.9), posture: 'standing', activity: 'wait', seed: 29,
+    },
+    {
+      assetId: 'customer-f07', name: 'Customer (metro, poster)', source: 'Female_Adult_07',
+      pos: [-1.95, -1.9], yaw: yawToward(-1.95, -1.9, -1.0, -2.44), posture: 'standing', activity: 'browse', seed: 47,
+    },
+  ],
+  // Pharmacy: one studies the shelves, one waits their turn.
+  pharmacie: [
+    {
+      assetId: 'customer-f14', name: 'Customer (pharmacy, shelves)', source: 'Female_Adult_14',
+      pos: [-2.05, -1.85], yaw: yawToward(-2.05, -1.85, -1.0, -2.42), posture: 'standing', activity: 'browse', seed: 53,
+    },
+    {
+      assetId: 'customer-m03', name: 'Customer (pharmacy, waiting)', source: 'Male_Adult_03',
+      pos: [2.0, -1.5], yaw: yawToward(2.0, -1.5, 0.4, -0.9), posture: 'standing', activity: 'wait', seed: 37,
+    },
+  ],
 };
 
 /** Café à deux seats (src/social/protocol.ts SEAT_LEFT / SEAT_RIGHT: x ±0.95, z -0.62). */

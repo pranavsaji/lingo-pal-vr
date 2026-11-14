@@ -1,6 +1,7 @@
 <!--
   Plan de Paris: pick a shop. Each card shows the shop, its shopkeeper and
-  whether it is open yet (shops open as the learner progresses).
+  whether it is open yet (shops open as the learner progresses). Two cards per
+  row; a new shop is one more card with ids place-<id> and place-<id>-status.
   Swaps into the lesson panel's slot (see src/ui/panels-system.ts).
 -->
 <style>
@@ -44,7 +45,8 @@
   }
 
   .list {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 10px;
     padding-top: 14px;
     padding-left: 16px;
@@ -52,13 +54,14 @@
   }
 
   .shop {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 12px;
-    padding-bottom: 12px;
-    padding-left: 16px;
-    padding-right: 16px;
+    flex-direction: column;
+    gap: 4px;
+    width: 259px;
+    flex-shrink: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 14px;
+    padding-right: 12px;
     border-radius: 14px;
     background-color: #2b2d33;
     cursor: pointer;
@@ -68,29 +71,30 @@
     background-color: #3d5a80;
   }
 
-  .labels {
-    flex-direction: column;
+  .top {
+    flex-direction: row;
+    align-items: center;
   }
 
   .name {
     color: #fafaf7;
-    font-size: 21px;
+    font-size: 17px;
     font-weight: bold;
   }
 
   .who {
     color: #b8bcc6;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .status {
     color: #1b1c20;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
     border-radius: 10px;
     background-color: #f5d90a;
   }
@@ -147,25 +151,46 @@
   </div>
   <div class="list">
     <div class="shop" id="place-cafe">
-      <div class="labels">
-        <span class="name">Le Café Lune</span>
-        <span class="who" id="place-cafe-who">Madame Lune · café, croissants</span>
+      <span class="name">Le Café Lune</span>
+      <span class="who" id="place-cafe-who">Madame Lune · café, croissants</span>
+      <div class="top">
+        <span class="status" id="place-cafe-status">Vous êtes ici</span>
       </div>
-      <span class="status" id="place-cafe-status">Vous êtes ici</span>
     </div>
     <div class="shop" id="place-boulangerie">
-      <div class="labels">
-        <span class="name">La Boulangerie</span>
-        <span class="who" id="place-boulangerie-who">Monsieur Paul · pain, pâtisseries</span>
+      <span class="name">La Boulangerie</span>
+      <span class="who" id="place-boulangerie-who">Monsieur Paul · pain, gâteaux</span>
+      <div class="top">
+        <span class="status" id="place-boulangerie-status">Ouvert</span>
       </div>
-      <span class="status" id="place-boulangerie-status">Ouvert</span>
     </div>
     <div class="shop" id="place-marche">
-      <div class="labels">
-        <span class="name">Le Marché</span>
-        <span class="who" id="place-marche-who">Madame Rose · fruits, légumes</span>
+      <span class="name">Le Marché</span>
+      <span class="who" id="place-marche-who">Madame Rose · fruits, légumes</span>
+      <div class="top">
+        <span class="status" id="place-marche-status">Ouvert</span>
       </div>
-      <span class="status" id="place-marche-status">Ouvert</span>
+    </div>
+    <div class="shop" id="place-bistrot">
+      <span class="name">Le Bistrot</span>
+      <span class="who" id="place-bistrot-who">Monsieur Marcel · déjeuner</span>
+      <div class="top">
+        <span class="status" id="place-bistrot-status">Bientôt</span>
+      </div>
+    </div>
+    <div class="shop" id="place-metro">
+      <span class="name">Le Métro</span>
+      <span class="who" id="place-metro-who">Monsieur Karim · tickets</span>
+      <div class="top">
+        <span class="status" id="place-metro-status">Bientôt</span>
+      </div>
+    </div>
+    <div class="shop" id="place-pharmacie">
+      <span class="name">La Pharmacie</span>
+      <span class="who" id="place-pharmacie-who">Madame Inès · pansements</span>
+      <div class="top">
+        <span class="status" id="place-pharmacie-status">Bientôt</span>
+      </div>
     </div>
   </div>
   <span class="hint" id="map-hint">Pinch a shop (or say its name) to go there.</span>

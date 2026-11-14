@@ -5,6 +5,7 @@
  */
 
 import type { PlaceId } from './game-state.js';
+import type { PlaceItemShape } from './models/place-items.js';
 
 export type ItemShape =
   | 'croissant'
@@ -23,7 +24,8 @@ export type ItemShape =
   | 'eclair'
   | 'macaron'
   | 'tart'
-  | 'model';
+  | 'model'
+  | PlaceItemShape;
 
 export interface VocabEntry {
   id: string;
@@ -95,6 +97,29 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
     { id: 'cageot', fr: 'le cageot', en: 'the crate', tip: 'ka-ZHOH', shape: 'model', color: 0x8a6a45, position: SLOTS[8], model: prop('wooden_crate_01'), modelScale: 0.45 },
     { id: 'panier', fr: 'le panier', en: 'the basket', tip: 'pan-YAY', shape: 'model', color: 0xb08850, position: SLOTS[11], model: prop('wicker_basket_01'), modelScale: 0.8 },
   ],
+  bistrot: [
+    { id: 'plat_du_jour', fr: 'le plat du jour', en: 'the dish of the day', tip: 'pla du ZHOOR, silent t', shape: 'plat', color: 0x6b3a22, position: SLOTS[0] },
+    { id: 'soupe', fr: "la soupe à l'oignon", en: 'the onion soup', tip: "SOOP a lo-NYOHN", shape: 'soupe', color: 0xb8743a, position: SLOTS[1] },
+    { id: 'salade', fr: 'la salade', en: 'the salad', tip: 'sa-LAD', shape: 'salade', color: 0x5fae3b, position: SLOTS[2] },
+    { id: 'crepe', fr: 'la crêpe', en: 'the crepe', tip: 'KREP, short e', shape: 'crepe', color: 0xe0a95b, position: SLOTS[3] },
+    { id: 'jus_orange', fr: "le jus d'orange", en: 'the orange juice', tip: 'zhoo do-RAHNJ, silent s', shape: 'jus', color: 0xf39a1d, position: SLOTS[4] },
+    { id: 'eau', fr: "la bouteille d'eau", en: 'the bottle of water', tip: 'boo-TAY doh', shape: 'bottle', color: 0x5aa9e6, position: SLOTS[5], model: prop('water_bottle') },
+    { id: 'carafe', fr: "la carafe d'eau", en: 'the jug of tap water', tip: 'ka-RAF doh. Free in every restaurant!', shape: 'carafe', color: 0xcfe8f2, position: SLOTS[6] },
+    { id: 'addition', fr: "l'addition", en: 'the bill', tip: 'la-dee-SYOHN. "L\'addition, s\'il vous plait !"', shape: 'addition', color: 0xfbfaf6, position: SLOTS[9] },
+  ],
+  metro: [
+    { id: 'ticket', fr: 'le ticket', en: 'the ticket', tip: 'tee-KAY, silent t', shape: 'ticket', color: 0xf2efe6, position: SLOTS[1] },
+    { id: 'carnet', fr: 'le carnet de tickets', en: 'the book of 10 tickets', tip: 'kar-NAY, silent t', shape: 'carnet', color: 0xf2efe6, position: SLOTS[2] },
+    { id: 'forfait_jour', fr: "le forfait d'une journée", en: 'the day pass', tip: 'for-FAY dune zhoor-NAY', shape: 'forfait', color: 0x2f6db5, position: SLOTS[3] },
+    { id: 'plan_metro', fr: 'le plan du métro', en: 'the metro map', tip: 'plahn du may-TRO', shape: 'plan_metro', color: 0xece6d6, position: SLOTS[4] },
+  ],
+  pharmacie: [
+    { id: 'pansements', fr: 'la boîte de pansements', en: 'the box of plasters', tip: 'pahns-MAHN, nasal an', shape: 'pansements', color: 0xf7f7f4, position: SLOTS[0] },
+    { id: 'creme_solaire', fr: 'la crème solaire', en: 'the sunscreen', tip: 'krem so-LAIR', shape: 'creme', color: 0xf6a623, position: SLOTS[1] },
+    { id: 'mouchoirs', fr: 'le paquet de mouchoirs', en: 'the pack of tissues', tip: 'moo-SHWAR', shape: 'mouchoirs', color: 0xdfeef8, position: SLOTS[2] },
+    { id: 'sirop', fr: 'le sirop pour la toux', en: 'the cough syrup', tip: 'see-RO poor la TOO, silent p and x', shape: 'sirop', color: 0x7a3d12, position: SLOTS[4] },
+    { id: 'paracetamol', fr: 'la boîte de paracétamol', en: 'the box of paracetamol', tip: 'pa-ra-say-ta-MOL', shape: 'paracetamol', color: 0xf7f7f4, position: SLOTS[5] },
+  ],
 };
 
 /** The words of the shop the learner is in (mutated in place by setVocabPlace). */
@@ -105,6 +130,9 @@ const PLACE_MISSIONS: Record<PlaceId, string[]> = {
   cafe: ['croissant', 'cafe', 'pomme', 'eau', 'gateau'],
   boulangerie: ['baguette', 'croissant', 'pain_chocolat', 'macaron', 'tarte'],
   marche: ['pomme', 'banane', 'citron', 'avocat', 'grenade'],
+  bistrot: ['plat_du_jour', 'soupe', 'crepe', 'carafe', 'addition'],
+  metro: ['ticket', 'carnet', 'forfait_jour', 'plan_metro'],
+  pharmacie: ['pansements', 'mouchoirs', 'sirop', 'creme_solaire', 'paracetamol'],
 };
 export const MISSIONS: string[] = [...PLACE_MISSIONS.cafe];
 

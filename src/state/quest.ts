@@ -1,7 +1,9 @@
 /**
  * La liste de courses: a daily shopping list across Paris. One thing to buy in
- * each shop (café, then bakery, then market), seeded by the date so it is the
- * same all day and new tomorrow. An item counts when it is paid for in its shop.
+ * three shops (the café, then two more), seeded by the date so it is the same
+ * all day and new tomorrow. An item counts when it is paid for in its shop.
+ * The first week's list is café, bakery, market; once more shops are open
+ * (bistrot, métro, pharmacie) the two others rotate among all of them.
  */
 
 import placesData from '../../shared/places.json';
@@ -25,17 +27,30 @@ export interface Quest {
 /** Bonus XP for finishing the whole list. */
 export const QUEST_XP = 60;
 
-const ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche'];
+/** The starter shops: always eligible, so a beginner's list is café, bakery, market. */
+const STARTERS: PlaceId[] = ['cafe', 'boulangerie', 'marche'];
+/** Every shop in map order (src/places/places.ts PLACE_ORDER; kept here so this module stays light). */
+const ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie'];
 const menus = placesData.places as unknown as Record<PlaceId, { menu: { id: string }[] }>;
 
 /**
  * @param focusWords optional words the shopkeeper planned for today (weakest
  * SRS words and mistakes, see state/plan.ts): a shop whose menu has one buys
  * it instead of the seeded pick. Without it the list is purely date-seeded.
+ * @param unlocks the learner's unlock ids: newer shops (scenario unlocks named after the shop) join the rotation.
  */
-export function dailyQuest(day: Day, focusWords?: readonly string[]): Quest {
+export function dailyQuest(day: Day, focusWords?: readonly string[], unlocks: readonly string[] = []): Quest {
   const seed = daySeed(day);
-  const tasks = ORDER.map((place, i) => {
+  const pool = ORDER.filter((p) => p !== 'cafe' && (STARTERS.includes(p) || unlocks.includes(p)));
+  const picks: PlaceId[] = ['cafe'];
+  if (pool.length <= 2) picks.push(...pool);
+  else {
+    const a = Math.abs(seed >>> 5) % pool.length;
+    let b = Math.abs(seed >>> 11) % (pool.length - 1);
+    if (b >= a) b++;
+    picks.push(pool[Math.min(a, b)], pool[Math.max(a, b)]); // map order
+  }
+  const tasks = picks.map((place, i) => {
     const menu = menus[place].menu;
     const s = (seed >>> (i * 7)) ^ (seed * (i + 3));
     const focus = focusWords?.find((w) => menu.some((m) => m.id === w));

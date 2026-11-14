@@ -90,12 +90,19 @@ export const UNLOCKS: Unlock[] = [
   { id: 'boulangerie', kind: 'scenario', fr: 'la boulangerie', en: 'the bakery', level: 1 },
   { id: 'gramophone', kind: 'decor', fr: 'le gramophone', en: 'the gramophone', streak: 3 },
   { id: 'marche', kind: 'scenario', fr: 'le marché', en: 'the market', level: 2 },
+  // The newer shops open with paid orders (src/places/places.ts PLACE_UNLOCK_ORDERS).
+  { id: 'bistrot', kind: 'scenario', fr: 'le bistrot', en: 'the bistro', orders: 2 },
+  { id: 'metro', kind: 'scenario', fr: 'le métro', en: 'the metro', orders: 3 },
+  { id: 'pharmacie', kind: 'scenario', fr: 'la pharmacie', en: 'the pharmacy', orders: 4 },
   { id: 'terrasse', kind: 'decor', fr: 'la terrasse', en: 'the terrace', streak: 7 },
   // Visible growth in every shop (Reason to Come Back): each milestone changes the room.
   { id: 'lanternes', kind: 'decor', fr: 'les lanternes', en: 'the lanterns', streak: 5 },
   { id: 'mur-tampons', kind: 'decor', fr: 'le tableau des tampons', en: 'the stamp board', stamps: 4 },
   { id: 'fleurs-boulangerie', kind: 'decor', fr: 'les fleurs de la boulangerie', en: 'the bakery flowers', placeOrders: { place: 'boulangerie', count: 3 }, place: 'boulangerie' },
   { id: 'guirlandes-marche', kind: 'decor', fr: 'les guirlandes du marché', en: 'the market lights', placeOrders: { place: 'marche', count: 3 }, place: 'marche' },
+  { id: 'guirlandes-bistrot', kind: 'decor', fr: 'les guirlandes du bistrot', en: 'the bistro lights', placeOrders: { place: 'bistrot', count: 3 }, place: 'bistrot' },
+  { id: 'plantes-metro', kind: 'decor', fr: 'les plantes du métro', en: 'the metro plants', placeOrders: { place: 'metro', count: 3 }, place: 'metro' },
+  { id: 'fleurs-pharmacie', kind: 'decor', fr: 'les fleurs de la pharmacie', en: 'the pharmacy flowers', placeOrders: { place: 'pharmacie', count: 3 }, place: 'pharmacie' },
 ];
 
 export interface UnlockInputs {

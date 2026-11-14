@@ -13,6 +13,7 @@ import { CustomerBehaviour, relativeGaze } from '../src/world/characters/custome
 import { CHAIR_SEAT, CUSTOMERS, customerRootY, SEAT_HIP } from '../src/world/characters/customers';
 import { HumanRig } from '../src/world/characters/human-rig';
 import { SHOPKEEPERS } from '../src/world/characters/shopkeepers';
+import { PLACE_ORDER } from '../src/places/places';
 
 const wp = (o: Object3D) => o.getWorldPosition(new Vector3());
 
@@ -316,15 +317,20 @@ describe('customer placement and assets', () => {
   const all = Object.values(CUSTOMERS).flat();
 
   it('has two different people per shop, none of them a shopkeeper', () => {
-    expect(Object.keys(CUSTOMERS).sort()).toEqual(['boulangerie', 'cafe', 'marche']);
-    for (const list of Object.values(CUSTOMERS)) expect(list).toHaveLength(2);
+    expect(Object.keys(CUSTOMERS).sort()).toEqual([...PLACE_ORDER].sort());
+    for (const list of Object.values(CUSTOMERS)) {
+      expect(list).toHaveLength(2);
+      expect(new Set(list.map((c) => c.assetId)).size).toBe(2);
+    }
+    // The six regulars come along to the newer shops; each placement has its own cache key.
     expect(new Set(all.map((c) => c.assetId)).size).toBe(6);
     expect(new Set(all.map((c) => c.source)).size).toBe(6);
+    expect(new Set(all.map((c) => c.name)).size).toBe(all.length);
     for (const c of all) {
       expect(shopkeeperIds.has(c.assetId)).toBe(false);
       for (const s of Object.values(SHOPKEEPERS)) expect(c.source).not.toBe(s.source);
     }
-    expect(all.filter((c) => c.source.startsWith('Female')).length).toBe(3);
+    expect(new Set(all.filter((c) => c.source.startsWith('Female')).map((c) => c.source)).size).toBe(3);
   });
 
   it('keeps everyone out of reach and out of the counter, shopkeeper and panel sight lines', () => {
@@ -338,7 +344,7 @@ describe('customer placement and assets', () => {
     }
   });
 
-  for (const c of all) {
+  for (const c of [...new Map(all.map((x) => [x.assetId, x])).values()]) {
     it(`${c.assetId} (${c.source}) is in the manifest and within budget`, () => {
       const m = assetsSrc.match(new RegExp(`'${c.assetId}': shopkeeper\\('([^']+)', '[^']*', 'lazy'\\)`));
       expect(m, `${c.assetId} missing (or not lazy) in src/assets.ts`).not.toBeNull();
@@ -370,8 +376,11 @@ describe('customer placement and assets', () => {
 describe('Café à deux frees the counter-end seats', () => {
   it('hides only the customers sitting where the friend appears', async () => {
     const { nearFriendSeat } = await import('../src/world/characters/customers');
-    const hidden = Object.values(CUSTOMERS).flat().filter((c) => nearFriendSeat(c.pos[0], c.pos[1]));
-    expect(hidden.map((c) => c.posture)).toEqual(['seated', 'seated']);
+    for (const list of Object.values(CUSTOMERS)) {
+      const hidden = list.filter((c) => nearFriendSeat(c.pos[0], c.pos[1]));
+      for (const c of hidden) expect(c.posture).toBe('seated'); // only the people on the side-table chairs
+    }
+    expect(CUSTOMERS.cafe.filter((c) => nearFriendSeat(c.pos[0], c.pos[1]))).toHaveLength(2);
     expect(nearFriendSeat(0.95, -0.62)).toBe(true);
     expect(nearFriendSeat(-0.95, -0.62)).toBe(true);
   });

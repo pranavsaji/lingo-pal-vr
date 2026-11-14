@@ -38,6 +38,21 @@ const SUBSTITUTES: Record<string, string[]> = {
   oignon: ['patate_douce', 'avocat'],
   patate_douce: ['oignon', 'avocat'],
   fromage: ['baguette', 'pomme'],
+  // Bistrot, métro, pharmacie.
+  plat_du_jour: ['salade', 'soupe'],
+  soupe: ['salade', 'plat_du_jour'],
+  salade: ['soupe', 'plat_du_jour'],
+  crepe: ['salade'],
+  jus_orange: ['eau'],
+  ticket: ['carnet', 'forfait_jour'],
+  carnet: ['ticket', 'forfait_jour'],
+  forfait_jour: ['carnet', 'ticket'],
+  plan_metro: ['ticket'],
+  pansements: ['mouchoirs'],
+  creme_solaire: ['mouchoirs'],
+  mouchoirs: ['pansements'],
+  sirop: ['paracetamol', 'mouchoirs'],
+  paracetamol: ['sirop'],
 };
 
 /** "Goes well with": what she suggests on top of an order. */
@@ -63,6 +78,16 @@ const PAIRINGS: Record<string, string[]> = {
   oignon: ['patate_douce'],
   patate_douce: ['oignon'],
   grenade: ['pomme'],
+  plat_du_jour: ['jus_orange', 'crepe'],
+  soupe: ['eau'],
+  salade: ['jus_orange'],
+  crepe: ['jus_orange'],
+  ticket: ['plan_metro'],
+  carnet: ['plan_metro'],
+  forfait_jour: ['plan_metro'],
+  sirop: ['mouchoirs'],
+  paracetamol: ['mouchoirs'],
+  pansements: ['creme_solaire'],
 };
 
 /**
@@ -161,13 +186,17 @@ export function caughtTrick(text: string, missingCents: number, trueCents: numbe
 export function findElsewhere(norm: string, here: string, places: Record<string, { menu: MenuItem[] }>): { item: MenuItem; place: string; alias: string } | null {
   const padded = ` ${norm} `;
   const sold = new Set(places[here]?.menu.map((m) => m.id) ?? []);
+  // Names this shop sells that are in the sentence: "jus d orange" at the bistrot is not the café's "orange".
+  const local: string[] = [];
+  for (const item of places[here]?.menu ?? []) for (const a of item.aliases) if (padded.includes(` ${a} `)) local.push(` ${a} `);
   let best: { item: MenuItem; place: string; alias: string } | null = null;
   for (const [place, data] of Object.entries(places)) {
     if (place === here) continue;
     for (const item of data.menu) {
       if (sold.has(item.id)) continue;
       for (const alias of item.aliases) {
-        if (padded.includes(` ${alias} `) && (!best || alias.length > best.alias.length)) best = { item, place, alias };
+        if (!padded.includes(` ${alias} `) || local.some((l) => l.includes(` ${alias} `))) continue;
+        if (!best || alias.length > best.alias.length) best = { item, place, alias };
       }
     }
   }

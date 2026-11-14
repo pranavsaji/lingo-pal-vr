@@ -24,6 +24,7 @@ import { director } from '../agent/runtime.js';
 import { appState, events, type PlaceId } from '../game-state.js';
 import { buildMadameLune } from '../models/cafe-models.js';
 import { luneSpeaking } from '../speech.js';
+import { PLACE_UNLOCK_ORDERS, placeUnlocked } from '../places/places.js';
 import { store } from '../state/store.js';
 import { VOCAB } from '../vocab.js';
 import { type CharacterDriver, type CharacterPose, createPose } from './characters/character-pose.js';
@@ -156,12 +157,13 @@ export class NpcSystem extends createSystem({}) {
     }
   }
 
-  /** Once the first avatar is up, warm the other shops' avatars so a shop switch is instant. */
+  /** Once the first avatar is up, warm the open shops' avatars so a shop switch is instant. */
   private prefetchOthers(): void {
     if (this.prefetched) return;
     this.prefetched = true;
     for (const p of PLACES) {
-      if (p === this.place) continue;
+      // The newer shops' keepers load once their shop opens (no download a beginner never uses).
+      if (p === this.place || (PLACE_UNLOCK_ORDERS[p] > 1 && !placeUnlocked(p, store.profile))) continue;
       AssetManager.loadGLTFById(SHOPKEEPERS[p].assetId).catch(() => {
         // Reported (and the fallback shown) if the learner actually visits that shop.
       });

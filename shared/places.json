@@ -49,6 +49,45 @@
         { "id": "grenade", "noun": "grenade", "plural": "grenades", "gender": "f", "en": "pomegranate", "enPlural": "pomegranates", "priceCents": 150, "aliases": ["grenade", "grenades"] }
       ],
       "words": ["cageot", "panier"]
+    },
+    "bistrot": {
+      "fr": "Le Bistrot",
+      "en": "The Bistro",
+      "shopkeeper": { "name": "Monsieur Marcel", "gender": "m", "role": "the friendly, unhurried waiter of Le Bistrot, a small Paris bistro serving lunch (no alcohol is served here: offer juice or water)", "notes": "Lunch service. Ask \"Vous avez choisi ?\" when the learner is ready. A carafe of tap water (une carafe d'eau) is free in every French restaurant: offer it happily, it is not on the bill. When they want to pay they ask for \"l'addition\"." },
+      "menu": [
+        { "id": "plat_du_jour", "noun": "plat du jour", "plural": "plats du jour", "gender": "m", "en": "dish of the day", "enPlural": "dishes of the day", "priceCents": 1450, "aliases": ["plat du jour", "plats du jour", "le plat du jour", "plat", "plats", "pla du jour"] },
+        { "id": "soupe", "noun": "soupe à l'oignon", "plural": "soupes à l'oignon", "gender": "f", "en": "onion soup", "enPlural": "onion soups", "priceCents": 690, "aliases": ["soupe a l oignon", "soupes a l oignon", "soupe", "soupes", "soupe a l onion", "soup"] },
+        { "id": "salade", "noun": "salade", "plural": "salades", "gender": "f", "en": "salad", "enPlural": "salads", "priceCents": 890, "aliases": ["salade", "salades", "salade verte", "salade nicoise", "sallade"] },
+        { "id": "crepe", "noun": "crêpe", "plural": "crêpes", "gender": "f", "en": "crêpe", "enPlural": "crêpes", "priceCents": 450, "aliases": ["crepe", "crepes", "crepe au sucre", "crepes au sucre", "crepe au chocolat", "crep", "krep"] },
+        { "id": "jus_orange", "noun": "jus d'orange", "plural": "jus d'orange", "gender": "m", "en": "orange juice", "enPlural": "orange juices", "priceCents": 380, "aliases": ["jus d orange", "jus d oranges", "jus", "ju d orange", "orange juice"] },
+        { "id": "eau", "noun": "bouteille d'eau", "plural": "bouteilles d'eau", "gender": "f", "en": "bottle of water", "enPlural": "bottles of water", "priceCents": 300, "aliases": ["eau", "bouteille d eau", "bouteilles d eau", "bouteille", "eau minerale"] }
+      ],
+      "words": ["carafe", "addition"]
+    },
+    "metro": {
+      "fr": "Le Métro",
+      "en": "The Metro",
+      "shopkeeper": { "name": "Monsieur Karim", "gender": "m", "role": "the brisk but kind agent at a Paris metro station ticket window, who knows every line by heart", "notes": "Sell tickets and maps only. Directions are welcome small talk: Montmartre is line 12 to Abbesses (or line 2 to Anvers), the Eiffel Tower is line 6 to Bir-Hakeim, the Louvre is line 1 to Palais Royal - Musée du Louvre. A carnet is ten tickets. Never mention brand names of passes or the transport company." },
+      "menu": [
+        { "id": "ticket", "noun": "ticket", "plural": "tickets", "gender": "m", "en": "ticket", "enPlural": "tickets", "priceCents": 250, "aliases": ["ticket", "tickets", "ticket de metro", "tickets de metro", "tiquet", "tiquets"] },
+        { "id": "carnet", "noun": "carnet de tickets", "plural": "carnets de tickets", "gender": "m", "en": "book of 10 tickets", "enPlural": "books of 10 tickets", "priceCents": 1700, "aliases": ["carnet de tickets", "carnets de tickets", "carnet de dix tickets", "carnet", "carnets", "carnet de ticket", "carne"] },
+        { "id": "forfait_jour", "noun": "forfait d'une journée", "plural": "forfaits d'une journée", "gender": "m", "en": "day pass", "enPlural": "day passes", "priceCents": 1200, "aliases": ["forfait d une journee", "forfaits d une journee", "forfait journee", "forfait", "forfaits", "pass journee", "pass", "ticket journee", "day pass"] },
+        { "id": "plan_metro", "noun": "plan du métro", "plural": "plans du métro", "gender": "m", "en": "metro map", "enPlural": "metro maps", "priceCents": 150, "aliases": ["plan du metro", "plans du metro", "plan de metro", "plan des lignes", "metro map"] }
+      ],
+      "words": []
+    },
+    "pharmacie": {
+      "fr": "La Pharmacie",
+      "en": "The Pharmacy",
+      "shopkeeper": { "name": "Madame Inès", "gender": "f", "role": "the calm, reassuring pharmacist of a neighbourhood Paris pharmacy (the green cross on the corner)", "notes": "Everyday items only. You may ask \"Vous avez mal où ?\" and suggest one of your everyday items (a headache: paracétamol; a cough: le sirop; a small cut: des pansements; sun: la crème solaire; a cold: des mouchoirs). Never give medical advice beyond that and never mention brand names; for anything serious say kindly \"Allez voir un médecin.\"" },
+      "menu": [
+        { "id": "pansements", "noun": "boîte de pansements", "plural": "boîtes de pansements", "gender": "f", "en": "box of plasters", "enPlural": "boxes of plasters", "priceCents": 450, "aliases": ["pansements", "pansement", "boite de pansements", "boites de pansements", "pensements", "pensement", "sparadrap"] },
+        { "id": "creme_solaire", "noun": "crème solaire", "plural": "crèmes solaires", "gender": "f", "en": "sunscreen", "enPlural": "sunscreens", "priceCents": 1290, "aliases": ["creme solaire", "cremes solaires", "creme", "cremes", "solaire", "creme pour le soleil", "sunscreen"] },
+        { "id": "mouchoirs", "noun": "paquet de mouchoirs", "plural": "paquets de mouchoirs", "gender": "m", "en": "pack of tissues", "enPlural": "packs of tissues", "priceCents": 150, "aliases": ["mouchoirs", "mouchoir", "paquet de mouchoirs", "paquets de mouchoirs", "mouchoirs en papier", "mouchoir en papier"] },
+        { "id": "sirop", "noun": "sirop pour la toux", "plural": "sirops pour la toux", "gender": "m", "en": "cough syrup", "enPlural": "bottles of cough syrup", "priceCents": 690, "aliases": ["sirop pour la toux", "sirops pour la toux", "sirop contre la toux", "sirop", "sirops", "cirop", "siro"] },
+        { "id": "paracetamol", "noun": "boîte de paracétamol", "plural": "boîtes de paracétamol", "gender": "f", "en": "box of paracetamol", "enPlural": "boxes of paracetamol", "priceCents": 220, "aliases": ["paracetamol", "boite de paracetamol", "boites de paracetamol", "paracetamole", "parasetamol", "paracetamols"] }
+      ],
+      "words": []
     }
   }
 }

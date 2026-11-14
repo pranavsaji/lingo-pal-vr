@@ -71,7 +71,7 @@ export class CustomersSystem extends createSystem({}) {
   private anchor!: Group;
   private place: PlaceId = 'cafe';
   private active: Customer[] = [];
-  /** Built customers by manifest id (cached across shop visits). */
+  /** Built customers by spec name (cached across shop visits; one avatar can appear in several shops). */
   private readonly built = new Map<string, Customer>();
   private readonly loading = new Set<PlaceId>();
   private readonly learner = new Vector3();
@@ -108,7 +108,7 @@ export class CustomersSystem extends createSystem({}) {
     this.active = [];
     let missing = false;
     for (const spec of CUSTOMERS[place]) {
-      const c = this.built.get(spec.assetId);
+      const c = this.built.get(spec.name);
       if (c) this.attach(c);
       else missing = true;
     }
@@ -131,10 +131,10 @@ export class CustomersSystem extends createSystem({}) {
       await sleep(AFTER_SHOPKEEPER_MS);
       for (const spec of CUSTOMERS[place]) {
         if (this.disposed) return;
-        if (this.built.has(spec.assetId)) continue;
+        if (this.built.has(spec.name)) continue;
         try {
           const c = await this.build(spec);
-          this.built.set(spec.assetId, c);
+          this.built.set(spec.name, c);
           if (this.place === place && !this.disposed && !this.active.includes(c)) this.attach(c);
         } catch (err) {
           // A missing customer is only missing ambience: carry on without them (retried next visit).

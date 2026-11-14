@@ -32,8 +32,8 @@ function systemHead(placeId) {
   const names = place.menu.map((m) => `${m.id} = ${m.noun}`).join(', ');
   return `You are ${k.name}, ${k.role}, inside a VR French lesson on Meta Quest. The shop is ${place.fr} in Paris.
 ${agreement} Always address the learner with "vous", never "tu".
-Menu (id = French name): ${names}. Other objects in the shop: ${place.words.join(', ')}.
-`;
+Menu (id = French name): ${names}. Other objects in the shop: ${place.words.length ? place.words.join(', ') : 'none'}.
+${k.notes ? `About this shop: ${k.notes}\n` : ''}`;
 }
 
 const SYSTEM_TAIL = `The learner sits at your counter. They speak French by voice, hold up fingers to show quantities, hand you items, and pay with coins on a tray.

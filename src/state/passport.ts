@@ -57,6 +57,9 @@ export const STAMPS: Stamp[] = [
   { id: 'cafe', kind: 'shop', fr: 'Café Lune', en: 'Café Lune', how: 'Pay for an order at the café', progress: orders('cafe') },
   { id: 'boulangerie', kind: 'shop', fr: 'Boulangerie', en: 'The bakery', how: 'Pay for an order at the bakery', progress: orders('boulangerie') },
   { id: 'marche', kind: 'shop', fr: 'Marché', en: 'The market', how: 'Pay for an order at the market', progress: orders('marche') },
+  { id: 'bistrot', kind: 'shop', fr: 'Bistrot', en: 'The bistro', how: 'Pay for a lunch at the bistro', progress: orders('bistrot') },
+  { id: 'metro', kind: 'shop', fr: 'Métro', en: 'The metro', how: 'Buy a ticket at the metro', progress: orders('metro') },
+  { id: 'pharmacie', kind: 'shop', fr: 'Pharmacie', en: 'The pharmacy', how: 'Pay for an order at the pharmacy', progress: orders('pharmacie') },
   { id: 'croissant', kind: 'skill', fr: 'Premier croissant', en: 'First croissant', how: 'Buy a croissant', progress: (f) => ({ have: f.passport.croissants, need: 1 }) },
   { id: 'appoint', kind: 'skill', fr: "L'appoint", en: 'Exact change', how: 'Pay the exact amount 3 times', progress: (f) => ({ have: f.passport.exactPayments, need: 3 }) },
   { id: 'liste', kind: 'skill', fr: 'Liste complète', en: 'Full list', how: 'Finish a daily shopping list', progress: (f) => ({ have: f.passport.listsDone, need: 1 }) },
@@ -67,6 +70,9 @@ export const STAMPS: Stamp[] = [
   { id: 'accent', kind: 'skill', fr: 'Bel accent', en: 'Lovely accent', how: 'Score 90+ saying a phrase', progress: (f) => ({ have: f.passport.bestPron >= 90 ? 1 : 0, need: 1 }) },
   { id: 'niveau-a2', kind: 'skill', fr: 'Niveau A2', en: 'Level A2', how: `Reach A2 (${A2_XP} XP)`, progress: (f) => ({ have: levelFor(f.xp).index >= 3 ? 1 : 0, need: 1 }) },
 ];
+
+/** Stamp slots on the passport panel (public/ui/passport.uikitml: st-0 .. st-15, 4 rows of 4). */
+export const STAMP_SLOTS = 16;
 
 export function stampById(id: string): Stamp | undefined {
   return STAMPS.find((s) => s.id === id);

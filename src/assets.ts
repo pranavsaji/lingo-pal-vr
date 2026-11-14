@@ -44,6 +44,9 @@ const shopkeepers = {
   'shopkeeper-lune': shopkeeper('lune.glb', 'Madame Lune', 'background'),
   'shopkeeper-paul': shopkeeper('paul.glb', 'Monsieur Paul', 'lazy'),
   'shopkeeper-rose': shopkeeper('rose.glb', 'Madame Rose', 'lazy'),
+  'shopkeeper-marcel': shopkeeper('marcel.glb', 'Monsieur Marcel', 'lazy'),
+  'shopkeeper-karim': shopkeeper('karim.glb', 'Monsieur Karim', 'lazy'),
+  'shopkeeper-ines': shopkeeper('ines.glb', 'Madame Inès', 'lazy'),
   // Background customers (src/world/customers-system.ts): loaded per shop, after its shopkeeper.
   'customer-m03': shopkeeper('customer-m03.glb', 'Customer (Male_Adult_03)', 'lazy'),
   'customer-f14': shopkeeper('customer-f14.glb', 'Customer (Female_Adult_14)', 'lazy'),
