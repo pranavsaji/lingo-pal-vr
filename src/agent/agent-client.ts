@@ -21,7 +21,11 @@ export function parseTurn(data: unknown): AgentTurn | null {
   if (typeof data !== 'object' || data === null) return null;
   const t = data as Record<string, unknown>;
   if (typeof t.fr !== 'string' || !t.fr.trim() || typeof t.en !== 'string') return null;
-  const replies = Array.isArray(t.replies) ? t.replies.filter(isReply).slice(0, 3) : [];
+  const replies = (Array.isArray(t.replies) ? t.replies.filter(isReply).slice(0, 3) : []).map((r) => ({
+    fr: r.fr,
+    en: r.en,
+    ...(typeof r.sounds === 'string' && r.sounds.trim() ? { sounds: r.sounds.trim().slice(0, 120) } : {}),
+  }));
   if (replies.length < 3) return null;
   return {
     fr: t.fr.slice(0, 200),

@@ -85,10 +85,10 @@ export class LocalVoice {
     this.send({ kind: 'preload', task });
   }
 
-  /** 16 kHz mono samples -> French transcript. The first call may wait for the download. */
-  async transcribe(samples: Float32Array): Promise<string> {
+  /** 16 kHz mono samples -> transcript (French; English for Pal: Whisper base is multilingual). The first call may wait for the download. */
+  async transcribe(samples: Float32Array, lang: 'fr' | 'en' = 'fr'): Promise<string> {
     const audio = samples.slice(); // own buffer, transferred to the worker
-    const res = await this.request({ kind: 'stt', id: ++this.seq, audio }, this.ready.stt ? 20000 : 90000, [audio.buffer]);
+    const res = await this.request({ kind: 'stt', id: ++this.seq, audio, ...(lang === 'en' ? { lang } : {}) }, this.ready.stt ? 20000 : 90000, [audio.buffer]);
     return res.kind === 'stt' ? res.text : '';
   }
 

@@ -5,7 +5,7 @@ export type VoiceTask = 'stt' | 'tts';
 export type VoiceRequest =
   | { kind: 'config'; sttModel: string; ttsDtype?: 'q8' | 'fp32' | 'fp16' }
   | { kind: 'preload'; task: VoiceTask }
-  | { kind: 'stt'; id: number; audio: Float32Array }
+  | { kind: 'stt'; id: number; audio: Float32Array; lang?: 'fr' | 'en' }
   | { kind: 'tts'; id: number; text: string };
 
 export type VoiceResponse =

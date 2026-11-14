@@ -22,6 +22,10 @@ import { fontsReady } from '../fonts.js';
 import { localVoice } from './local-voice.js';
 import { SpeechInput } from './speech-input.js';
 import { commandFeedback, parseVoiceCommand } from './voice-commands.js';
+import { palRoute } from '../pal/pal-brain.js';
+
+/** Read by Pal: whether a microphone engine exists (Pal then listens in English; else quick-ask chips only). */
+export const voiceInput = { available: false };
 
 const MIN_TARGET_SCORE = 45; // below this the learner said something else, not a try at a reply
 
@@ -32,6 +36,8 @@ export class VoiceSystem extends createSystem({}) {
   private processing = false;
   /** This recording was started hands-free: stay quiet if nothing was said. */
   private autoListen = false;
+  /** This recording is a question for Pal, in English. */
+  private palMode = false;
 
   init(): void {
     const panel = this.world.getSceneObject<UIKitMLAsset>('chat-panel');
@@ -53,12 +59,18 @@ export class VoiceSystem extends createSystem({}) {
         void this.begin(true);
       }),
       events.voiceOrder.on((text) => this.set('heard', `Vous (doigts) : ${text}`)),
+      // Pal (the English-speaking companion) listens in English; a second call while listening sends it.
+      events.palListen.on(() => {
+        if (this.mic.listening && this.palMode) void this.finish();
+        else if (!this.processing && !this.mic.listening) void this.begin(false, 'en');
+      }),
       localVoice.progress.on(({ task, pct }) => {
         if (task === 'stt' && this.processing && pct < 100) this.set('heard-detail', `Loading the on-device French voice model (first time only): ${pct}%`);
       }),
     );
 
     void this.mic.detect().then((engine) => {
+      voiceInput.available = engine !== 'none';
       // On-device recognition: fetch the model in the background once the scene has loaded.
       if (engine === 'local') {
         let t: ReturnType<typeof setTimeout> | null = null;
@@ -85,15 +97,26 @@ export class VoiceSystem extends createSystem({}) {
     else await this.begin();
   }
 
-  private async begin(auto = false): Promise<void> {
+  private async begin(auto = false, lang: 'fr' | 'en' = 'fr'): Promise<void> {
     if (this.processing || this.mic.listening || !this.mic.available) return;
     this.autoListen = auto;
-    const ok = await this.mic.start();
+    this.palMode = lang === 'en';
+    const ok = await this.mic.start(lang);
     if (!ok) {
       this.set('heard', 'Microphone blocked. Allow it in the browser, or pinch a reply.');
+      if (this.palMode) events.palState.emit('idle');
+      this.palMode = false;
       return;
     }
     events.listening.emit(true);
+    if (this.palMode) {
+      events.palState.emit('listening');
+      this.micButton?.setProperties({ backgroundColor: '#2f5fb3' });
+      this.set('mic-label', 'Pal...');
+      this.set('heard', 'Ask Pal in English now!');
+      this.set('heard-detail', 'Pinch Pal (or "Parler") again when you are done.');
+      return;
+    }
     this.micButton?.setProperties({ backgroundColor: '#2a9d8f' });
     this.set('mic-label', "J'écoute...");
     this.set('heard', 'Parlez maintenant ! Speak now.');
@@ -109,9 +132,16 @@ export class VoiceSystem extends createSystem({}) {
     const loading = this.mic.engine === 'local' && !localVoice.ready.stt;
     this.set('heard', loading ? 'Un instant... Loading speech recognition.' : 'Un instant... Listening back.');
     this.set('heard-detail', loading ? 'First time only. It runs on your headset, nothing to install.' : '');
+    const pal = this.palMode;
+    this.palMode = false;
+    if (pal) events.palState.emit('thinking');
     try {
       const text = await this.mic.stop();
-      this.handle(text);
+      if (pal) {
+        this.set('heard', text.trim() ? `You (to Pal): ${text}` : "Pal didn't hear anything.");
+        this.set('heard-detail', '');
+        events.palAsk.emit(text.trim());
+      } else this.handle(text);
     } finally {
       this.processing = false;
       this.set('mic-label', 'Parler');
@@ -136,6 +166,15 @@ export class VoiceSystem extends createSystem({}) {
     // Mixed reality: while the placement reticle shows, "ici" puts the cafe where the learner points.
     if (appState.placingCafe && /\bici\b/.test(normalizeFrench(text))) {
       events.placeCafe.emit('here');
+      return;
+    }
+    // English for Pal ("Pal", "help me", "how do I say ..."): the shopkeepers only speak French.
+    const pal = appState.choosingInput ? null : palRoute(text);
+    if (pal) {
+      this.set('heard', `You (to Pal): ${text}`);
+      this.set('heard-detail', pal === 'listen' ? 'Pal is listening, in English.' : 'Pal answers in English.');
+      if (pal === 'listen') setTimeout(() => events.palListen.emit(), 0);
+      else events.palAsk.emit(pal.ask);
       return;
     }
     // Global commands first (map, carnet, ma semaine, je paie, répète...): never sent to the agent.

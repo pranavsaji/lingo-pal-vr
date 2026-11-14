@@ -92,7 +92,7 @@ async function run(req: Extract<VoiceRequest, { id: number }>): Promise<void> {
       const fn = await loadAsr();
       // Short cafe phrases: cap the output and block loops ("de plus de plus de plus..."),
       // which Whisper falls into on noisy or unclear audio.
-      const out = await fn(req.audio, { language: 'french', task: 'transcribe', max_new_tokens: 64, no_repeat_ngram_size: 4 });
+      const out = await fn(req.audio, { language: req.lang === 'en' ? 'english' : 'french', task: 'transcribe', max_new_tokens: 64, no_repeat_ngram_size: 4 });
       const text = Array.isArray(out) ? out.map((o) => o.text).join(' ') : out.text;
       post({ kind: 'stt', id: req.id, text: text.trim() });
       return;

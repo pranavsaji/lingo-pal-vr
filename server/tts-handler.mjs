@@ -32,6 +32,8 @@ export const SPEAKERS = {
   ines: { voiceId: 'Hélène', style: '[calm, soft-spoken, reassuring pharmacist, gentle and clear]', rate: 0.9 },
   claire: { voiceId: 'Hélène', style: '[polished, welcoming hotel receptionist, bright and professional, clear for a learner]', rate: 1.0 },
   learner: { voiceId: 'Étienne', style: '', rate: 0.95 },
+  // Pal, the English-speaking companion (English text only): Inworld "Hazel", a warm, upbeat tutoring voice.
+  pal: { voiceId: 'Hazel', style: '[cheerful, warm little helper, upbeat and clear, speaking simple English]', rate: 1.0 },
 };
 
 const rateLimited = createRateLimiter({ windowMs: 60_000, max: 60 });

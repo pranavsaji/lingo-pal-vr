@@ -51,7 +51,8 @@ function shopkeeperApi(): Plugin {
           let status = 500;
           let body: unknown = { error: 'unknown' };
           try {
-            ({ status, body } = await handleStt(req.method, Buffer.concat(chunks), req.headers['content-type'], env, req.socket.remoteAddress ?? 'local'));
+            const lang = new URL(req.url ?? '/', 'http://local').searchParams.get('lang') ?? req.headers['x-stt-lang'];
+            ({ status, body } = await handleStt(req.method, Buffer.concat(chunks), req.headers['content-type'], env, req.socket.remoteAddress ?? 'local', lang));
           } catch (err) {
             body = { error: String(err) };
           }

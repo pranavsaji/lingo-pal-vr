@@ -11,6 +11,8 @@ import type { PlaceId } from '../game-state.js';
 export interface ReplyOption {
   fr: string;
   en: string;
+  /** How fr sounds to an English speaker ("duh ka-FAY"); filled locally when absent (src/pal/sounds-like.ts). */
+  sounds?: string;
 }
 
 export type AgentEvent =

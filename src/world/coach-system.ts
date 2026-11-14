@@ -79,6 +79,7 @@ export class CoachSystem extends createSystem({}) {
     c.lookingAt = handState.gazeItem ?? director.perception.lookingAt;
     const t = this.coach.tick(this.nowMs, c);
     if (!t) return;
+    events.coachHint.emit(); // Pal may add an English hint for beginners after her line (src/pal/pal-system.ts)
     void director.handle(t.reason === 'gaze' ? { kind: 'hint', reason: 'gaze', itemId: t.itemId, nth: t.nth } : { kind: 'hint', reason: 'hesitate', nth: t.nth });
   }
 }
