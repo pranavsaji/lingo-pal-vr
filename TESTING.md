@@ -10,14 +10,18 @@ are gold. Thank you!
 `?perf` turns on tester mode: a small readout in the lower left of your view, and an
 anonymous frame-rate summary sent every 30 s. Without `?perf` nothing is shown or sent.
 
-## What to do (about 3 minutes)
+## What to do (about 4 minutes)
 
 1. Open the link in the Quest Browser and press **Entrer au café** (Enter).
 2. **Order once**: pinch a reply on the chat panel, or point at an item, or say "un café, s'il vous plaît".
-3. **Pay**: pinch coins from the dish and drop them on the tray.
-4. **Open the map** (the map button, or say "le plan").
-5. **Travel once** to another shop and look around for ~20 s.
-6. Leave the session (the Meta button). That's it.
+3. **Count with your fingers** (hands, no controllers): look at the croissants, raise your hand
+   to chest height or higher and hold up 2 fingers, either way (index + middle, or thumb + index
+   like in France). A round badge shows the number she sees; hold it 1 s and she serves two.
+   If you have a moment, try 1, 3 and 4 too and tell us any number the badge got wrong.
+4. **Pay**: pinch coins from the dish and drop them on the tray.
+5. **Open the map** (the map button, or say "le plan").
+6. **Travel once** to another shop and look around for ~20 s.
+7. Leave the session (the Meta button). That's it.
 
 If something stutters, a note of what you were doing helps (e.g. "when the baker waved").
 

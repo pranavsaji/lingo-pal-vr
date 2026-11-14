@@ -42,7 +42,14 @@ export function newGestureFrame(): GestureFrame {
 export const TUNING = {
   fingerReachRatio: 1.45, // |wrist->tip| / |wrist->proximal| above this = extended
   fingerStraightCos: 0.6, // cos between proximal->intermediate and intermediate->tip
-  thumbSpreadRatio: 0.55, // |thumbTip->indexProximal| / palm size
+  // Thumb out = how far the thumb's end sits beyond the index side of the palm
+  // (palm units) + how much the thumb points away from the palm (cos). Measured
+  // on IWER's captured-skeleton poses (tests/hand-poses.test.ts): extended thumbs
+  // score 1.57-1.75 (open, thumbs-up, finger-gun, call); a thumb resting beside
+  // the curled fingers ('point') 1.29, a relaxed hand 1.11, tucked thumbs
+  // (peace, three, four, fist) below 0.3.
+  thumbOutOn: 1.45, // becomes extended above this...
+  thumbOutOff: 1.37, // ...and stays extended until it drops below this (no flicker)
   thumbStraightCos: 0.7,
   verticalCos: 0.6, // thumb direction vs world up for thumbs up/down
   palmUpCos: 0.6,
@@ -70,6 +77,37 @@ function upComponent(j: Float32Array, a: number, b: number): number {
   return l > 1e-9 ? (j[b * 3 + 1] - j[a * 3 + 1]) / l : 0;
 }
 
+/**
+ * How clearly the thumb sticks out sideways: the distance of the thumb's end
+ * (tip and last joint, averaged against jitter) beyond the index-finger side of
+ * the palm, in palm lengths, plus the cosine between the whole thumb
+ * (metacarpal -> tip) and the outward palm direction. Independent of hand
+ * orientation, size and handedness (the axis runs index -> pinky on both hands).
+ */
+export function thumbOutScore(j: Float32Array, palm: number): number {
+  // y: wrist -> middle proximal (along the palm).
+  const yx = (j[33] - j[0]) / palm, yy = (j[34] - j[1]) / palm, yz = (j[35] - j[2]) / palm;
+  // x: index proximal (6) -> pinky proximal (21), made perpendicular to y.
+  let xx = j[63] - j[18], xy = j[64] - j[19], xz = j[65] - j[20];
+  const along = xx * yx + xy * yy + xz * yz;
+  xx -= along * yx;
+  xy -= along * yy;
+  xz -= along * yz;
+  const xl = Math.sqrt(xx * xx + xy * xy + xz * xz);
+  if (xl < 1e-6) return 0;
+  xx /= xl;
+  xy /= xl;
+  xz /= xl;
+  // Thumb tip (4) and distal joint (3), averaged, beyond the index proximal (6); outward is -x.
+  const ex = (j[12] + j[9]) / 2 - j[18], ey = (j[13] + j[10]) / 2 - j[19], ez = (j[14] + j[11]) / 2 - j[20];
+  const out = -(ex * xx + ey * xy + ez * xz) / palm;
+  // Direction thumb metacarpal (1) -> tip (4) against x.
+  const tx = j[12] - j[3], ty = j[13] - j[4], tz = j[14] - j[5];
+  const tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+  const point = tl > 1e-6 ? -(tx * xx + ty * xy + tz * xz) / tl : 0;
+  return out + point;
+}
+
 function fingerExtended(j: Float32Array, finger: number): boolean {
   const base = 5 + (finger - 1) * 5; // metacarpal index
   const prox = base + 1;
@@ -91,8 +129,9 @@ export function classifyHand(joints: Float32Array, handedness: Handedness, out: 
     out.thumbsUp = out.thumbsDown = out.openPalm = out.palmUp = out.pinching = false;
     return out;
   }
+  const thumbOut = thumbOutScore(joints, palm);
   out.extended[0] =
-    dist(joints, 4, 6) / palm > TUNING.thumbSpreadRatio && cosBetween(joints, 2, 3, 3, 4) > TUNING.thumbStraightCos;
+    thumbOut > (out.extended[0] ? TUNING.thumbOutOff : TUNING.thumbOutOn) && cosBetween(joints, 2, 3, 3, 4) > TUNING.thumbStraightCos;
   for (let f = 1; f <= 4; f++) out.extended[f] = fingerExtended(joints, f);
 
   let count = 0;
@@ -121,21 +160,36 @@ export function classifyHand(joints: Float32Array, handedness: Handedness, out: 
 
 /**
  * Debounce: a value must be held for `holdMs` before it is reported, and each
- * stable value is reported once. Prevents flicker between counts.
+ * stable value is reported once. Prevents flicker between counts. A different
+ * value seen for less than `glitchMs` (a frame or two of tracking noise) is
+ * ignored instead of restarting the hold.
  */
 export class GestureStabilizer {
   private candidate = -1;
   private since = 0;
   private emitted = -1;
+  private other = -1;
+  private otherSince = 0;
 
-  constructor(private holdMs = 400) {}
+  constructor(private holdMs = 400, private glitchMs = 100) {}
 
   /** Returns the newly stable value, or null when nothing new. */
   update(value: number, nowMs: number): number | null {
-    if (value !== this.candidate) {
+    if (value === this.candidate) {
+      this.other = -1;
+    } else if (this.candidate === -1) {
       this.candidate = value;
       this.since = nowMs;
       return null;
+    } else {
+      if (value !== this.other) {
+        this.other = value;
+        this.otherSince = nowMs;
+      }
+      if (nowMs - this.otherSince < this.glitchMs) return null;
+      this.candidate = value;
+      this.since = this.otherSince;
+      this.other = -1;
     }
     if (value !== this.emitted && nowMs - this.since >= this.holdMs) {
       this.emitted = value;
@@ -151,5 +205,6 @@ export class GestureStabilizer {
   reset(): void {
     this.candidate = -1;
     this.emitted = -1;
+    this.other = -1;
   }
 }

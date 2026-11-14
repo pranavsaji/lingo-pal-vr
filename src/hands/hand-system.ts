@@ -22,7 +22,7 @@ import { handState } from './hand-state.js';
 
 const ORDER_HOLD_MS = 1000; // fingers + gaze must hold this long to order
 const GESTURE_HOLD_MS = 450;
-const RAISED_BELOW_HEAD = 0.32; // counting hand: wrist near face height, not resting or pointing low
+const RAISED_BELOW_HEAD = 0.5; // counting hand: wrist at chest height or above (resting, reaching and pointing hands fail UPRIGHT_MIN)
 const UPRIGHT_MIN = 0.55; // wrist -> middle knuckle must point mostly up (pointing poses are horizontal)
 const GAZE_CONE_DEG = 14; // what the head is looking at, for finger orders
 

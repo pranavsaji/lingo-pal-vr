@@ -10,8 +10,7 @@ type V = [number, number, number];
 function hand(extended: boolean[], opts: { thumbUp?: boolean; palmUp?: boolean } = {}): Float32Array {
   const j: V[] = [[0, 0, 0]];
   // Thumb (sticks out to -x when extended; tucked under the palm when not).
-  if (opts.thumbUp) j.push([-0.02, 0, -0.02], [-0.03, 0.02, -0.03], [-0.03, 0.05, -0.035], [-0.03, 0.075, -0.04]);
-  else if (extended[0]) j.push([-0.02, 0, -0.02], [-0.045, 0, -0.04], [-0.07, 0, -0.055], [-0.09, 0, -0.065]);
+  if (extended[0] || opts.thumbUp) j.push([-0.02, 0, -0.02], [-0.05, 0, -0.035], [-0.08, 0, -0.045], [-0.105, 0, -0.05]);
   else j.push([-0.02, 0, -0.02], [-0.03, -0.01, -0.045], [-0.02, -0.02, -0.06], [-0.01, -0.02, -0.07]);
   const xs = [-0.03, -0.01, 0.01, 0.03];
   for (let f = 0; f < 4; f++) {
@@ -23,8 +22,9 @@ function hand(extended: boolean[], opts: { thumbUp?: boolean; palmUp?: boolean }
   const out = new Float32Array(75);
   j.forEach((p, i) => {
     // Palm up: rotate 180 degrees about z (x -> -x, y -> -y).
-    out[i * 3] = opts.palmUp ? -p[0] : p[0];
-    out[i * 3 + 1] = opts.palmUp ? -p[1] : p[1];
+    // Thumbs up: a sideways fist, rotated -90 degrees about z so the thumb (-x) points up.
+    out[i * 3] = opts.palmUp ? -p[0] : opts.thumbUp ? p[1] : p[0];
+    out[i * 3 + 1] = opts.palmUp ? -p[1] : opts.thumbUp ? -p[0] : p[1];
     out[i * 3 + 2] = p[2];
   });
   return out;
