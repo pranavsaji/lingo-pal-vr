@@ -23,7 +23,7 @@ import { director } from './agent/runtime.js';
 import { emptyOrder, type OrderState } from './agent/tools.js';
 import { buildHitArea, buildItem } from './cafe-builder.js';
 import { VocabItem } from './components.js';
-import { events } from './game-state.js';
+import { appState, events } from './game-state.js';
 import { COUNTER_Y, counterKeepOuts } from './layout.js';
 import { makeCanvasTexture } from './models/model-kit.js';
 import { layoutServed, type Rect, type ServeGroupIn, type ServeGroupOut } from './serve-layout.js';
@@ -263,6 +263,7 @@ export class ItemSystem extends createSystem({
       events.order.on((o) => this.reconcileServed(o)),
       // Left-hand mode mirrors the money dish and Pal: re-pack around them.
       events.settings.on(() => this.reconcileServed(store.order)),
+      events.viewFit.on(() => this.reconcileServed(store.order)),
       events.effects.on((effects) => {
         for (const fx of effects) {
           if (fx.kind === 'point') {
@@ -303,7 +304,7 @@ export class ItemSystem extends createSystem({
       if (f && l.qty > 0) groups.push({ id: l.itemId, qty: l.qty, w: f.w, d: f.d, h: f.h });
     }
     const keepOuts = [...counterKeepOuts(store.profile.settings.leftHanded), ...this.displayRects];
-    const { placed } = layoutServed(groups, keepOuts);
+    const { placed } = layoutServed(groups, keepOuts, appState.narrowView);
 
     const old = new Map<string, ServedVisual>();
     for (const v of this.served) old.set(v.key, v);

@@ -129,9 +129,9 @@ function arrange(g: ServeGroupIn, shown: number, s: number): Arrangement {
 }
 
 /** Candidate x centers, nearest the preferred spot first. */
-function candidates(halfW: number): number[] {
-  const lo = SERVE_AREA.x0 + halfW;
-  const hi = SERVE_AREA.x1 - halfW;
+function candidates(halfW: number, x0: number, x1: number): number[] {
+  const lo = x0 + halfW;
+  const hi = x1 - halfW;
   const out: number[] = [];
   if (lo > hi) return out;
   const p = Math.min(hi, Math.max(lo, SERVE_AREA.preferX));
@@ -146,6 +146,12 @@ function candidates(halfW: number): number[] {
   return out;
 }
 
+/**
+ * Meta VR Glasses see 37 deg to each side: at the counter's front edge that is
+ * |x| <= 0.5 m. There, goods are set down inside this band when they fit.
+ */
+export const NARROW_X = 0.5;
+
 /** Fewer copies first, then slightly smaller goods: whatever lets every line show. */
 const ATTEMPTS: { cap: number; scale: number }[] = [
   { cap: Infinity, scale: 1 },
@@ -155,7 +161,7 @@ const ATTEMPTS: { cap: number; scale: number }[] = [
   { cap: 1, scale: 0.72 },
 ];
 
-function attempt(groups: ServeGroupIn[], keepOuts: Rect[], cap: number, scale: number): ServeLayout {
+function attempt(groups: ServeGroupIn[], keepOuts: Rect[], cap: number, scale: number, x0: number, x1: number): ServeLayout {
   const placed: ServeGroupOut[] = [];
   const hidden: string[] = [];
   const blocked = (r: Rect) => keepOuts.some((k) => rectsOverlap(r, k, CLEAR)) || placed.some((p) => rectsOverlap(r, p.rect, CLEAR));
@@ -168,7 +174,7 @@ function attempt(groups: ServeGroupIn[], keepOuts: Rect[], cap: number, scale: n
     for (let shown = most; shown >= 1 && !done; shown--) {
       const a = arrange(g, shown, scale);
       if (SERVE_AREA.frontZ - a.gd < SERVE_AREA.backZ) continue;
-      for (const x of candidates(a.gw / 2)) {
+      for (const x of candidates(a.gw / 2, x0, x1)) {
         const rect = { x0: x - a.gw / 2, x1: x + a.gw / 2, z0: SERVE_AREA.frontZ - a.gd, z1: SERVE_AREA.frontZ };
         if (blocked(rect)) continue;
         done = {
@@ -190,13 +196,20 @@ function attempt(groups: ServeGroupIn[], keepOuts: Rect[], cap: number, scale: n
   return { placed, hidden };
 }
 
-/** Pack the order lines along the learner's edge of the counter, clear of `keepOuts`. */
-export function layoutServed(groups: ServeGroupIn[], keepOuts: Rect[]): ServeLayout {
+/**
+ * Pack the order lines along the learner's edge of the counter, clear of
+ * `keepOuts`. `narrow` (Meta VR Glasses): stay inside the glasses' view
+ * (|x| <= NARROW_X) whenever every line fits there, else use the whole counter.
+ */
+export function layoutServed(groups: ServeGroupIn[], keepOuts: Rect[], narrow = false): ServeLayout {
+  const bands: [number, number][] = narrow ? [[-NARROW_X, NARROW_X], [SERVE_AREA.x0, SERVE_AREA.x1]] : [[SERVE_AREA.x0, SERVE_AREA.x1]];
   let best: ServeLayout | null = null;
-  for (const { cap, scale } of ATTEMPTS) {
-    const out = attempt(groups, keepOuts, cap, scale);
-    if (!out.hidden.length) return out;
-    if (!best || out.hidden.length < best.hidden.length) best = out;
+  for (const [x0, x1] of bands) {
+    for (const { cap, scale } of ATTEMPTS) {
+      const out = attempt(groups, keepOuts, cap, scale, x0, x1);
+      if (!out.hidden.length) return out;
+      if (!best || out.hidden.length < best.hidden.length) best = out;
+    }
   }
   return best ?? { placed: [], hidden: [] };
 }

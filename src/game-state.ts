@@ -38,6 +38,8 @@ export const events = {
   settings: new Emitter<Settings>(),
   /** Order state changed (items, tray, phase). */
   order: new Emitter<OrderState>(),
+  /** The headset's view was measured: true for a narrow view (Meta VR Glasses). */
+  viewFit: new Emitter<boolean>(),
   /** Validated agent effects for the scene to play (spawn food, coins, emotes). */
   effects: new Emitter<Effect[]>(),
   /** Stable finger count changed (0 to 10). */
@@ -125,4 +127,6 @@ export const appState = {
   interceptReply: null as ((fr: string) => boolean) | null,
   /** Frame-rate guard: extras dropped to hold the frame rate (0 = none; see src/world/power.ts). */
   powerLevel: 0,
+  /** Narrow-view headset (Meta VR Glasses, 37 deg to each side): see PanelsSystem.fitView. */
+  narrowView: false,
 };

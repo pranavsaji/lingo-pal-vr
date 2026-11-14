@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { menuFor } from '../src/agent/menu';
 import type { PlaceId } from '../src/game-state';
 import { counterKeepOuts } from '../src/layout';
-import { copyCapacity, layoutServed, rectsOverlap, SERVE_AREA, type Rect, type ServeGroupIn } from '../src/serve-layout';
+import { copyCapacity, layoutServed, NARROW_X, rectsOverlap, SERVE_AREA, type Rect, type ServeGroupIn } from '../src/serve-layout';
 import { PLACE_VOCAB } from '../src/vocab';
 import { MEASURED } from './serve-fixture';
 
@@ -114,6 +114,25 @@ describe('served goods on the counter', () => {
       const makes = menuGroups(place);
       for (const pick of combos(makes, Math.min(3, makes.length))) assertClear(pick.map((m) => m(5)), place, true);
     }
+  });
+
+  it('Meta VR Glasses: a one-item order stays inside the 37-degree view, clear of everything', () => {
+    let inside = 0;
+    let total = 0;
+    for (const place of PLACES)
+      for (const make of menuGroups(place))
+        for (const q of [1, 3]) {
+          const { placed, hidden } = layoutServed([make(q)], keepOuts(place), true);
+          expect(hidden).toEqual([]);
+          // Plates 20 cm deep (cake, plat du jour, crepe) do not fit between the display goods
+          // and the edge in the middle; they go to the side, full size, rather than shrink.
+          if (make(q).d >= 0.2) continue;
+          total++;
+          if (placed[0].rect.x0 >= -NARROW_X && placed[0].rect.x1 <= NARROW_X) inside++;
+          for (const k of keepOuts(place)) expect(rectsOverlap(placed[0].rect, k)).toBe(false);
+        }
+    // Every other single-item order fits in front of the learner (the center gap between Pal and the money).
+    expect(inside).toBe(total);
   });
 
   it('paper-flat goods stack instead of spreading', () => {

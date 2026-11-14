@@ -42,6 +42,11 @@ const MIN_BOTTOM_Y: Record<string, number> = {
   'report-panel': 1.14,
   'passport-panel': 1.14,
 };
+/**
+ * Meta VR Glasses see only 25 deg above the view axis, and their narrow layout
+ * swings the chat panel away from the register: there it may sit lower.
+ */
+const NARROW_CHAT_MIN_BOTTOM_Y = 1.18;
 const UIKIT_UNIT = 0.01; // UIKit sizes are centimeters
 const LIFT_EVERY_FRAMES = 6; // hidden panels move far away so rays cannot hit them
 const XP_TRACK_PX = 400;
@@ -331,7 +336,7 @@ export class PanelsSystem extends createSystem({}) {
   /** Authored height, raised when the panel is tall enough to reach below MIN_BOTTOM_Y. */
   private restY(id: string): number {
     const home = this.homeY.get(id) ?? 0;
-    const min = MIN_BOTTOM_Y[id];
+    const min = id === 'chat-panel' && this.fitScale < 1 ? NARROW_CHAT_MIN_BOTTOM_Y : MIN_BOTTOM_Y[id];
     const obj = this.objects.get(id);
     const size = min === undefined || !obj ? null : this.panels.get(id)?.document.computedSize;
     if (!size || !obj) return home;
@@ -375,6 +380,8 @@ export class PanelsSystem extends createSystem({}) {
   /** Swing panels toward the view center (narrow) or back to the authored layout. */
   private fitView(narrow: boolean): void {
     this.fitScale = narrow ? NARROW_SCALE : 1;
+    appState.narrowView = narrow;
+    events.viewFit.emit(narrow);
     for (const [id, obj] of this.objects) {
       const base = this.basePos.get(id)!;
       const q = this.baseQuat.get(id)!;
