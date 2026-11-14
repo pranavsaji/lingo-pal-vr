@@ -412,8 +412,9 @@ export class OnboardingSystem extends createSystem({}) {
 
     switch (this.step) {
       case 'wave': {
-        // Hand up, palm toward Madame Lune, waving side to side.
-        r.position.set(0.22 * side, 1.28, -0.45);
+        // Hand up, palm toward Madame Lune, waving side to side. Kept near the
+        // center line: further right it hid the chat panel's replies from a seated learner.
+        r.position.set(0.12 * side, 1.28, -0.45);
         r.rotation.set(Math.PI / 2, 0, Math.sin(e * 7) * 0.45);
         for (const finger of f) finger.rotation.x = 0;
         break;
@@ -435,7 +436,7 @@ export class OnboardingSystem extends createSystem({}) {
       }
       case 'order': {
         // Hand raised, one finger up (index), others folded.
-        r.position.set(0.2 * side, 1.3 + Math.sin(e * 2) * 0.01, -0.42);
+        r.position.set(0.12 * side, 1.3 + Math.sin(e * 2) * 0.01, -0.42);
         r.rotation.set(Math.PI / 2, 0, 0);
         f[0].rotation.x = 1.2;
         f[1].rotation.x = 0;
