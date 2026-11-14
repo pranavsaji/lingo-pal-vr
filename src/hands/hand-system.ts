@@ -237,7 +237,7 @@ export class HandSystem extends createSystem({}) {
     const side: Handedness = r >= l ? 'right' : 'left';
     if (total > 0 && this.raised(side)) {
       const w = handState.wrist[side];
-      this.badge.position.set(w[0], w[1] + 0.2, w[2]);
+      this.badge.position.set(w[0], w[1] + 0.25, w[2]); // just above the fingertips (about 19 cm from the wrist), never over them
       this.player.head.getWorldPosition(this.headWorld);
       this.badge.lookAt(this.headWorld); // face the learner (plane front is +Z)
       this.drawBadge(total);
