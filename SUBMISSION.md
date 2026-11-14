@@ -13,37 +13,43 @@ Re-read it after the Quest device pass and remove anything that did not hold up 
 - **Target launch:** December 2026, public web (Quest Browser)
 - **Team:** Pranav Saji (Pranav Innovates), solo developer
 
-## Description (about 600 words)
+## Description (about 750 words)
 
 **Inspiration.** The hardest part of learning a language is speaking it in a real moment,
-like ordering a coffee, with someone waiting for your answer. Apps teach words; they rarely
-make you use them. Lingo Pal VR turns that moment into a ten-minute daily habit you can do
+with someone waiting for your answer. Apps teach words; they rarely make you use them. Lingo Pal VR turns that moment into a ten-minute daily habit you can do
 seated, with only your hands, your eyes and your voice.
 
 **What it does.** You sit at Madame Lune's café counter in Paris. Look at the croissants,
 hold up two fingers and say "Deux croissants, s'il vous plaît": she serves two croissants
 and tells you the price in French. Pick up a 5 € note, drop it on her tray, and she counts
-your change back out loud. Every reply you speak gets a pronunciation score. Three shops
-(café, boulangerie, marché), each with its own shopkeeper, menu and words, and a daily
-shopping list across Paris.
+your change back out loud. Every reply you speak gets a pronunciation score. Seven
+everyday places open one by one: the café, the boulangerie, the market, a bistrot (order
+lunch, ask for the bill), a métro ticket window (ask the way to Montmartre), a pharmacie
+("Vous avez mal où ?") and a small hotel (give your name, book nights by holding up
+fingers, pay by card). Each has its own shopkeeper, voice, menu and words, and a daily
+shopping list sends you across Paris.
 
-**An agent, not a chatbot.** The shopkeepers are spatial AI agents built on Claude with
-strict tool use. A deterministic game core owns the menu, prices and every calculation;
-the model proposes actions (serve, quote, give change, offer a substitute, remember a fact)
-and the client validates each one before it happens in 3D. They are proactive: they notice
-when you hesitate or keep looking at an item and offer a hint scaled to your level; they
-remember your mistakes ("Lune note : deux ≠ douze") and reuse those words on purpose; when
-an item runs out they propose a substitute; once you are doing well they sometimes give
-you the wrong change on purpose to see if you catch it; and at goodbye they plan
-tomorrow's shopping list around your weakest words. Hints run locally with no extra AI call.
+**A little Paris on your table.** You travel on "Plan de Paris", a tabletop city that
+unfolds on the counter: the Seine with a tour boat, the Eiffel Tower, Notre-Dame, the Arc
+de Triomphe and Sacré-Cœur, and one pin per place. Touch or pinch a pin (or look at it, or
+say "au marché") and you are there.
+
+**An agent, not a chatbot.** The shopkeepers are AI agents built on Claude with strict tool
+use: a deterministic game core owns the menu, prices and every calculation, and validates
+each proposed action (serve, quote, give change, offer a substitute) before it happens in
+3D. They are proactive: they notice when you hesitate or keep looking at an item and give
+a hint at your level, remember your mistakes ("Lune note : deux ≠ douze"), offer a swap
+when something runs out, sometimes give wrong change on purpose to see if you catch it,
+and at goodbye plan tomorrow's shopping list around your weakest words.
 
 **Your real table.** In mixed reality the café comes to your room: plane detection finds
 your real table or desk and the counter snaps onto it; you can move it with a pinch or by
 saying "ici", and a persistent spatial anchor brings it back to the same spot tomorrow.
-With Quest 3 depth sensing your real hands pass in front of the virtual croissants.
+With Quest 3 depth sensing your real hands pass in front of the virtual croissants, and
+the Plan de Paris sits on your real desk.
 
 **Come back tomorrow.** Streaks with earned rest days, XP and levels from A1 to A2, a
-Passeport de Paris with twelve stamps, spaced-repetition word review, a café that visibly
+Passeport de Paris with sixteen stamps, spaced-repetition word review, a café that visibly
 changes as you progress, a "Bon retour !" summary of what changed since your last visit,
 a teaser for tomorrow, and "Ma semaine", a weekly report.
 
@@ -68,8 +74,10 @@ WebXR hand tracking, gaze, plane detection, anchors, depth sensing, UIKitML spat
 Shopkeepers and customers are Microsoft Rocketbox avatars (MIT) animated procedurally;
 food and rooms are photo scans (CC0 and CC-BY). Claude and natural French voices (Inworld)
 run on Vercel serverless routes behind rate limits and daily budgets; keys never reach the
-headset. On-device Whisper is the speech fallback. Per-frame work is measured and kept low
-(about 2 ms of app logic per frame).
+headset. French speech recognition runs on a server route, with on-device Whisper as the
+fallback. Built for Quest 3 at 72 Hz: merged static scenery (about 120 to 160 draw calls
+per place), about 2 ms of app logic per frame, and a frame-rate guard that raises
+foveation and then sheds extras (background customers, decor) before frames drop.
 
 **What's next.** More cities (Madrid, Rome), a teacher mode, and launch on the Meta
 Horizon Store as a PWA.
@@ -80,6 +88,8 @@ Horizon Store as a PWA.
 - A week of progress in one click (labelled DEMO): https://lingo-pal-vr.vercel.app/?demo=week
   (your own progress is backed up first; `?restore` brings it back)
 - Mixed reality: press "Dans ma pièce" on the start page (Quest 3: set up your room first)
+- Plan de Paris: pinch "Paris" on the left panel; touch a pin on the tabletop map to travel
+  (with `?demo=week` all seven places are open)
 - Café à deux: Paris map → "Inviter un ami", then open the shown link on a laptop or phone
 
 ## Hand interactions (optional field)
@@ -88,6 +98,8 @@ Horizon Store as a PWA.
 | --- | --- | --- |
 | Look at an item + hold up 1 to 5 fingers | Orders that many | Say it, or pinch a suggested reply |
 | Pinch | Select a reply, button or item | Look at it for 1 second (eyes-only mode) |
+| Touch or pinch a pin on the tabletop Plan de Paris | Travel to that place | Say "au marché", or look at the pin |
+| Hold up 2 fingers at the hotel desk | Book two nights | Say "deux nuits" |
 | Pinch-grab a coin or note, release over the tray | Pay | Say "je paie" or "voilà cinq euros", or look at a coin for 1 second |
 | Point at your real table and pinch (mixed reality) | Place the café there | Say "ici" |
 | Palm up / lower palm | Start / stop talking | Pinch "Parler" |
