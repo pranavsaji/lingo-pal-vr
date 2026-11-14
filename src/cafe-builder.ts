@@ -19,6 +19,7 @@ import {
   SphereGeometry,
   TorusGeometry,
 } from '@iwsdk/core';
+import { buildPlaceItem, isPlaceItemShape } from './models/place-items.js';
 import type { ItemShape } from './vocab.js';
 
 function mat(color: number, opts: { roughness?: number; metalness?: number; transparent?: boolean; opacity?: number } = {}): MeshStandardMaterial {
@@ -41,6 +42,7 @@ function mesh(geo: ConstructorParameters<typeof Mesh>[0], m: MeshStandardMateria
 
 /** Build one pinchable vocabulary object. */
 export function buildItem(shape: ItemShape, color: number): Group {
+  if (isPlaceItemShape(shape)) return buildPlaceItem(shape); // bistrot, metro, pharmacie
   const g = new Group();
   switch (shape) {
     case 'croissant': {

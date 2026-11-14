@@ -6,6 +6,7 @@
  */
 
 import { numberToFrench, PLACES, quantityPhrase, quantityPhraseEn } from '../agent/menu.js';
+import { PLACE_TEXT } from '../places/place-text.js';
 import { addDays, daySeed, type Day } from './dates.js';
 import { stampById, type PassportProgress } from './passport.js';
 import { levelFor, LEVELS, UNLOCKS, type Unlock } from './progression.js';
@@ -58,11 +59,7 @@ export interface Line {
   en: string;
 }
 
-const AT: Record<string, Line> = {
-  cafe: { fr: 'au café', en: 'at the café' },
-  boulangerie: { fr: 'à la boulangerie', en: 'at the bakery' },
-  marche: { fr: 'au marché', en: 'at the market' },
-};
+const AT: Record<string, Line> = Object.fromEntries(Object.entries(PLACE_TEXT).map(([id, t]) => [id, t.at]));
 
 /** How far an unlock still is, in rough "visits" (for picking the nearest goal), and its line. */
 function remaining(u: Unlock, h: HookInputs): { visits: number; line: Line } | null {
@@ -111,9 +108,9 @@ export function nextGoal(h: HookInputs): Line | null {
 }
 
 /** One item from tomorrow's shopping list ("Demain : deux baguettes à la boulangerie ?"). */
-export function tomorrowList(today: Day, focusWords?: readonly string[]): Line {
+export function tomorrowList(today: Day, focusWords?: readonly string[], unlocks: readonly string[] = []): Line {
   const tomorrow = addDays(today, 1);
-  const q = dailyQuest(tomorrow, focusWords);
+  const q = dailyQuest(tomorrow, focusWords, unlocks);
   const t = q.tasks.find((task) => focusWords?.includes(task.itemId)) ?? q.tasks[daySeed(tomorrow) % q.tasks.length];
   const item = PLACES[t.place]?.menu.find((m) => m.id === t.itemId);
   const at = AT[t.place] ?? AT.cafe;
@@ -123,7 +120,7 @@ export function tomorrowList(today: Day, focusWords?: readonly string[]): Line {
 
 /** Short teaser for tomorrow: tomorrow's list item plus the nearest goal. */
 export function tomorrowHook(h: HookInputs): Line {
-  const list = tomorrowList(h.today, h.focusWords);
+  const list = tomorrowList(h.today, h.focusWords, h.unlocks);
   const goal = nextGoal(h);
   return goal ? { fr: `${list.fr} ${goal.fr}.`, en: `${list.en} ${goal.en}.` } : list;
 }

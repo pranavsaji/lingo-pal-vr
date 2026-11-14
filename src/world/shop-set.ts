@@ -18,6 +18,7 @@ import {
   MeshStandardMaterial,
   type Object3D,
 } from '@iwsdk/core';
+import { buildPlaceDressing } from '../models/place-items.js';
 import type { PlaceLook, Surface } from '../places/places.js';
 import { surfaceMaterial, type TextureSet } from './surfaces.js';
 
@@ -121,6 +122,10 @@ export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) 
     t.position.set(x, 0, z);
     root.add(t);
   }
+
+  // Procedural set dressing (signs, shelves): owned by this set, disposed with it.
+  const dressing = look.dressing ? buildPlaceDressing(look.dressing) : null;
+  if (dressing) root.add(room(dressing));
 
   // Realistic props.
   for (const p of look.props) {

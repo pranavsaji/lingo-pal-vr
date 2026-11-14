@@ -5,6 +5,17 @@
  * exhaustive search over subsets is cheap and exact.
  */
 
+/** The learner's purse for each new order: 22 euros in useful denominations. */
+export const WALLET = [1000, 500, 200, 200, 100, 100, 50, 20, 20, 10] as const;
+
+/**
+ * Pay by card: at the hotel (a night costs more than any purse of coins), or
+ * whenever the bill is more than the coins in the dish can cover.
+ */
+export function needsCard(place: string, dueCents: number, purseCents: number): boolean {
+  return place === 'hotel' || dueCents > purseCents;
+}
+
 /** Indexes into `purse` of the pieces to hand over; [] when the purse cannot cover `due`. */
 export function pickCoins(purse: readonly number[], due: number): number[] {
   if (due <= 0) return [];

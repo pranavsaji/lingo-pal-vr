@@ -13,6 +13,7 @@
 import type { AgentEvent, AgentTurn, ReplyOption } from '../agent/protocol.js';
 import { EMOTES, type Effect, type OrderPhase, type OrderState } from '../agent/tools.js';
 import type { PlaceId } from '../game-state.js';
+import { PLACE_ORDER } from '../places/places.js';
 
 // ---- Rooms --------------------------------------------------------------------
 
@@ -222,7 +223,7 @@ export type Msg =
   | { t: 'travel'; place: PlaceId }
   | { t: 'bye' };
 
-const PLACES: readonly PlaceId[] = ['cafe', 'boulangerie', 'marche'];
+const PLACES: readonly PlaceId[] = PLACE_ORDER;
 const PHASES: readonly OrderPhase[] = ['browsing', 'ordering', 'paying', 'paid'];
 const GESTURES = ['thumbs_up', 'thumbs_down', 'wave', 'count'] as const;
 

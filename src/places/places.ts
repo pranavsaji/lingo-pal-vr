@@ -10,23 +10,28 @@
 import type { PlaceId } from '../game-state.js';
 import type { Profile } from '../state/profile.js';
 
-export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche'];
+export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel'];
 
 /**
- * Shops open fast enough that a first-time visitor (or a judge) sees all three
- * within minutes: the bakery after the first-run tutorial, the market after
- * the first paid order.
+ * Paid orders (any shop) that open each shop after the tutorial. Shops open fast
+ * enough that a first-time visitor (or a judge) sees the first three within
+ * minutes: the bakery after the first-run tutorial, the market after the first
+ * paid order, then one more shop per order. `?demo=week` (10 orders) opens all.
  */
+export const PLACE_UNLOCK_ORDERS: Record<PlaceId, number> = { cafe: 0, boulangerie: 0, marche: 1, bistrot: 2, metro: 3, pharmacie: 4, hotel: 5 };
+
 export function placeUnlocked(place: PlaceId, p: Pick<Profile, 'onboarded' | 'stats'>): boolean {
   if (place === 'cafe') return true;
-  if (place === 'boulangerie') return p.onboarded;
-  return p.onboarded && p.stats.orders >= 1;
+  return p.onboarded && p.stats.orders >= (PLACE_UNLOCK_ORDERS[place] ?? Infinity);
 }
 
+const ORDINAL_FR = ['', 'première', 'deuxième', 'troisième', 'quatrième', 'cinquième', 'sixième'];
+const ORDINAL_EN = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+
 export function unlockHint(place: PlaceId): { fr: string; en: string } {
-  return place === 'boulangerie'
-    ? { fr: 'Après le tutoriel', en: 'Opens after the tutorial' }
-    : { fr: 'Après votre première commande', en: 'Opens after your first paid order' };
+  const n = PLACE_UNLOCK_ORDERS[place] ?? 0;
+  if (n === 0) return { fr: 'Après le tutoriel', en: 'Opens after the tutorial' };
+  return { fr: `Après votre ${ORDINAL_FR[n] ?? `${n}e`} commande`, en: `Opens after your ${ORDINAL_EN[n] ?? `${n}th`} paid order` };
 }
 
 /** A PBR surface from public/textures/<id>/ with a tiling density (repeats per meter). */
@@ -64,6 +69,8 @@ export interface PlaceLook {
   /** Accent color of the counter trim and awning. */
   accent: number;
   props: PropPlacement[];
+  /** Procedural set dressing for this shop (signs, shelves; src/models/place-items.ts). */
+  dressing?: PlaceId;
 }
 
 const p = (id: string) => `prop-${id}`;
@@ -150,6 +157,86 @@ export const PLACE_LOOKS: Record<PlaceId, PlaceLook> = {
       { model: p('food_pomegranate_01'), pos: [-1.0, B, BZ] },
       { model: p('food_avocado_01'), pos: [1.0, B, BZ] },
     ],
+  },
+  bistrot: {
+    hdri: 'bush_restaurant',
+    hdriYawDeg: 133, // the dining room with its laid tables behind the waiter
+    backdropIntensity: 0.9,
+    iblIntensity: 0.95,
+    floor: { tex: 'terracotta_floor_tiles', perMeter: 0.8, roughness: 0.7 },
+    counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    counterFront: { tex: 'dark_wood', perMeter: 0.9 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    backFront: { tex: 'dark_wood', perMeter: 0.9 },
+    accent: 0x8b1e2d,
+    props: [
+      { model: p('cafe_plate'), pos: [-1.05, B, BZ] },
+      { model: p('cafe_plate'), pos: [-1.05, B + 0.012, BZ], rotY: 0.5 },
+      { model: p('cafe_plate'), pos: [-1.05, B + 0.024, BZ], rotY: 1.1 },
+      { model: p('cafe_teapot'), pos: [-0.45, B, BZ], scale: 1.3, rotY: 0.5 },
+      { model: p('ceramic_vase_01'), pos: [1.1, B, BZ], scale: 0.6 },
+      { model: p('carrot_cake'), pos: [0.6, B, BZ] },
+      { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
+      { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
+      { model: p('painted_wooden_chair_01'), pos: [1.78, 0, -0.42], rotY: -1.9 },
+      { model: p('painted_wooden_chair_01'), pos: [-1.82, 0, -0.42], rotY: 1.9 },
+    ],
+    dressing: 'bistrot',
+  },
+  metro: {
+    hdri: 'subway_entrance',
+    hdriYawDeg: 7, // the long tiled corridor behind the ticket window
+    backdropIntensity: 0.95,
+    iblIntensity: 1,
+    floor: { tex: 'checkered_pavement_tiles', perMeter: 0.6, roughness: 0.5 },
+    counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.3, tint: 0xd6d9dc },
+    counterFront: { tex: 'marble_01', perMeter: 0.5, roughness: 0.3, tint: 0xf1efe8 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.3, tint: 0xd6d9dc },
+    backFront: { tex: 'marble_01', perMeter: 0.5, roughness: 0.3, tint: 0xf1efe8 },
+    accent: 0x1f4e8c,
+    props: [
+      { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
+      { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
+      { model: p('cafe_cup'), pos: [1.05, B, BZ + 0.05], rotY: 0.6 },
+    ],
+    dressing: 'metro',
+  },
+  pharmacie: {
+    hdri: 'st_fagans_interior',
+    hdriYawDeg: 0, // the green wall and the bright counter
+    backdropIntensity: 0.9,
+    iblIntensity: 0.95,
+    floor: { tex: 'wood_floor', perMeter: 0.5, roughness: 0.5 },
+    counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.2, tint: 0xfafafa },
+    counterFront: { tex: 'oak_veneer_01', perMeter: 1.2, roughness: 0.45 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.2, tint: 0xfafafa },
+    backFront: { tex: 'oak_veneer_01', perMeter: 1.2, roughness: 0.45 },
+    accent: 0x2a9d48,
+    props: [
+      { model: p('ceramic_vase_01'), pos: [1.15, B, BZ], scale: 0.6 },
+      { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
+      { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
+    ],
+    dressing: 'pharmacie',
+  },
+  hotel: {
+    hdri: 'entrance_hall',
+    hdriYawDeg: 133, // through the open double doors to the chandelier salon
+    backdropIntensity: 0.9,
+    iblIntensity: 0.95,
+    floor: { tex: 'old_wood_floor', perMeter: 0.6, roughness: 0.6 },
+    counterTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    counterFront: { tex: 'dark_wood', perMeter: 0.9 },
+    backTop: { tex: 'marble_01', perMeter: 0.7, roughness: 0.25 },
+    backFront: { tex: 'dark_wood', perMeter: 0.9 },
+    accent: 0xc9a227,
+    props: [
+      { model: p('ceramic_vase_01'), pos: [1.15, B, BZ], scale: 0.7 },
+      { model: p('orchid'), pos: [-0.3, B, BZ], scale: 1.1 },
+      { model: p('hanging_industrial_lamp'), pos: [-0.75, 3.45, -1.25], scale: 0.55 },
+      { model: p('hanging_industrial_lamp'), pos: [0.85, 3.45, -1.25], scale: 0.55 },
+    ],
+    dressing: 'hotel',
   },
 };
 

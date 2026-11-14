@@ -9,6 +9,10 @@
  * conversation, not a command), except the explicit "mode ..." switches.
  */
 
+import { namesMenuItem, travelPlace } from '../agent/intent.js';
+import type { PlaceId } from '../game-state.js';
+import { PLACE_ORDER } from '../places/places.js';
+import { PLACE_TEXT } from '../places/place-text.js';
 import { normalizeFrench } from './pronunciation.js';
 
 export type PanelId = 'home' | 'carnet' | 'settings' | 'map' | 'report';
@@ -23,7 +27,7 @@ export type VoiceCommand =
   | { kind: 'help' }
   | { kind: 'skip' }
   | { kind: 'pay_exact' }
-  | { kind: 'travel'; place: 'cafe' | 'boulangerie' | 'marche' }
+  | { kind: 'travel'; place: PlaceId }
   | { kind: 'mode'; mode: InputMode }
   | { kind: 'text'; bigger: boolean }
   | { kind: 'toggle'; setting: ToggleSetting }
@@ -41,10 +45,10 @@ export interface CommandContext {
 /** Longest utterance (in words) still treated as a command. */
 const MAX_WORDS = 6;
 
-const PLACE_WORDS: [RegExp, 'cafe' | 'boulangerie' | 'marche'][] = [
-  [/\b(boulangerie|bakery|baker)\b/, 'boulangerie'],
-  [/\b(marche|market)\b/, 'marche'],
-  [/\b(cafe|coffee shop)\b/, 'cafe'],
+/** Shop names, French and English (the café last: "coffee" also appears in orders). */
+const PLACE_WORDS: [RegExp, PlaceId][] = [
+  ...PLACE_ORDER.filter((p) => p !== 'cafe').map((p) => [PLACE_TEXT[p].words, p] as [RegExp, PlaceId]),
+  [PLACE_TEXT.cafe.words, 'cafe'],
 ];
 
 const MODE_WORDS: [RegExp, InputMode][] = [
@@ -77,13 +81,20 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
     if (mode) return { kind: 'mode', mode };
   }
 
-  // Travel (English; the French forms are also understood by the intent parser).
-  if (/\b(go|take me|let s go|allons|aller|allez|vais|retour|retourner|direction)\b/.test(n)) {
+  // A shop item that sounds like a command ("un carnet de tickets", "un plan du métro",
+  // "je vais prendre un café") is an order, not a command.
+  const item = namesMenuItem(text);
+
+  // Travel: French with the shop right after the verb ("allons au métro", not "je vais prendre
+  // un café"), English with "go" / "take me" anywhere before it.
+  const fr = travelPlace(n);
+  if (fr) return { kind: 'travel', place: fr };
+  if (/\b(go|take me|let s go)\b/.test(n)) {
     for (const [re, place] of PLACE_WORDS) if (re.test(n)) return { kind: 'travel', place };
   }
 
   // Payment: "je paie" with no amount places the exact coins on the tray.
-  if (ctx.paying && /\b(je paie|je paye|je vais payer|payer|pay|i ll pay|c est juste|exact)\b/.test(n) && !/\d|\beuros?\b|\bcentimes?\b|\bbillet\b/.test(n)) {
+  if (ctx.paying && /\b(je paie|je paye|je vais payer|payer|pay|i ll pay|c est juste|exact|par carte|by card)\b/.test(n) && !/\d|\beuros?\b|\bcentimes?\b|\bbillet\b/.test(n)) {
     return { kind: 'pay_exact' };
   }
 
@@ -94,9 +105,9 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
 
   // Panels.
   if (/\b(ma semaine|cette semaine|rapport|my week|weekly report|report|progres|progress)\b/.test(n)) return { kind: 'open', panel: 'report' };
-  if (/\b(carnet|mes mots|vocabulaire|notebook|my words|words)\b/.test(n)) return { kind: 'open', panel: 'carnet' };
+  if (/\b(carnet|mes mots|vocabulaire|notebook|my words|words)\b/.test(n) && (!item || /\bmon carnet\b/.test(n))) return { kind: 'open', panel: 'carnet' };
   if (/\b(reglages|parametres|settings|options|accessibilite|accessibility)\b/.test(n)) return { kind: 'open', panel: 'settings' };
-  if (/\b(plan|la carte de paris|carte de paris|map|paris)\b/.test(n)) return { kind: 'open', panel: 'map' };
+  if (/\b(plan|la carte de paris|carte de paris|map|paris)\b/.test(n) && !item) return { kind: 'open', panel: 'map' };
   if (/\b(fermer|ferme|fermez|close|back|go back|retour|accueil|home)\b/.test(n)) return { kind: 'close' };
 
   // Panel buttons that are not panels.
@@ -133,7 +144,7 @@ export function commandFeedback(cmd: VoiceCommand): string {
     case 'pay_exact':
       return 'Je paie le compte juste';
     case 'travel':
-      return { cafe: 'Au café', boulangerie: 'À la boulangerie', marche: 'Au marché' }[cmd.place];
+      return PLACE_TEXT[cmd.place].go;
     case 'mode':
       return { hands: 'Mode mains', eyes: 'Mode regard', voice: 'Mode voix' }[cmd.mode];
     case 'text':

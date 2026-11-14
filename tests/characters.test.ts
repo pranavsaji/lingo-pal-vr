@@ -11,6 +11,7 @@ import { aimArm, EMOTE_SECONDS, emoteEnvelope, lipFlap, poseEmote } from '../src
 import { boneKey, HumanRig } from '../src/world/characters/human-rig';
 import { ProceduralLuneDriver } from '../src/world/characters/procedural-driver';
 import { SHOPKEEPER_POS, SHOPKEEPERS } from '../src/world/characters/shopkeepers';
+import { PLACE_ORDER } from '../src/places/places';
 import { buildMadameLune } from '../src/models/cafe-models';
 
 // ---------------------------------------------------------------------------
@@ -271,8 +272,9 @@ describe('shopkeeper avatars', () => {
   const assetsSrc = readFileSync(resolve(root, 'src/assets.ts'), 'utf8');
 
   it('has one shopkeeper per shop on the shared counter spot', () => {
-    expect(Object.keys(SHOPKEEPERS).sort()).toEqual(['boulangerie', 'cafe', 'marche']);
-    expect(new Set(Object.values(SHOPKEEPERS).map((s) => s.assetId)).size).toBe(3);
+    expect(Object.keys(SHOPKEEPERS).sort()).toEqual([...PLACE_ORDER].sort());
+    expect(new Set(Object.values(SHOPKEEPERS).map((s) => s.assetId)).size).toBe(PLACE_ORDER.length);
+    expect(new Set(Object.values(SHOPKEEPERS).map((s) => s.source)).size).toBe(PLACE_ORDER.length);
     expect(SHOPKEEPER_POS).toEqual([0.15, 0, -1.65]);
   });
 

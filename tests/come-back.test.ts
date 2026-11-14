@@ -3,7 +3,8 @@ import { parseIntent } from '../src/agent/intent.js';
 import { addDays } from '../src/state/dates.js';
 import { demoProfile } from '../src/state/demo.js';
 import { goalLadder, nextGoal, returnMoment, tomorrowHook, tomorrowList } from '../src/state/goals.js';
-import { collectStamps, emptyPassport, nextStamp, notePurchase, STAMPS, stampDate, type StampFacts } from '../src/state/passport.js';
+import { collectStamps, emptyPassport, nextStamp, notePurchase, STAMP_SLOTS, STAMPS, stampDate, type StampFacts } from '../src/state/passport.js';
+import { PLACE_ORDER } from '../src/places/places.js';
 import { loadProfile, PROFILE_KEY, type KV } from '../src/state/profile.js';
 import { unlockedIds } from '../src/state/progression.js';
 import { daysToNextRest, MAX_REST, touchStreakWithRest } from '../src/state/rest-days.js';
@@ -50,9 +51,10 @@ describe('jours de repos (streak protection)', () => {
 const facts = (over: Partial<StampFacts> = {}): StampFacts => ({ passport: emptyPassport(), streakDays: 1, wordsSeen: 0, xp: 0, ...over });
 
 describe('le passeport de Paris', () => {
-  it('has 12 unique stamps', () => {
-    expect(STAMPS.length).toBe(12);
-    expect(new Set(STAMPS.map((s) => s.id)).size).toBe(12);
+  it('has unique stamps, one per shop, that fit the passport panel', () => {
+    expect(new Set(STAMPS.map((s) => s.id)).size).toBe(STAMPS.length);
+    for (const place of PLACE_ORDER) expect(STAMPS.find((s) => s.id === place)?.kind, place).toBe('shop');
+    expect(STAMPS.length).toBeLessThanOrEqual(STAMP_SLOTS);
   });
   it('stamps shops, croissants and exact change from real purchases', () => {
     const f = facts();

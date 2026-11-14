@@ -19,15 +19,17 @@ import { priceToDigits } from '../agent/menu.js';
 import { orderTotal } from '../agent/tools.js';
 import { director } from '../agent/runtime.js';
 import { Coin } from '../components.js';
-import { events } from '../game-state.js';
+import { appState, events } from '../game-state.js';
 import { dishPos, LUNE_HAND, REGISTER, TRAY, TRAY_RADIUS, type V3 } from '../layout.js';
 import { buildMoney, buildMoneyDish, buildRegisterDisplay, buildTray, moneyStyle, styleMoney } from '../models/cafe-models.js';
+import { buildBankCard } from '../models/place-items.js';
 import { addDwellTarget } from '../ui/dwell.js';
-import { pickCoins } from './pick-coins.js';
+import { needsCard, pickCoins, WALLET } from './pick-coins.js';
 import { store } from '../state/store.js';
 
-/** The learner's purse for each new order: 22 euros in useful denominations. */
-const WALLET = [1000, 500, 200, 200, 100, 100, 50, 20, 20, 10];
+/** The bank card's `cents`: it pays whatever is still due (see landedOnTray). */
+const CARD = 0;
+const WALLET_CENTS = WALLET.reduce((a, b) => a + b, 0);
 const IDLE_REPORT_MS = 2500; // short payment: report after the learner stops adding coins
 const TAP_MS = 320;
 const TAP_MOVE = 0.04;
@@ -36,6 +38,8 @@ const TRAY_AIM_DEG = 11;
 /** Coin grid in the dish (meters from the dish center): 3 rows of 4, every coin individually targetable. */
 const COIN_COLS = [-0.075, -0.025, 0.025, 0.075];
 const COIN_ROWS = [-0.045, 0, 0.045];
+/** homeFor() slot index reserved for the bank card. */
+const CARD_SLOT = -1;
 
 const enum State {
   Dish,
@@ -61,6 +65,8 @@ interface Money {
   grabStart: number;
   grabPos: Vector3;
   undwell: () => void;
+  /** The bank card (pays the rest of the bill, then comes back to the dish). */
+  card: boolean;
 }
 
 export class CoinSystem extends createSystem({
@@ -123,7 +129,8 @@ export class CoinSystem extends createSystem({
           // Not enough left in the purse (after many orders): fresh purse, nothing is on the tray yet.
           let inDish = 0;
           for (const m of this.money) if (m.state === State.Dish) inDish += m.cents;
-          if (inDish < due && this.unreported === 0 && o.trayCents === 0) this.refillWallet();
+          if (inDish < due && due <= WALLET_CENTS && this.unreported === 0 && o.trayCents === 0) this.refillWallet();
+          if (needsCard(appState.place, due, this.purse())) this.ensureCard();
           this.register.setText(priceToDigits(due));
         }
         if (o.phase === 'paid') {
@@ -141,7 +148,7 @@ export class CoinSystem extends createSystem({
         this.placeDish();
         if (s.highContrast !== moneyStyle.highContrast) {
           moneyStyle.highContrast = s.highContrast;
-          for (const m of this.money) styleMoney(m.root, m.cents, s.highContrast);
+          for (const m of this.money) if (!m.card) styleMoney(m.root, m.cents, s.highContrast);
           this.register.setText(String(this.register.root.userData.text ?? ''));
         }
       }),
@@ -167,6 +174,7 @@ export class CoinSystem extends createSystem({
     const left = store.profile.settings.leftHanded;
     const [x, y, z] = dishPos(left);
     const outward = left ? -1 : 1;
+    if (index === CARD_SLOT) return out.set(x - outward * 0.17, y + 0.008, z - 0.07);
     if (isNote) return out.set(x - outward * 0.17, y + 0.002 + index * 0.002, z + 0.005 - (index % 2) * 0.075);
     const slot = index % (COIN_COLS.length * COIN_ROWS.length);
     const lift = Math.floor(index / (COIN_COLS.length * COIN_ROWS.length)) * 0.006; // overflow stacks neatly
@@ -176,15 +184,16 @@ export class CoinSystem extends createSystem({
 
 
   private spawn(cents: number, at: V3 | Vector3, state: State): Money {
-    const root = buildMoney(cents);
-    root.name = `Money ${cents}`;
+    const card = cents === CARD;
+    const root = card ? buildBankCard() : buildMoney(cents);
+    root.name = card ? 'Bank Card' : `Money ${cents}`;
     if (Array.isArray(at)) root.position.set(at[0], at[1], at[2]);
     else root.position.copy(at);
     const entity = this.world.createTransformEntity(root);
     const slot = this.money.length;
     const isNote = cents >= 500;
-    const homeIndex = isNote ? this.nextNoteSlot++ : this.nextCoinSlot++;
-    const home = this.homeFor(homeIndex, isNote, new Vector3());
+    const homeIndex = card ? CARD_SLOT : isNote ? this.nextNoteSlot++ : this.nextCoinSlot++;
+    const home = this.homeFor(homeIndex, isNote || card, new Vector3());
     entity.addComponent(Coin, { cents, slot });
     entity.addComponent(RayInteractable);
     entity.addComponent(DistanceGrabbable, {
@@ -204,6 +213,7 @@ export class CoinSystem extends createSystem({
       t0: 0, dur: 0, arc: 0, after: state,
       grabStart: 0, grabPos: new Vector3(),
       undwell: () => undefined,
+      card,
     };
     // Eyes-only: a one-second look at a coin in the dish sends it to the tray (only while paying).
     m.undwell = addDwellTarget(
@@ -229,6 +239,21 @@ export class CoinSystem extends createSystem({
       const m = this.spawn(c, [0, 0, 0], State.Dish);
       m.root.position.copy(m.home);
     }
+    if (needsCard(appState.place, orderTotal(store.order.lines), this.purse())) this.ensureCard();
+  }
+
+  /** Cents in the dish (coins and notes, not the card). */
+  private purse(): number {
+    let n = 0;
+    for (const m of this.money) if (m.state === State.Dish && !m.card) n += m.cents;
+    return n;
+  }
+
+  /** Put the bank card in the dish if it is not there yet. */
+  private ensureCard(): void {
+    if (this.money.some((m) => m.card && m.state !== State.Gone)) return;
+    const m = this.spawn(CARD, [0, 0, 0], State.Dish);
+    m.root.position.copy(m.home);
   }
 
   private fly(m: Money, to: V3 | Vector3, dur: number, arc: number, after: State, delay = 0): void {
@@ -281,7 +306,12 @@ export class CoinSystem extends createSystem({
     for (const m of this.money) if (m.state === State.Flying && m.after === State.Tray) pending += m.cents;
     const due = orderTotal(store.order.lines) - store.order.trayCents - this.unreported - pending;
     if (due <= 0) return;
-    const dish = this.money.filter((m) => m.state === State.Dish);
+    const card = this.money.find((m) => m.card && m.state === State.Dish);
+    if (card && needsCard(appState.place, due, this.purse())) {
+      this.toTray(card, 0.12);
+      return;
+    }
+    const dish = this.money.filter((m) => m.state === State.Dish && !m.card);
     const pick = pickCoins(dish.map((m) => m.cents), due);
     if (pick.length === 0) {
       void director.pay(due); // purse cannot cover it (should not happen): pay through the order state
@@ -291,12 +321,13 @@ export class CoinSystem extends createSystem({
   }
 
   private landedOnTray(m: Money): void {
-    this.unreported += m.cents;
-    this.lastDropAt = this.clock;
-    events.coinDropped.emit(m.cents);
     const due = orderTotal(store.order.lines) - store.order.trayCents;
+    const amount = m.card ? Math.max(0, due - this.unreported) : m.cents;
+    this.unreported += amount;
+    this.lastDropAt = this.clock;
+    events.coinDropped.emit(m.card ? 1000 : m.cents);
     const left = due - this.unreported;
-    this.register.setText(left > 0 ? `${priceToDigits(left)}` : 'OK !');
+    this.register.setText(m.card && left <= 0 ? 'Carte OK' : left > 0 ? `${priceToDigits(left)}` : 'OK !');
     if (left <= 0) this.report();
   }
 
@@ -314,6 +345,10 @@ export class CoinSystem extends createSystem({
     let i = 0;
     for (const m of this.money) {
       if (m.state !== State.Tray) continue;
+      if (m.card) {
+        this.fly(m, m.home, 0.5, 0.1, State.Dish, 0.4); // "Voilà votre carte."
+        continue;
+      }
       this.fly(m, LUNE_HAND, 0.5, 0.1, State.Gone, 0.15 * i++);
     }
   }

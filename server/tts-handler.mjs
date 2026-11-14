@@ -26,6 +26,11 @@ export const SPEAKERS = {
   lune: { voiceId: 'Hélène', style: '[warm, gentle, smiling café owner, speaking clearly for a learner]', rate: 0.95 },
   paul: { voiceId: 'Alain', style: '[cheerful, proud baker, friendly and clear]', rate: 0.95 },
   rose: { voiceId: 'Hélène', style: '[lively, chatty market seller with energy, clear for a learner]', rate: 1.05 },
+  // Inworld's French voices are Hélène, Alain and Étienne: the new shopkeepers differ by voice, delivery and pace.
+  marcel: { voiceId: 'Étienne', style: '[relaxed, warm Paris waiter, unhurried and friendly, clear for a learner]', rate: 0.92 },
+  karim: { voiceId: 'Alain', style: '[brisk but kind metro ticket agent, crisp and efficient, clear for a learner]', rate: 1.05 },
+  ines: { voiceId: 'Hélène', style: '[calm, soft-spoken, reassuring pharmacist, gentle and clear]', rate: 0.9 },
+  claire: { voiceId: 'Hélène', style: '[polished, welcoming hotel receptionist, bright and professional, clear for a learner]', rate: 1.0 },
   learner: { voiceId: 'Étienne', style: '', rate: 0.95 },
 };
 

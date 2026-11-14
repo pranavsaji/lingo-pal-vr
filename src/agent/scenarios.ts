@@ -8,7 +8,7 @@ import type { PlaceId } from '../game-state.js';
 import { PLACES, type MenuItem } from './menu.js';
 
 export interface Scenario {
-  id: 'cafe' | 'boulangerie' | 'marche';
+  id: PlaceId;
   fr: string;
   en: string;
   /** Menu ids sold in this scenario. */
@@ -21,6 +21,10 @@ export const SCENARIOS: Scenario[] = [
   { id: 'cafe', fr: 'Le Café Lune', en: 'Cafe Lune', sells: ['cafe', 'croissant', 'gateau', 'eau', 'orange'] },
   { id: 'boulangerie', fr: 'La Boulangerie', en: 'The Bakery', sells: ['baguette', 'croissant', 'gateau'], unlock: 'boulangerie' },
   { id: 'marche', fr: 'Le Marché', en: 'The Market', sells: ['pomme', 'orange', 'fromage', 'eau'], unlock: 'marche' },
+  { id: 'bistrot', fr: 'Le Bistrot', en: 'The Bistro', sells: ['plat_du_jour', 'soupe', 'salade', 'crepe'], unlock: 'bistrot' },
+  { id: 'metro', fr: 'Le Métro', en: 'The Metro', sells: ['ticket', 'carnet', 'forfait_jour'], unlock: 'metro' },
+  { id: 'pharmacie', fr: 'La Pharmacie', en: 'The Pharmacy', sells: ['pansements', 'mouchoirs', 'creme_solaire', 'sirop'], unlock: 'pharmacie' },
+  { id: 'hotel', fr: "L'Hôtel", en: 'The Hotel', sells: ['petit_dejeuner', 'carte_postale', 'parapluie'], unlock: 'hotel' },
 ];
 
 export interface DailySpecial {

@@ -94,6 +94,16 @@ export class DecorSystem extends createSystem({}) {
     const marketLights = buildStringLights();
     marketLights.position.set(0, 2.42, -1.55);
     this.add('guirlandes-marche', marketLights, 'Market Lights', 'marche');
+    const bistroLights = buildStringLights();
+    bistroLights.position.set(0, 2.42, -1.55);
+    this.add('guirlandes-bistrot', bistroLights, 'Bistro Lights', 'bistrot');
+    for (const [id, place, name] of [['plantes-metro', 'metro', 'Metro Plant'], ['fleurs-pharmacie', 'pharmacie', 'Pharmacy Plant'], ['plantes-hotel', 'hotel', 'Hotel Plant']] as const) {
+      for (const [x, z] of [[-2.05, -1.95], [2.05, -1.95]] as const) {
+        const plant = buildPlant();
+        plant.position.set(x, 0, z);
+        this.add(id, plant, name, place);
+      }
+    }
 
     // Decor earned since the last visit (streak, stamps): pop it in shortly after arrival.
     for (const id of store.arrival?.newUnlocks ?? []) {

@@ -221,7 +221,7 @@ export class Store {
   /** Today's shopping list (a new one each day). */
   questToday(): Quest {
     if (!this.profile.quest || this.profile.quest.day !== this.today) {
-      this.profile.quest = dailyQuest(this.today, this.plannedFocus());
+      this.profile.quest = dailyQuest(this.today, this.plannedFocus(), this.profile.unlocks);
       this.save();
     }
     return this.profile.quest;

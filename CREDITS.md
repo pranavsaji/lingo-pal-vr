@@ -3,7 +3,10 @@
 Sound effects and the café ambience are synthesized at runtime with WebAudio
 (`src/audio/`); no audio files are used. Money, the tray, register, decor, ghost hand,
 the cheese, the macarons, the menu card and the cartoon fallback shopkeeper are
-procedural geometry written for this project.
+procedural geometry written for this project. So are every item and sign in the bistrot,
+the metro and the pharmacy (`src/models/place-items.ts`: plates, bowls, tickets, the metro
+map and day pass, the pharmacy boxes, the green cross; the network poster shows made-up
+lines, and no packaging carries a real brand).
 
 ## Characters
 
@@ -12,7 +15,10 @@ Female_Adult_05, Male_Adult_05 and Female_Adult_02
 (https://github.com/microsoft/Microsoft-Rocketbox), © 2020 Microsoft, MIT License.
 Background customers (two per shop) are Rocketbox avatars Male_Adult_03,
 Female_Adult_14, Male_Adult_08, Female_Adult_09, Male_Adult_12 and Female_Adult_07,
-same source and license. Converted to glTF for this project; license text in
+same source and license. Monsieur Marcel (bistrot), Monsieur Karim (metro), Madame Inès
+(pharmacie) and Madame Claire (hotel) are Rocketbox avatars Business_Male_04, Male_Adult_07,
+Medical_Female_01 and Business_Female_04, same source and license.
+Converted to glTF for this project; license text in
 `public/models/characters/LICENSE-Rocketbox.txt`.
 
 ## Voices
@@ -35,9 +41,13 @@ credited with thanks). Downloaded and optimized by `scripts/fetch-assets.mjs`.
 - Textures: marble_01, dark_wood, oak_veneer_01, wood_floor, old_wood_floor,
   cobblestone_floor_04, wood_table_worn (plus checkered_pavement_tiles,
   red_brick_plaster_patch_02 and terracotta_floor_tiles, prepared but unused).
-- 360° environments (backdrop + lighting): comfy_cafe, decor_shop, leadenhall_market.
-  Shop names and brand lettering in the Leadenhall Market photo are blurred so no real
-  trademarks are shown.
+- 360° environments (backdrop + lighting): comfy_cafe, decor_shop, leadenhall_market,
+  bush_restaurant (le bistrot), subway_entrance (le métro), st_fagans_interior (la
+  pharmacie), entrance_hall (l'hôtel). Shop names and brand lettering in the Leadenhall
+  Market photo are blurred so no real trademarks are shown; so are the city map, line
+  numbers, operator logos and posters in the subway photo, the building name and signs in
+  the St Fagans photo, and the posters in the entrance hall photo (`REDACT` in
+  `scripts/fetch-assets.mjs`).
 
 ## Libraries
 

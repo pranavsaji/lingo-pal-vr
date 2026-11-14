@@ -75,10 +75,10 @@
     flex-direction: column;
     justify-content: space-between;
     width: 122px;
-    height: 86px;
+    height: 72px;
     flex-shrink: 0;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 16px;
@@ -217,6 +217,12 @@
       <div class="stamp" id="st-9"><span class="st-name" id="st-9-name">?</span><span class="st-sub" id="st-9-sub">?</span></div>
       <div class="stamp" id="st-10"><span class="st-name" id="st-10-name">?</span><span class="st-sub" id="st-10-sub">?</span></div>
       <div class="stamp" id="st-11"><span class="st-name" id="st-11-name">?</span><span class="st-sub" id="st-11-sub">?</span></div>
+    </div>
+    <div class="row">
+      <div class="stamp" id="st-12"><span class="st-name" id="st-12-name">?</span><span class="st-sub" id="st-12-sub">?</span></div>
+      <div class="stamp" id="st-13"><span class="st-name" id="st-13-name">?</span><span class="st-sub" id="st-13-sub">?</span></div>
+      <div class="stamp" id="st-14"><span class="st-name" id="st-14-name">?</span><span class="st-sub" id="st-14-sub">?</span></div>
+      <div class="stamp" id="st-15"><span class="st-name" id="st-15-name">?</span><span class="st-sub" id="st-15-sub">?</span></div>
     </div>
   </div>
   <div class="next">

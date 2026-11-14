@@ -8,6 +8,8 @@ import { NUMBER_WORDS } from '../state/mistakes.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { findElsewhere, substituteFor, upsellFor } from './agency.js';
 import { parseIntent } from './intent.js';
+import { needsCard, WALLET } from '../interaction/pick-coins.js';
+import { PLACE_TEXT } from '../places/place-text.js';
 import { MENU, menuItem, PLACES, priceToEnglish, priceToFrench, quantityPhrase, quantityPhraseEn, type MenuItem } from './menu.js';
 import type { AgentRequest, AgentTurn, ReplyOption } from './protocol.js';
 import type { AgentAction, OrderLine } from './tools.js';
@@ -33,16 +35,16 @@ export function orderPhrase(lines: OrderLine[]): { fr: string; en: string } {
   return { fr: join(fr, 'et'), en: join(en, 'and') };
 }
 
+/** This shop's everyday lines (the café's when the shop is unknown). */
+const textFor = (req: AgentRequest) => PLACE_TEXT[req.scene.place] ?? PLACE_TEXT.cafe;
+
 function replies(req: AgentRequest, phaseOverride?: AgentRequest['scene']['phase']): ReplyOption[] {
   const phase = phaseOverride ?? req.scene.phase;
   const special = menuItem(req.scene.special.itemId);
+  const t = textFor(req);
   switch (phase) {
     case 'ordering':
-      return [
-        { fr: "C'est tout, merci.", en: "That's all, thanks." },
-        { fr: "C'est combien ?", en: 'How much is it?' },
-        { fr: 'Et un café aussi.', en: 'And a coffee too.' },
-      ];
+      return [{ fr: "C'est tout, merci.", en: "That's all, thanks." }, t.bill, t.more];
     case 'paying':
       return [
         { fr: 'Voilà.', en: 'Here you go.' },
@@ -50,18 +52,14 @@ function replies(req: AgentRequest, phaseOverride?: AgentRequest['scene']['phase
         { fr: "Pardon, c'est combien ?", en: 'Sorry, how much is it?' },
       ];
     case 'paid':
-      return [
-        { fr: 'Merci, au revoir !', en: 'Thanks, goodbye!' },
-        { fr: 'À demain !', en: 'See you tomorrow!' },
-        { fr: 'Encore un café, s\'il vous plaît.', en: 'Another coffee, please.' },
-      ];
+      return [{ fr: 'Merci, au revoir !', en: 'Thanks, goodbye!' }, { fr: 'À demain !', en: 'See you tomorrow!' }, t.again];
     default:
       return [
-        { fr: 'Deux croissants, s\'il vous plaît.', en: 'Two croissants, please.' },
+        t.count,
         special
           ? { fr: `${quantityPhrase(special, 1).replace(/^./, (c) => c.toUpperCase())}, s'il vous plaît.`, en: `${quantityPhraseEn(special, 1)}, please.` }
-          : { fr: "Un café, s'il vous plaît.", en: 'A coffee, please.' },
-        { fr: "Qu'est-ce que vous recommandez ?", en: 'What do you recommend?' },
+          : { fr: `${cap(t.example.fr)}.`, en: `${cap(t.example.en)}.` },
+        t.talk ?? { fr: "Qu'est-ce que vous recommandez ?", en: 'What do you recommend?' },
       ];
   }
 }
@@ -75,13 +73,6 @@ const turn = (fr: string, en: string, actions: AgentAction[], points: number, re
   source: 'script',
 });
 
-/** How each shopkeeper says "welcome to ...". */
-const WELCOME: Record<string, { fr: string; en: string }> = {
-  cafe: { fr: 'au Café Lune', en: 'to Café Lune' },
-  boulangerie: { fr: 'à la boulangerie', en: 'to the bakery' },
-  marche: { fr: 'au marché', en: 'to the market' },
-};
-
 export function scriptedTurn(req: AgentRequest): AgentTurn {
   const { profile, scene, event } = req;
   const name = profile.name;
@@ -91,8 +82,21 @@ export function scriptedTurn(req: AgentRequest): AgentTurn {
     case 'arrive': {
       const place = PLACES[scene.place] ?? PLACES.cafe;
       const keeper = place.shopkeeper;
-      const welcome = WELCOME[scene.place] ?? WELCOME.cafe;
+      const welcome = textFor(req).to;
       const sir = keeper.gender === 'm' ? 'monsieur' : 'madame';
+      if (scene.place === 'hotel') {
+        return turn(
+          `Bonjour ! Bienvenue ${welcome.fr}. Je suis ${keeper.name}. Vous avez une réservation ? C'est à quel nom ?`,
+          `Hello! Welcome ${welcome.en}. I'm ${keeper.name}. Do you have a booking? What name is it under?`,
+          [{ type: 'emote', kind: 'wave' }],
+          0,
+          [
+            { fr: `Au nom de ${name || 'Alex'}.`, en: `Under ${name || 'Alex'}.` },
+            { fr: "J'ai une réservation.", en: 'I have a booking.' },
+            { fr: "Une chambre, s'il vous plaît.", en: 'A room, please.' },
+          ],
+        );
+      }
       if (!name) {
         const intro = scene.place === 'cafe' ? '' : ` Je suis ${keeper.name}.`;
         const introEn = scene.place === 'cafe' ? '' : ` I'm ${keeper.name}.`;
@@ -178,8 +182,8 @@ export function scriptedTurn(req: AgentRequest): AgentTurn {
 
     case 'idle':
       return turn(
-        "Besoin d'aide ? Montrez-moi un objet, ou dites : un café, s'il vous plaît.",
-        'Need help? Show me an item, or say: a coffee, please.',
+        `Besoin d'aide ? Montrez-moi un objet, ou dites : ${textFor(req).example.fr}.`,
+        `Need help? Show me an item, or say: ${textFor(req).example.en}.`,
         special ? [{ type: 'point_at', itemId: special.id }] : [],
         0,
         replies(req),
@@ -251,12 +255,11 @@ function withPractice(reps: ReplyOption[], pr: { reply: ReplyOption | null } | n
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const sorry = (req: AgentRequest) => ((PLACES[req.scene.place] ?? PLACES.cafe).shopkeeper.gender === 'm' ? 'Désolé' : 'Désolée');
-const AT_PLACE: Record<string, { fr: string; en: string }> = {
-  cafe: { fr: 'au café', en: 'at the café' },
-  boulangerie: { fr: 'à la boulangerie', en: 'at the bakery' },
-  marche: { fr: 'au marché', en: 'at the market' },
-};
+/** A bill paid by card (the hotel, or more than a purse of coins). */
+const WALLET_CENTS = WALLET.reduce((a, b) => a + b, 0);
+const byCard = (req: AgentRequest) => needsCard(req.scene.place, req.scene.totalCents, WALLET_CENTS);
+const isMan = (req: AgentRequest) => (PLACES[req.scene.place] ?? PLACES.cafe).shopkeeper.gender === 'm';
+const sorry = (req: AgentRequest) => (isMan(req) ? 'Désolé' : 'Désolée');
 const OFFER_REPLIES: ReplyOption[] = [
   { fr: 'Oui, avec plaisir !', en: 'Yes, with pleasure!' },
   { fr: "Non merci, c'est tout.", en: "No thanks, that's all." },
@@ -342,7 +345,7 @@ function orderTurn(req: AgentRequest, items: OrderLine[], fingers: number, polit
 
 /** The learner asked for something another shop sells: say where, offer what is here. */
 function elsewhereTurn(req: AgentRequest, found: { item: MenuItem; place: string }): AgentTurn {
-  const at = AT_PLACE[found.place] ?? AT_PLACE.cafe;
+  const at = (PLACE_TEXT[found.place as keyof typeof PLACE_TEXT] ?? PLACE_TEXT.cafe).at;
   const sub = substituteFor(found.item.id, MENU, (id) => freeStock(req, id) <= 0);
   const lead = `${sorry(req)}, pas de ${found.item.plural} ici. C'est ${at.fr} !`;
   const leadEn = `Sorry, no ${found.item.enPlural} here. Try ${at.en}!`;
@@ -386,14 +389,33 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
     if (rest.kind !== 'order') return elsewhereTurn(req, elsewhere);
     intent = rest;
   }
+  // "Une carafe d'eau" is free tap water, not the bottle of water on the menu.
+  if (scene.place === 'bistrot' && /\bcarafe\b/.test(norm)) {
+    const rest = parseIntent(` ${norm} `.replace(/ (?:une |la )?carafes? (?:d )?(?:eau )?/, ' '), fingers);
+    intent = rest.kind === 'order' ? rest : { kind: 'unknown' };
+  }
+  // Shop small talk (directions, aches, free tap water) before the generic answers.
+  if (intent.kind === 'unknown' || intent.kind === 'recommend') {
+    const talk = smallTalk(req, norm);
+    if (talk) return talk;
+  }
   const polite = /s.il vous pla[iî]t|merci/i.test(text) ? 5 : 0;
   const special = menuItem(scene.special.itemId);
   const name = profile.name ? `, ${profile.name}` : '';
 
   switch (intent.kind) {
     case 'name':
+      if (scene.place === 'hotel') {
+        return turn(
+          `Merci, ${intent.name}. Votre chambre est prête ! Pour combien de nuits ?`,
+          `Thank you, ${intent.name}. Your room is ready! For how many nights?`,
+          [{ type: 'remember', key: 'name', value: intent.name }, { type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'nuit' }],
+          10,
+          NIGHTS,
+        );
+      }
       return turn(
-        `Enchantée, ${intent.name} ! Qu'est-ce que je vous sers ?`,
+        `${isMan(req) ? 'Enchanté' : 'Enchantée'}, ${intent.name} ! Qu'est-ce que je vous sers ?`,
         `Nice to meet you, ${intent.name}! What can I get you?`,
         [{ type: 'remember', key: 'name', value: intent.name }, { type: 'emote', kind: 'nod' }],
         10,
@@ -404,7 +426,17 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
     case 'ask_price':
     case 'done_ordering':
       if (scene.order.length === 0) {
-        return turn("Vous n'avez rien commandé ! Un café, peut-être ?", "You haven't ordered anything! A coffee, maybe?", [{ type: 'emote', kind: 'laugh' }], 2, replies(req, 'browsing'));
+        const ex = textFor(req).example;
+        return turn(`Vous n'avez rien commandé ! ${cap(ex.fr.replace(/, s'il vous plaît$/, ''))}, peut-être ?`, `You haven't ordered anything! ${cap(ex.en.replace(/, please$/, ''))}, maybe?`, [{ type: 'emote', kind: 'laugh' }], 2, replies(req, 'browsing'));
+      }
+      if (byCard(req)) {
+        return turn(
+          `Ça fait ${priceToFrench(scene.totalCents)}, s'il vous plaît. Posez votre carte sur le plateau.`,
+          `That comes to ${priceToEnglish(scene.totalCents)}, please. Put your card on the tray.`,
+          [{ type: 'quote_total', totalCents: scene.totalCents }],
+          10 + polite,
+          replies(req, 'paying'),
+        );
       }
       return turn(
         `Ça fait ${priceToFrench(scene.totalCents)}, s'il vous plaît. Posez les pièces sur le plateau.`,
@@ -481,4 +513,94 @@ function sayTurn(req: AgentRequest, text: string, fingers: number, misheard?: st
       break;
   }
   return turn('Pardon ? Vous pouvez répéter, s\'il vous plaît ?', 'Sorry? Can you repeat, please?', [{ type: 'emote', kind: 'think' }], 0, replies(req));
+}
+
+// ---- Small talk: each shop's everyday questions, answered offline too ----------------
+
+/** "Pour combien de nuits ?": the learner can also just hold up fingers and say "nuits". */
+const NIGHTS: ReplyOption[] = [
+  { fr: "Une nuit, s'il vous plaît.", en: 'One night, please.' },
+  { fr: "Deux nuits, s'il vous plaît.", en: 'Two nights, please.' },
+  { fr: 'Trois nuits, avec le petit-déjeuner.', en: 'Three nights, with breakfast.' },
+];
+
+/** Metro directions (real lines and stops; no brand names). */
+const DIRECTIONS: { re: RegExp; fr: string; en: string }[] = [
+  { re: /\b(montmartre|sacre coeur|abbesses)\b/, fr: 'Montmartre ? Ligne 12, station Abbesses. Bonne visite !', en: 'Montmartre? Line 12, Abbesses station. Enjoy!' },
+  { re: /\b(tour eiffel|eiffel)\b/, fr: 'La tour Eiffel ? Ligne 6, station Bir-Hakeim.', en: 'The Eiffel Tower? Line 6, Bir-Hakeim station.' },
+  { re: /\b(louvre|musee)\b/, fr: 'Le Louvre ? Ligne 1, station Palais-Royal.', en: 'The Louvre? Line 1, Palais-Royal station.' },
+  { re: /\b(notre dame|cite)\b/, fr: 'Notre-Dame ? Ligne 4, station Cité.', en: 'Notre-Dame? Line 4, Cité station.' },
+];
+
+/** Pharmacy: where it hurts -> one everyday item (never more than that). */
+const ACHES: { re: RegExp; item: string; fr: string; en: string }[] = [
+  { re: /\b(tete|migraine)\b/, item: 'paracetamol', fr: 'Mal à la tête ? Du paracétamol, peut-être.', en: 'A headache? Some paracetamol, maybe.' },
+  { re: /\b(gorge|tousse|toux)\b/, item: 'sirop', fr: 'Vous toussez ? Un sirop pour la toux, peut-être.', en: 'A cough? Some cough syrup, maybe.' },
+  { re: /\b(coupe|coupure|doigt|genou|ampoule)\b/, item: 'pansements', fr: 'Oh là là ! Des pansements, alors.', en: 'Oh dear! Some plasters, then.' },
+  { re: /\b(soleil|coup de soleil|plage)\b/, item: 'creme_solaire', fr: 'Pour le soleil, de la crème solaire !', en: 'For the sun, some sunscreen!' },
+  { re: /\b(rhume|nez|eternue|enrhume)\b/, item: 'mouchoirs', fr: 'Un rhume ? Des mouchoirs, alors.', en: 'A cold? Some tissues, then.' },
+];
+
+function smallTalk(req: AgentRequest, norm: string): AgentTurn | null {
+  const place = req.scene.place;
+  const offer = (itemId: string, fr: string, en: string): AgentTurn | null => {
+    const item = menuItem(itemId);
+    if (!item || freeStock(req, itemId) <= 0) return turn(fr, en, [{ type: 'emote', kind: 'nod' }], 5, replies(req));
+    const open = req.scene.phase !== 'paying' && req.scene.phase !== 'paid';
+    return turn(
+      fr,
+      en,
+      open ? [{ type: 'offer', itemId, quantity: 1, reason: 'upsell' }, { type: 'point_at', itemId }] : [{ type: 'point_at', itemId }],
+      5,
+      open ? OFFER_REPLIES : replies(req),
+    );
+  };
+  if (place === 'bistrot') {
+    if (/\bcarafe\b/.test(norm)) {
+      return turn("Une carafe d'eau ? Bien sûr, c'est gratuit !", "A jug of tap water? Of course, it's free!", [{ type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'carafe' }], 8, replies(req));
+    }
+    if (/\bplat du jour\b/.test(norm)) {
+      return offer('plat_du_jour', "Aujourd'hui, c'est steak-frites avec des haricots verts. Ça vous dit ?", "Today it's steak and fries with green beans. Fancy it?");
+    }
+  }
+  if (place === 'metro') {
+    const d = DIRECTIONS.find((x) => x.re.test(norm));
+    if (d) return turn(d.fr, d.en, [{ type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'plan_metro' }], 8, replies(req));
+    if (/\b(pour aller|comment aller|ou est|c est ou)\b/.test(norm)) {
+      return offer('plan_metro', 'Regardez le plan du métro : tout est dessus !', "Look at the metro map: it's all on there!");
+    }
+  }
+  if (place === 'hotel') {
+    if (/\b(reservation|reserve)\b/.test(norm)) {
+      return turn("Très bien. C'est à quel nom ?", 'Very good. What name is it under?', [{ type: 'emote', kind: 'nod' }], 5, [
+        { fr: `Au nom de ${req.profile.name || 'Alex'}.`, en: `Under ${req.profile.name || 'Alex'}.` },
+        { fr: 'Au nom de Sam.', en: 'Under Sam.' },
+        { fr: 'Pardon ?', en: 'Sorry?' },
+      ]);
+    }
+    if (/\bchambres?\b/.test(norm)) {
+      return turn('Une chambre ? Bien sûr. Pour combien de nuits ?', 'A room? Of course. For how many nights?', [{ type: 'emote', kind: 'nod' }, { type: 'point_at', itemId: 'nuit' }], 5, NIGHTS);
+    }
+    if (/\bpetit dejeuner\b/.test(norm)) {
+      return turn('Le petit-déjeuner, c\'est de sept heures à dix heures. Croissant, café, confiture !', 'Breakfast is from seven to ten. Croissant, coffee, jam!', [{ type: 'point_at', itemId: 'petit_dejeuner' }], 5, replies(req));
+    }
+    if (/\bascenseur\b/.test(norm)) return turn("L'ascenseur est à droite.", 'The lift is on the right.', [{ type: 'emote', kind: 'nod' }], 5, replies(req));
+    if (/\b(wifi|wi fi|internet)\b/.test(norm)) return turn('Le code wifi est sur votre clé.', 'The wifi code is on your key.', [{ type: 'point_at', itemId: 'nuit' }], 5, replies(req));
+    if (/\b(pleut|pluie)\b/.test(norm)) return offer('parapluie', 'Il pleut ? Un parapluie, peut-être.', 'Is it raining? An umbrella, maybe.');
+  }
+  if (place === 'pharmacie') {
+    if (/\b(urgence|tres mal|fievre|saigne|allergie)\b/.test(norm)) {
+      return turn('Pour ça, allez voir un médecin, tout de suite.', 'For that, go and see a doctor, right away.', [{ type: 'emote', kind: 'think' }], 3, replies(req));
+    }
+    const a = ACHES.find((x) => x.re.test(norm));
+    if (a) return offer(a.item, a.fr, a.en);
+    if (/\b(mal|malade|pas bien)\b/.test(norm)) {
+      return turn('Oh, mince. Vous avez mal où ?', 'Oh no. Where does it hurt?', [{ type: 'emote', kind: 'think' }], 3, [
+        { fr: "J'ai mal à la tête.", en: 'I have a headache.' },
+        { fr: "J'ai mal à la gorge.", en: 'I have a sore throat.' },
+        { fr: 'Je me suis coupé le doigt.', en: 'I cut my finger.' },
+      ]);
+    }
+  }
+  return null;
 }

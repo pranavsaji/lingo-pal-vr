@@ -68,7 +68,7 @@ export const TEXTURES = [
   'old_wood_floor', // bakery floor
 ];
 
-export const HDRIS = ['comfy_cafe', 'decor_shop', 'leadenhall_market'];
+export const HDRIS = ['comfy_cafe', 'decor_shop', 'leadenhall_market', 'bush_restaurant', 'subway_entrance', 'st_fagans_interior', 'entrance_hall'];
 
 /**
  * Photo-scanned breads and pastries from ambientCG (https://ambientcg.com, CC0),
@@ -89,6 +89,31 @@ const REDACT = {
     [0.45, 0.25, 0.55, 0.278], // red LED sign over the arcade
     [0.335, 0.375, 0.405, 0.5], // lettering in shop windows
     [0.2, 0.43, 0.235, 0.49],
+  ],
+  // le métro: a real city map, transit line numbers, operator logos and notices.
+  subway_entrance: [
+    [0.05, 0.36, 0.205, 0.575], // "Information" map and the ticket machine
+    [0.235, 0.398, 0.33, 0.46], // overhead direction sign (line numbers, stop names)
+    [0.38, 0.42, 0.5, 0.53], // station logo and notice boards
+    [0.52, 0.44, 0.63, 0.56], // posters behind the glass
+    [0.74, 0.45, 0.94, 0.51], // shop lettering and red signs at the far doors
+  ],
+  // la pharmacie: a building's name over the desk, room signs, screens and notices.
+  st_fagans_interior: [
+    [0.305, 0.445, 0.37, 0.505], // centre name over the desk + screen
+    [0.325, 0.52, 0.375, 0.54], // lettering on the desk
+    [0.385, 0.45, 0.42, 0.48], // room sign
+    [0.44, 0.42, 0.47, 0.465], // room sign
+    [0.265, 0.515, 0.29, 0.565], // A-frame board
+    [0.46, 0.525, 0.49, 0.575], // notice on the right
+    [0.585, 0.46, 0.63, 0.525], // screen
+    [0.895, 0.43, 0.945, 0.49], // wayfinding sign
+  ],
+  // l'hôtel: posters with lettering and labelled bottles.
+  entrance_hall: [
+    [0.445, 0.45, 0.48, 0.58],
+    [0.8, 0.44, 0.835, 0.57],
+    [0.05, 0.505, 0.09, 0.555],
   ],
 };
 
