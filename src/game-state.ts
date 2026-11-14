@@ -88,6 +88,8 @@ export const events = {
   invite: new Emitter<void>(),
   /** Café à deux: a friend is (true) or is no longer (false) at a counter-end seat. */
   friendPresent: new Emitter<boolean>(),
+  /** The home-slot panel now showing (PanelsSystem); the tabletop Plan de Paris follows 'map'. */
+  panelShown: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport'>(),
 };
 
 /** Shops on the Paris map. Every shop shares the counter layout: same seat, tray and shopkeeper spot. */

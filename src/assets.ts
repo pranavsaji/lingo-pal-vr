@@ -5,6 +5,7 @@
 
 import { AssetType, defineAssets } from '@iwsdk/core';
 import { createStudioFloor } from './scene-assets/studio.scene-asset.js';
+import { createParisDiorama } from './scene-assets/paris-diorama.scene-asset.js';
 
 const publicAssetUrl = (filePath: string): string =>
   `${import.meta.env.BASE_URL}${filePath.replace(/^\/+/u, '')}`;
@@ -62,6 +63,7 @@ const uikitml = (fileName: string, name: string) => ({
 
 export default defineAssets({
   'studio-floor': createStudioFloor(),
+  'paris-diorama': createParisDiorama(), // Plan de Paris (DioramaSystem places it on the counter)
   'lesson-panel': uikitml('lesson.uikitml', 'Lesson Panel'),
   'chat-panel': uikitml('chat.uikitml', 'Chat Panel'),
   'carnet-panel': uikitml('carnet.uikitml', 'Carnet Panel'),

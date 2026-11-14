@@ -189,6 +189,7 @@ export class PanelsSystem extends createSystem({}) {
     if (slot === 'report') this.renderReport();
     if (slot === 'passport') renderPassport(this.panels.get('passport-panel'));
     if (slot === 'settings') this.renderSettings(store.profile.settings);
+    events.panelShown.emit(slot); // DioramaSystem: the 3D Plan de Paris on the counter
   }
 
   private renderCarnet(): void {
