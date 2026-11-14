@@ -73,8 +73,10 @@ export class DecorSystem extends createSystem({}) {
     this.renderBoard();
 
     const gramophone = buildGramophone();
-    gramophone.position.set(-1.0, 1.0, -1.17);
-    gramophone.rotation.y = 0.5;
+    // On the back counter, left of the shopkeeper: on the main counter its horn hid the
+    // home panel's buttons from a seated learner and its case stood in the display goods.
+    gramophone.position.set(-1.27, 0.93, -2.12);
+    gramophone.rotation.y = 0.55;
     this.add('gramophone', gramophone, 'Gramophone');
 
     // Longer-arc milestones (see UNLOCKS in src/state/progression.ts).
