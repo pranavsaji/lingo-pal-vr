@@ -26,15 +26,21 @@ export const DIORAMA_WORLD = { x: 0, y: 1.0, z: -0.93 } as const;
 /**
  * One pin per place, keyed by place id. Ids that are not in PLACE_ORDER are
  * simply not shown, so this can list places another build has not added yet.
+ *
+ * Three staggered rows, like theatre seats: the left bank in front (2 pins),
+ * the right bank by the river (3), the north at the back (2). Each row sits
+ * in the gaps of the row in front, so from a seated learner's eyes every
+ * card is in clear view and a fingertip reaching for it does not pass
+ * through another pin (tests/diorama.test.ts checks the lines of sight).
  */
 export const PARIS_MAP: Record<string, MapXZ> = {
-  cafe: { x: -0.035, z: 0.085 }, // Saint-Germain, left bank
-  boulangerie: { x: 0.165, z: -0.08 }, // Le Marais
-  marche: { x: 0.2, z: 0.125 }, // rue Mouffetard
-  bistrot: { x: 0.12, z: -0.17 }, // Montmartre
-  metro: { x: -0.1, z: -0.085 }, // Opéra
-  pharmacie: { x: -0.245, z: -0.015 }, // Passy, by the river bend
-  hotel: { x: 0.03, z: -0.05 }, // by the Louvre
+  cafe: { x: -0.14, z: 0.11 }, // Saint-Germain, left bank
+  marche: { x: 0.14, z: 0.11 }, // rue Mouffetard, left bank
+  pharmacie: { x: -0.27, z: -0.07 }, // Passy, west
+  hotel: { x: 0, z: -0.07 }, // by the Louvre
+  boulangerie: { x: 0.27, z: -0.07 }, // Le Marais, east
+  metro: { x: -0.14, z: -0.17 }, // Opéra
+  bistrot: { x: 0.14, z: -0.17 }, // Montmartre
 };
 
 /** Landmark spots (board metres). */
@@ -105,11 +111,12 @@ export function onBoard(p: MapXZ, margin = 0): boolean {
 
 /**
  * Pin height above the map surface: pins further back stand taller, like
- * stadium seating, so front labels never hide the ones behind them.
+ * stadium seating, so front labels do not hide the ones behind them (the
+ * front and back rows share columns; the back row's cards clear the front's).
  */
 export function pinHeight(z: number): number {
   const back = (BOARD.depth / 2 - z) / BOARD.depth; // 0 at the front edge, 1 at the back
-  return 0.045 + 0.035 * Math.min(1, Math.max(0, back));
+  return 0.035 + 0.06 * Math.min(1, Math.max(0, back));
 }
 
 export type PinState = 'here' | 'open' | 'locked';
@@ -187,4 +194,122 @@ export function pinSubtitle(pin: Pick<PinView, 'state' | 'en'>, hint: { fr: stri
   if (pin.state === 'here') return subtitles ? 'Vous êtes ici · You are here' : 'Vous êtes ici';
   if (pin.state === 'locked') return subtitles ? hint.en : hint.fr;
   return subtitles ? pin.en : '';
+}
+
+// ------------------------------------------------------------------ labels and pick volumes
+
+export interface XYZ {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Label card size (metres) and its gap above the pin head. */
+export const LABEL = { w: 0.112, h: 0.044, gap: 0.014 } as const;
+
+/** Where labels face: a seated learner's eyes, in board coordinates. */
+export const LABEL_EYE: XYZ = { x: 0, y: 1.42 - DIORAMA_WORLD.y, z: -DIORAMA_WORLD.z };
+
+/** A pin's label card centre (board coordinates). */
+export function labelCentre(pin: MapXZ & { height: number }): XYZ {
+  return { x: pin.x, y: BOARD.surfaceY + pin.height + LABEL.gap + LABEL.h / 2, z: pin.z };
+}
+
+/**
+ * A pick volume: an oriented box (centre, unit axes, half sizes) in board
+ * coordinates. Its z axis faces the learner's eyes, like the card it wraps.
+ */
+export interface PickBox {
+  c: XYZ;
+  ax: XYZ;
+  ay: XYZ;
+  az: XYZ;
+  hx: number;
+  hy: number;
+  hz: number;
+}
+
+/**
+ * Pin pick volume half sizes: the visible card plus the pin head below it,
+ * and only 1 cm either side of the card's face. A thin slab means a finger
+ * reaching past a front pin to a back one does not go through the front
+ * pin's volume (a thick one sat in the reach path and fired first); the
+ * fingertip has to actually be at the card to touch it.
+ */
+export const PICK = { hx: (LABEL.w + 0.006) / 2, hy: (LABEL.h + 0.034) / 2, hz: 0.01, below: 0.014 } as const;
+
+/** The pick box around a card centred at `card` (board coordinates), facing `eye`. */
+export function pickBox(card: XYZ, eye: XYZ = LABEL_EYE): PickBox {
+  // Same basis as Object3D.lookAt for a non-camera: +z towards the eye, x = up × z, y = z × x.
+  let zx = eye.x - card.x;
+  let zy = eye.y - card.y;
+  let zz = eye.z - card.z;
+  const zl = Math.hypot(zx, zy, zz) || 1;
+  zx /= zl;
+  zy /= zl;
+  zz /= zl;
+  let xx = zz; // (0,1,0) × z
+  let xz = -zx;
+  const xl = Math.hypot(xx, xz) || 1;
+  xx /= xl;
+  xz /= xl;
+  const ax = { x: xx, y: 0, z: xz };
+  const az = { x: zx, y: zy, z: zz };
+  const ay = { x: az.y * ax.z - az.z * ax.y, y: az.z * ax.x - az.x * ax.z, z: az.x * ax.y - az.y * ax.x };
+  // The box hangs a little below the card so it covers the pin head too.
+  const c = { x: card.x - ay.x * PICK.below, y: card.y - ay.y * PICK.below, z: card.z - ay.z * PICK.below };
+  return { c, ax, ay, az, hx: PICK.hx, hy: PICK.hy, hz: PICK.hz };
+}
+
+/** Pick boxes for these pins, in the same order. */
+export function pinPickBoxes(pins: readonly (MapXZ & { height: number })[], eye: XYZ = LABEL_EYE): PickBox[] {
+  return pins.map((p) => pickBox(labelCentre(p), eye));
+}
+
+/**
+ * True when the segment a→b (board coordinates) passes through or ends inside
+ * the box. Slab test in the box's frame; no allocation (runs every frame for
+ * each fingertip while the board is open).
+ */
+export function segmentHitsBox(b: PickBox, ax: number, ay: number, az: number, bx: number, by: number, bz: number): boolean {
+  let t0 = 0;
+  let t1 = 1;
+  const px = ax - b.c.x;
+  const py = ay - b.c.y;
+  const pz = az - b.c.z;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const dz = bz - az;
+  for (let k = 0; k < 3; k++) {
+    const axis = k === 0 ? b.ax : k === 1 ? b.ay : b.az;
+    const h = k === 0 ? b.hx : k === 1 ? b.hy : b.hz;
+    const p = px * axis.x + py * axis.y + pz * axis.z;
+    const d = dx * axis.x + dy * axis.y + dz * axis.z;
+    if (Math.abs(d) < 1e-9) {
+      if (p < -h || p > h) return false;
+      continue;
+    }
+    let ta = (-h - p) / d;
+    let tb = (h - p) / d;
+    if (ta > tb) {
+      const s = ta;
+      ta = tb;
+      tb = s;
+    }
+    if (ta > t0) t0 = ta;
+    if (tb < t1) t1 = tb;
+    if (t0 > t1) return false;
+  }
+  return true;
+}
+
+/** Distance from a point (board coordinates) to the box (0 inside). */
+export function distanceToBox(b: PickBox, x: number, y: number, z: number): number {
+  const px = x - b.c.x;
+  const py = y - b.c.y;
+  const pz = z - b.c.z;
+  const ex = Math.max(0, Math.abs(px * b.ax.x + py * b.ax.y + pz * b.ax.z) - b.hx);
+  const ey = Math.max(0, Math.abs(px * b.ay.x + py * b.ay.y + pz * b.ay.z) - b.hy);
+  const ez = Math.max(0, Math.abs(px * b.az.x + py * b.az.y + pz * b.az.z) - b.hz);
+  return Math.hypot(ex, ey, ez);
 }

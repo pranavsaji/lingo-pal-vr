@@ -24,6 +24,7 @@ import {
   type Entity,
   Group,
   Hovered,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   Object3D,
@@ -42,7 +43,10 @@ import { Coin, VocabItem } from '../components.js';
 import { appState, events, type PlaceId } from '../game-state.js';
 import { makeCanvasTexture, merge, type Part, T, vcMat } from '../models/model-kit.js';
 import { buildParisDiorama } from '../models/paris-diorama.js';
-import { BOARD, DIORAMA_WORLD, dioramaPins, type MapXZ, pinColor, pinSubtitle, type PinView, PIN_COLORS, seinePoint, underBoard } from '../places/paris-map.js';
+import {
+  BOARD, DIORAMA_WORLD, dioramaPins, distanceToBox, LABEL, LABEL_EYE, labelCentre, type MapXZ, pickBox, type PickBox, pinColor, pinSubtitle,
+  type PinView, PIN_COLORS, seinePoint, segmentHitsBox, underBoard,
+} from '../places/paris-map.js';
 import { PLACE_ORDER, placeUnlocked, unlockHint } from '../places/places.js';
 import { speakFrench } from '../speech.js';
 import { store } from '../state/store.js';
@@ -51,20 +55,39 @@ import { tutorialState } from '../ui/input-mode.js';
 
 const S = BOARD.surfaceY;
 /** Label card size (metres) and its atlas slot (pixels). */
-const LW = 0.112;
-const LH = 0.044;
+const LW = LABEL.w;
+const LH = LABEL.h;
 const SLOT_W = 512;
 const SLOT_H = 200;
 const ATLAS = 1024;
 const COLS = ATLAS / SLOT_W;
 /** Where labels face: a seated learner's eyes, in board coordinates. */
-const EYE = new Vector3(0, 1.42 - DIORAMA_WORLD.y, -DIORAMA_WORLD.z);
+const EYE = new Vector3(LABEL_EYE.x, LABEL_EYE.y, LABEL_EYE.z);
+/**
+ * Fingertip touch. IWSDK's touch pointer presses anything within 2 cm of a
+ * PokeInteractable, so a finger reaching past a front pin to a back one
+ * grazed the front pin's volume and sent the learner to the wrong place. The
+ * touch pointer still gives hover (ring) and hides the hand ray near the
+ * board, but its presses are ignored here: a touch counts only when the
+ * fingertip's path this frame actually enters a pin's thin pick slab (the
+ * card plus 1 cm either side), first slab along the path wins, and that hand
+ * has to come back out (TOUCH_RELEASE) before it can touch again.
+ */
+const TOUCH_NEAR = 0.03; // a Pressed this close to a fingertip came from the touch pointer
+const TOUCH_RELEASE = 0.01;
+const TOUCH_JUMP = 0.1; // longer frame-to-frame moves are tracking jumps: test the end point only
+const HANDS = ['left', 'right'] as const;
 /** Ignore the pinch that opened the map; leave a beat between the plop and the trip. */
 const OPEN_GRACE_S = 0.45;
 const TRAVEL_DELAY_S = 0.35;
 const BOAT_LAP_S = 46;
 
 type Target = { kind: 'pin'; id: string } | { kind: 'close' };
+interface Proxy {
+  obj: Object3D;
+  target: Target;
+  box: PickBox;
+}
 
 interface Hidden {
   obj: Object3D;
@@ -95,7 +118,12 @@ export class DioramaSystem extends createSystem({
   private boat!: Mesh;
   private pins: PinView[] = [];
   private targets = new Map<Entity, Target>();
-  private proxies: { obj: Object3D; target: Target }[] = [];
+  private proxies: Proxy[] = [];
+  /** Per hand (left, right): last fingertip in board coordinates, and whether it is still in (or by) a slab. */
+  private tipPrev = [new Vector3(), new Vector3()];
+  private tipNow = new Vector3();
+  private tipLatched = [false, false];
+  private tipPrimed = [false, false];
   private hidden: Hidden[] = [];
   private flash: string | null = null;
   private pending: { id: string; at: number } | null = null;
@@ -128,7 +156,8 @@ export class DioramaSystem extends createSystem({
     );
     this.queries.pressed.subscribe('qualify', (e) => {
       const t = this.targets.get(e);
-      if (t) this.activate(t);
+      // Ray pinch and mouse press here; fingertip presses are decided in update() (see TOUCH_NEAR).
+      if (t && !this.fingertipNear(e)) this.activate(t);
     });
     this.queries.hovered.subscribe('qualify', (e) => {
       const t = this.targets.get(e);
@@ -157,6 +186,7 @@ export class DioramaSystem extends createSystem({
     for (const p of this.proxies) p.obj.pointerEvents = show ? 'auto' : 'none';
     this.hoverRing.visible = false;
     this.pending = null;
+    this.tipPrimed[0] = this.tipPrimed[1] = false;
     if (show) {
       this.openedAt = this.clock;
       this.flash = null;
@@ -207,29 +237,40 @@ export class DioramaSystem extends createSystem({
     // Labels never change place: lay out the cards (UVs into the atlas) and the pick volumes once.
     this.pins = this.computePins();
     const cards: { m: Object3D; slot: number }[] = [];
-    const proxyGeo = new BoxGeometry(LW + 0.006, LH + 0.034, 0.03);
     // Pick volumes: never drawn (material.visible = false costs no draw call), but rays, fingers and gaze find them.
+    // Thin slabs around each card and its pin head (paris-map.ts pickBox), facing the learner like the cards.
     const pickMat = new MeshBasicMaterial({ visible: false });
+    const basis = new Matrix4();
+    const ax = new Vector3();
+    const ay = new Vector3();
+    const az = new Vector3();
+    let proxyGeo: BoxGeometry | null = null;
     const add = (target: Target, x: number, y: number, z: number, slot: number) => {
       const card = new Object3D();
       card.position.set(x, y, z);
       card.lookAt(EYE);
       card.updateMatrix();
       cards.push({ m: card, slot });
+      const box = pickBox({ x, y, z });
+      proxyGeo ??= new BoxGeometry(box.hx * 2, box.hy * 2, box.hz * 2);
       const proxy = new Mesh(proxyGeo, pickMat);
       proxy.name = target.kind === 'pin' ? `Pin ${target.id}` : 'Plan Close';
-      proxy.position.set(x, y - 0.014, z);
-      proxy.quaternion.copy(card.quaternion);
+      proxy.position.set(box.c.x, box.c.y, box.c.z);
+      basis.makeBasis(ax.set(box.ax.x, box.ax.y, box.ax.z), ay.set(box.ay.x, box.ay.y, box.ay.z), az.set(box.az.x, box.az.y, box.az.z));
+      proxy.quaternion.setFromRotationMatrix(basis);
       const entity = this.world.createTransformEntity(proxy, { parent: rootEntity });
       entity.addComponent(RayInteractable);
       entity.addComponent(PokeInteractable);
       proxy.pointerEvents = 'none';
       this.targets.set(entity, target);
-      this.proxies.push({ obj: proxy, target });
+      this.proxies.push({ obj: proxy, target, box });
       // Eyes mode: look at a pin for a second.
       this.cleanupFuncs.push(addDwellTarget(proxy, () => this.activate(target), 3, () => this.shown));
     };
-    this.pins.forEach((p, i) => add({ kind: 'pin', id: p.id }, p.x, S + p.height + 0.014 + LH / 2, p.z, i));
+    this.pins.forEach((p, i) => {
+      const c = labelCentre(p);
+      add({ kind: 'pin', id: p.id }, c.x, c.y, c.z, i);
+    });
     // Fermer: a small card on the front-right corner of the board; the title plaque on the front-left.
     add({ kind: 'close' }, BOARD.width / 2 - 0.07, S + 0.03, BOARD.depth / 2 - 0.012, 9);
     const plaque = new Object3D();
@@ -421,6 +462,68 @@ export class DioramaSystem extends createSystem({
     this.pending = { id: pin.id, at: this.clock + TRAVEL_DELAY_S };
   }
 
+  /** True when a fingertip is within TOUCH_NEAR of this proxy's slab (the press came from the touch pointer). */
+  private fingertipNear(e: Entity): boolean {
+    const proxy = this.proxies.find((p) => p.obj === e.object3D);
+    if (!proxy) return false;
+    for (const hand of HANDS) {
+      this.boardPoint(this.player.indexTipSpaces[hand], this.tipNow);
+      if (distanceToBox(proxy.box, this.tipNow.x, this.tipNow.y, this.tipNow.z) <= TOUCH_NEAR) return true;
+    }
+    return false;
+  }
+
+  private boardPoint(obj: Object3D, out: Vector3): Vector3 {
+    obj.getWorldPosition(out);
+    return this.root.worldToLocal(out);
+  }
+
+  /**
+   * Fingertip touch (see TOUCH_NEAR): the first slab this frame's fingertip
+   * path enters fires, once, until that hand comes back out.
+   */
+  private updateTouch(): void {
+    for (let h = 0; h < 2; h++) {
+      const tip = this.boardPoint(this.player.indexTipSpaces[HANDS[h]], this.tipNow);
+      const prev = this.tipPrev[h];
+      if (!this.tipPrimed[h]) {
+        // First frame shown: a finger already resting in a slab must come out first.
+        this.tipPrimed[h] = true;
+        prev.copy(tip);
+        this.tipLatched[h] = this.nearestSlab(tip) <= TOUCH_RELEASE;
+        continue;
+      }
+      if (this.tipLatched[h]) {
+        if (this.nearestSlab(tip) > TOUCH_RELEASE) this.tipLatched[h] = false;
+        prev.copy(tip);
+        continue;
+      }
+      if (prev.distanceTo(tip) > TOUCH_JUMP) prev.copy(tip);
+      let best: Proxy | null = null;
+      let bestD = Infinity;
+      for (const p of this.proxies) {
+        if (!segmentHitsBox(p.box, prev.x, prev.y, prev.z, tip.x, tip.y, tip.z)) continue;
+        // First touched along the path: the slab nearest the previous fingertip.
+        const d = distanceToBox(p.box, prev.x, prev.y, prev.z);
+        if (d < bestD) {
+          bestD = d;
+          best = p;
+        }
+      }
+      prev.copy(tip);
+      if (best) {
+        this.tipLatched[h] = true;
+        this.activate(best.target);
+      }
+    }
+  }
+
+  private nearestSlab(tip: Vector3): number {
+    let d = Infinity;
+    for (const p of this.proxies) d = Math.min(d, distanceToBox(p.box, tip.x, tip.y, tip.z));
+    return d;
+  }
+
   private hover(id: string): void {
     const p = this.pins.find((x) => x.id === id);
     if (!p || !this.shown) return;
@@ -490,6 +593,7 @@ export class DioramaSystem extends createSystem({
       return;
     }
     if (this.dirty) this.render();
+    if (!this.flat) this.updateTouch();
     if (this.pending && this.clock >= this.pending.at) {
       const id = this.pending.id as PlaceId;
       this.pending = null;
