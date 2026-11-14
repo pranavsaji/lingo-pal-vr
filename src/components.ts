@@ -9,9 +9,9 @@ export const VocabItem = createComponent('VocabItem', {
   index: { type: Types.Int16, default: 0 },
 });
 
-/** A euro coin or note the learner can grab and drop on the payment tray. */
+/** A euro coin or note the learner can grab and drop on the payment tray (cents 0 = the bank card). */
 export const Coin = createComponent('Coin', {
-  cents: { type: Types.Int16, default: 100, min: 10, max: 1000 },
+  cents: { type: Types.Int16, default: 100, min: 0, max: 1000 },
   /** Index into CoinSystem's per-coin animation state. */
   slot: { type: Types.Int16, default: 0 },
 });
