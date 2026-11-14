@@ -13,21 +13,30 @@ Re-read it after the Quest device pass and remove anything that did not hold up 
 - **Target launch:** December 2026, public web (Quest Browser)
 - **Team:** Pranav Saji (Pranav Innovates), solo developer
 
-## Description (about 750 words)
+## Description (about 800 words)
 
 **Inspiration.** The hardest part of learning a language is speaking it in a real moment,
-with someone waiting for your answer. Apps teach words; they rarely make you use them. Lingo Pal VR turns that moment into a ten-minute daily habit you can do
-seated, with only your hands, your eyes and your voice.
+with someone waiting for your answer. Apps teach words; they rarely make you use them. Lingo Pal VR turns
+that moment into a ten-minute daily habit, seated, with your hands, eyes and voice.
 
 **What it does.** You sit at Madame Lune's café counter in Paris. Look at the croissants,
 hold up two fingers and say "Deux croissants, s'il vous plaît": she serves two croissants
-and tells you the price in French. Pick up a 5 € note, drop it on her tray, and she counts
-your change back out loud. Every reply you speak gets a pronunciation score. Seven
-everyday places open one by one: the café, the boulangerie, the market, a bistrot (order
-lunch, ask for the bill), a métro ticket window (ask the way to Montmartre), a pharmacie
-("Vous avez mal où ?") and a small hotel (give your name, book nights by holding up
-fingers, pay by card). Each has its own shopkeeper, voice, menu and words, and a daily
-shopping list sends you across Paris.
+and tells you the price in French. Drop a 5 € note on her tray and she counts your
+change back out loud. Every line you speak gets a pronunciation score. Seven places open
+one by one: café, boulangerie, market, bistrot, métro ticket window, pharmacie and a small
+hotel (book nights by holding up fingers, pay by card), each with its own shopkeeper,
+voice and words, and a daily shopping list sends you across Paris.
+
+**No French? Ask Pal.** The shopkeepers only speak French. Pal, a little sparrow in a
+beret on your counter, speaks English: pinch it and ask "How do I say two coffees?" and it
+answers aloud, then hands you the French line with an English-style spelling of how it
+sounds ("duh ka-FAY, seel voo PLAY"). It explains what the shopkeeper just said and
+whispers a hint when you hesitate, so someone with zero French succeeds in minutes.
+
+**Then graduate to real Paris.** Switch on "Vraie vie" and the training wheels come off:
+natural speed, no English, no suggested replies, and the curveballs that freeze people on
+real trips ("Sur place ou à emporter ?", "Vous avez réservé ?", "Vous pouvez épeler votre
+nom ?"). Ask "plus lentement" and they slow down, like real people do.
 
 **A little Paris on your table.** You travel on "Plan de Paris", a tabletop city that
 unfolds on the counter: the Seine with a tour boat, the Eiffel Tower, Notre-Dame, the Arc
@@ -49,9 +58,8 @@ With Quest 3 depth sensing your real hands pass in front of the virtual croissan
 the Plan de Paris sits on your real desk.
 
 **Come back tomorrow.** Streaks with earned rest days, XP and levels from A1 to A2, a
-Passeport de Paris with sixteen stamps, spaced-repetition word review, a café that visibly
-changes as you progress, a "Bon retour !" summary of what changed since your last visit,
-a teaser for tomorrow, and "Ma semaine", a weekly report.
+Passeport de Paris with sixteen stamps, spaced-repetition review, a café that changes as
+you progress, a "Bon retour !" summary, a teaser for tomorrow and a weekly report.
 
 **First five minutes.** A branded page appears instantly with a real loading bar. Madame
 Lune asks how you want to play: hands, eyes or voice. A ghost hand and her voice teach
@@ -59,10 +67,9 @@ four moves (wave, pinch, count, pay) with one pictogram each and almost no text;
 first order and confetti arrive in about a minute.
 
 **Accessible by default.** Every hand action has a voice alternative and an eyes-only
-alternative (look for one second), including paying ("je paie"). Global voice commands
-open every panel. Subtitles on, high contrast that also reaches 3D labels and coins, text
-size, slow speech, left-handed layout, reduced motion, hands-free voice. Seated, and it
-also fits the narrower view of Meta VR Glasses with gaze and pinch.
+alternative (look for one second), including paying ("je paie"). Subtitles on, high
+contrast down to the 3D coins, text size, slow speech, left-handed layout, reduced motion,
+hands-free voice; seated, and it fits the narrower view of Meta VR Glasses.
 
 **Café à deux.** Invite a friend with a private link or QR code: they join from a second
 headset or simply a laptop or phone browser, appear across the counter with head and hands,
@@ -71,11 +78,9 @@ accounts.
 
 **How we built it.** Meta's Immersive Web SDK (three.js and an entity-component system),
 WebXR hand tracking, gaze, plane detection, anchors, depth sensing, UIKitML spatial panels.
-Shopkeepers and customers are Microsoft Rocketbox avatars (MIT) animated procedurally;
-food and rooms are photo scans (CC0 and CC-BY). Claude and natural French voices (Inworld)
-run on Vercel serverless routes behind rate limits and daily budgets; keys never reach the
-headset. French speech recognition runs on a server route, with on-device Whisper as the
-fallback. Built for Quest 3 at 72 Hz: merged static scenery (about 120 to 160 draw calls
+Characters are Microsoft Rocketbox avatars (MIT) animated procedurally; food and rooms
+are CC0/CC-BY scans. Claude, Inworld voices and speech recognition run on Vercel routes
+behind rate limits; keys never reach the headset, and on-device Whisper is the fallback. Built for Quest 3 at 72 Hz: merged static scenery (about 120 to 160 draw calls
 per place), about 2 ms of app logic per frame, and a frame-rate guard that raises
 foveation and then sheds extras (background customers, decor) before frames drop.
 
@@ -88,6 +93,8 @@ Horizon Store as a PWA.
 - A week of progress in one click (labelled DEMO): https://lingo-pal-vr.vercel.app/?demo=week
   (your own progress is backed up first; `?restore` brings it back)
 - Mixed reality: press "Dans ma pièce" on the start page (Quest 3: set up your room first)
+- No French? Pinch Pal (the sparrow on the front-left of the counter) and ask in English
+- Real-life mode: say "vraie vie" (or Réglages → Vraie vie)
 - Plan de Paris: pinch "Paris" on the left panel; touch a pin on the tabletop map to travel
   (with `?demo=week` all seven places are open)
 - Café à deux: Paris map → "Inviter un ami", then open the shown link on a laptop or phone
@@ -100,6 +107,7 @@ Horizon Store as a PWA.
 | Pinch | Select a reply, button or item | Look at it for 1 second (eyes-only mode) |
 | Touch or pinch a pin on the tabletop Plan de Paris | Travel to that place | Say "au marché", or look at the pin |
 | Hold up 2 fingers at the hotel desk | Book two nights | Say "deux nuits" |
+| Pinch or touch Pal | Ask for help in English | Say "Pal" or "help me", or look at Pal |
 | Pinch-grab a coin or note, release over the tray | Pay | Say "je paie" or "voilà cinq euros", or look at a coin for 1 second |
 | Point at your real table and pinch (mixed reality) | Place the café there | Say "ici" |
 | Palm up / lower palm | Start / stop talking | Pinch "Parler" |
