@@ -334,7 +334,7 @@ Phase 9 and 10 essentials.
 ### Phase 0: Setup, deploy, device check (Nov 12 morning, 2 to 3 hours)
 Tasks
 - `npm install`, `npm run dev`, confirm v1 works in the emulator.
-- `git init`, first commit, push to a **new private GitHub repo** `lingo-pal-vr`.
+- `git init`, first commit, push to a **new private GitHub repo** `lingo-pal-vr`. Done 2026-11-15: https://github.com/pranavsaji/lingo-pal-vr (private; full history, first commit c52ca52 2026-11-12).
 - Deploy to Vercel now (`vercel`, `vercel env add ANTHROPIC_API_KEY`, `vercel --prod`).
 - Open the Vercel URL on a Quest 3/3S (borrow/buy). Record fps with the Quest browser
   performance overlay or `metavr` CLI, check hand-ray pinch on the panels (v1 open issue).
