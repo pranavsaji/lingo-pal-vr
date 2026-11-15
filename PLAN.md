@@ -29,8 +29,9 @@ time, finishing each phase's acceptance checklist before starting the next.
 - **Track: Productivity.** Official description: "Apps that make you more effective anywhere or
   are designed around specific daily moments ... habits tied to a recurring context."
   Our framing: *a 10-minute daily French cafe habit*.
-- **Division: New Experience.** Lingo Pal started Oct 2026 and the VR app started Nov 11, both
-  inside the window. Keep proof: first commit date, App Store release date.
+- **Division: New Experience.** This repo was created for the competition (first commit
+  2026-11-12, inside the window). The VR app is a new codebase; it shares only the name with the
+  separate Lingo Pal mobile app. Proof: first commit date (`git log --reverse`).
 - Open question to email the hackathon manager: "Does a language-learning habit app fit the
   Productivity track?"
 
