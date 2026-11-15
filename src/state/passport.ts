@@ -21,10 +21,16 @@ export interface PassportProgress {
   listsDone: number;
   /** Best pronunciation score on a phrase (0 to 100). */
   bestPron: number;
+  /** Per shop, for "Prêt pour Paris" (src/state/readiness.ts): phrases said at 70 %+, */
+  placeSpoken: Record<string, number>;
+  /** exact-amount payments, */
+  placeExact: Record<string, number>;
+  /** and orders paid in "vraie vie" mode with no help. */
+  placeRealLife: Record<string, number>;
 }
 
 export function emptyPassport(): PassportProgress {
-  return { stamps: {}, placeOrders: {}, croissants: 0, exactPayments: 0, listsDone: 0, bestPron: 0 };
+  return { stamps: {}, placeOrders: {}, croissants: 0, exactPayments: 0, listsDone: 0, bestPron: 0, placeSpoken: {}, placeExact: {}, placeRealLife: {} };
 }
 
 /** Everything a stamp can be earned from. */
@@ -116,7 +122,15 @@ export function nextStamp(f: StampFacts): { stamp: Stamp; have: number; need: nu
 export function notePurchase(pp: PassportProgress, place: string, lines: { itemId: string; qty: number }[], exact: boolean): void {
   pp.placeOrders[place] = (pp.placeOrders[place] ?? 0) + 1;
   for (const l of lines) if (l.itemId === 'croissant') pp.croissants += l.qty;
-  if (exact) pp.exactPayments += 1;
+  if (exact) {
+    pp.exactPayments += 1;
+    pp.placeExact[place] = (pp.placeExact[place] ?? 0) + 1;
+  }
+}
+
+/** Count one more per-shop situation (readiness counters). */
+export function notePlace(counter: Record<string, number>, place: string): void {
+  counter[place] = (counter[place] ?? 0) + 1;
 }
 
 /** "12/11" for a stamp date. */

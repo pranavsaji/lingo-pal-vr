@@ -14,11 +14,13 @@ import { speakFrench } from '../speech.js';
 import type { Settings } from '../state/profile.js';
 import { mastery } from '../state/srs.js';
 import { store } from '../state/store.js';
-import { VOCAB } from '../vocab.js';
+import { VOCAB, vocabById } from '../vocab.js';
+import { nextTrip, readiness, readinessStrip, SITUATION_KINDS, todaysPlan, tripLabel } from '../state/readiness.js';
 import { onActivate } from './dwell.js';
 import { renderGoals, renderPassport, renderPassportStrip } from './passport-view.js';
 
 type Slot = 'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport';
+type ReportTab = 'week' | 'paris';
 const SLOT_NODE: Record<Slot, string> = { home: 'lesson-panel', carnet: 'carnet-panel', settings: 'settings-panel', map: 'map-panel', report: 'report-panel', passport: 'passport-panel' };
 const ALL_PANELS = ['lesson-panel', 'chat-panel', 'carnet-panel', 'settings-panel', 'map-panel', 'report-panel', 'passport-panel'];
 const CARNET_ROWS = 12;
@@ -92,6 +94,7 @@ export class PanelsSystem extends createSystem({}) {
   private up = new Vector3(0, 1, 0);
   private forcedLayout: string | null = null;
   private liftFrame = 0;
+  private reportTab: ReportTab = 'week';
 
   init(): void {
     this.forcedLayout = new URLSearchParams(location.search).get('layout'); // ?layout=glasses|wide
@@ -121,7 +124,11 @@ export class PanelsSystem extends createSystem({}) {
         this.renderCarnet();
       });
     // Weekly report.
-    this.click('lesson-panel', 'week-button', () => this.show('report'));
+    this.click('lesson-panel', 'week-button', () => this.showReport('week'));
+    // Prêt pour Paris: the readiness strip opens the report on its Paris tab.
+    this.click('lesson-panel', 'ready-button', () => this.showReport('paris'));
+    this.click('report-panel', 'tab-week', () => this.showReport('week'));
+    this.click('report-panel', 'tab-paris', () => this.showReport('paris'));
     this.click('report-panel', 'week-back', () => this.show('home'));
     // Passeport de Paris (from the lesson panel, the map and the weekly report).
     this.click('lesson-panel', 'passport-button', () => this.show('passport'));
@@ -151,6 +158,11 @@ export class PanelsSystem extends createSystem({}) {
       const order: Settings['textSize'][] = ['s', 'm', 'l'];
       store.setSetting('textSize', order[(order.indexOf(store.profile.settings.textSize) + 1) % 3]);
     });
+    this.click('settings-panel', 'set-trip', () => {
+      // "Mon voyage à Paris": aucun > 7 > 14 > 30 jours; the countdown starts today.
+      store.setSetting('tripSet', store.today);
+      store.setSetting('trip', nextTrip(store.profile.settings.trip));
+    });
     this.click('settings-panel', 'set-tutorial', () => {
       this.show('home');
       events.tutorial.emit();
@@ -160,7 +172,7 @@ export class PanelsSystem extends createSystem({}) {
       this.world.visibilityState.subscribe((v) => {
         if (v === VisibilityState.NonImmersive) this.fitChecked = false; // re-measure next session
       }),
-      events.openPanel.on((s) => this.show(s)),
+      events.openPanel.on((s) => (s === 'ready' ? this.showReport('paris') : s === 'report' ? this.showReport('week') : this.show(s))),
       events.place.on(() => {
         if (this.slot === 'carnet') this.renderCarnet();
         if (this.slot === 'map') this.renderMap();
@@ -172,6 +184,7 @@ export class PanelsSystem extends createSystem({}) {
       }),
       events.profile.on(() => {
         this.renderXp();
+        if (this.slot === 'report') this.renderReport();
         if (this.slot === 'carnet') this.renderCarnet();
         this.renderMapBadge();
       }),
@@ -217,6 +230,51 @@ export class PanelsSystem extends createSystem({}) {
     events.panelShown.emit(slot); // DioramaSystem: the 3D Plan de Paris on the counter
   }
 
+  private showReport(tab: ReportTab): void {
+    this.reportTab = tab;
+    this.show('report');
+  }
+
+  /** Prêt pour Paris: % of the 28 real situations done, the per-place checklist and today's plan. */
+  private renderReadiness(): void {
+    const p = store.profile;
+    const r = readiness(p);
+    const trip = tripLabel(p.settings.trip, p.settings.tripSet, store.today);
+    const words = store
+      .weakWords(3)
+      .map((id) => vocabById(id)?.fr)
+      .filter((w): w is string => !!w);
+    const plan = todaysPlan(p, words);
+    // Home strip.
+    this.text('lesson-panel', 'ready-title', readinessStrip(r, trip));
+    this.text('lesson-panel', 'ready-label', `${r.done} / ${r.total} situations · plan du jour`);
+    if (this.slot !== 'report' || this.reportTab !== 'paris') return;
+    // Report tab.
+    this.text('report-panel', 'pp-title', `PRÊT POUR PARIS ${r.percent} %`);
+    this.style('report-panel', 'pp-trip', { display: trip ? 'flex' : 'none' });
+    if (trip) this.text('report-panel', 'pp-trip', trip);
+    this.style('report-panel', 'pp-fill', { width: Math.max(6, Math.round(528 * (r.done / r.total))) });
+    this.text('report-panel', 'pp-sub', `${r.done} / ${r.total} real situations, each checked by the game${trip ? '' : ' · set a trip in Réglages'}`);
+    for (const row of r.places) {
+      this.style('report-panel', `rp-${row.place}-name`, { color: row.open ? '#fafaf7' : '#7a8496' });
+      for (const k of SITUATION_KINDS) {
+        const done = row.done[k];
+        // Done: filled teal with a bright label; to do: outlined (never color alone).
+        this.style('report-panel', `rp-${row.place}-${k}`, done ? { backgroundColor: '#3f8f78', borderColor: '#9fd8c4', borderWidth: 2 } : { backgroundColor: '#1c2433', borderColor: row.open ? '#4a5568' : '#2e394b', borderWidth: 1 });
+        this.style('report-panel', `rp-${row.place}-${k}-t`, { color: done ? '#ffffff' : row.open ? '#9aa3b2' : '#5c667a', fontWeight: done ? 'bold' : 'normal' });
+      }
+    }
+    for (let i = 0; i < 3; i++) {
+      const item = plan[i];
+      this.style('report-panel', `plan-${i}`, { display: item ? 'flex' : 'none' });
+      this.style('report-panel', `plan-${i}-en`, { display: item && p.settings.subtitles ? 'flex' : 'none' });
+      if (!item) continue;
+      this.text('report-panel', `plan-${i}`, `${i + 1}. ${item.fr}`);
+      this.text('report-panel', `plan-${i}-en`, item.en);
+    }
+    this.text('report-panel', 'plan-title', plan.length ? "AUJOURD'HUI · 10 MIN" : 'PRÊT POUR PARIS ! BRAVO');
+  }
+
   private renderCarnet(): void {
     const p = store.profile;
     const seenHere = VOCAB.filter((v) => p.wordsSeen.includes(v.id)).length;
@@ -244,6 +302,16 @@ export class PanelsSystem extends createSystem({}) {
 
   /** Ma semaine: XP bars per day, weekly totals, trend vs last week. */
   private renderReport(): void {
+    const paris = this.reportTab === 'paris';
+    this.style('report-panel', 'week-view', { display: paris ? 'none' : 'flex' });
+    this.style('report-panel', 'paris-view', { display: paris ? 'flex' : 'none' });
+    this.style('report-panel', 'tab-week', paris ? { backgroundColor: '#232c3b', borderColor: '#3a4558' } : { backgroundColor: '#3b4a63', borderColor: '#e2b857' });
+    this.style('report-panel', 'tab-paris', paris ? { backgroundColor: '#3b4a63', borderColor: '#e2b857' } : { backgroundColor: '#232c3b', borderColor: '#3a4558' });
+    this.text('report-panel', 'week-range', paris ? 'Your trip, situation by situation' : 'Your last 7 days');
+    if (paris) {
+      this.renderReadiness();
+      return;
+    }
     const r = store.weekReport();
     const maxXp = Math.max(30, ...r.days.map((d) => d.xp));
     r.days.forEach((d, i) => {
@@ -311,6 +379,9 @@ export class PanelsSystem extends createSystem({}) {
   private renderSettings(s: Settings): void {
     for (const key of TOGGLES) this.text('settings-panel', `set-${key}-val`, s[key] ? 'ON' : 'OFF');
     this.text('settings-panel', 'set-textSize-val', s.textSize.toUpperCase());
+    const trip = tripLabel(s.trip, s.tripSet, store.today);
+    this.text('settings-panel', 'set-trip-val', trip || 'AUCUN');
+    this.style('settings-panel', 'set-trip-val', { backgroundColor: trip ? '#3f8f78' : '#4a5568' });
     for (const key of TOGGLES) this.style('settings-panel', `set-${key}-val`, { backgroundColor: s[key] ? '#3f8f78' : '#4a5568' });
   }
 
@@ -331,6 +402,7 @@ export class PanelsSystem extends createSystem({}) {
     this.style('lesson-panel', 'xp-fill', { width: Math.max(6, Math.round(XP_TRACK_PX * lvl.progress)) });
     this.text('lesson-panel', 'xp-label', lvl.next ? `${lvl.id} > ${lvl.next}` : `${lvl.id} MAX`);
     renderPassportStrip(this.panels.get('lesson-panel'));
+    this.renderReadiness();
   }
 
   /** Authored height, raised when the panel is tall enough to reach below MIN_BOTTOM_Y. */

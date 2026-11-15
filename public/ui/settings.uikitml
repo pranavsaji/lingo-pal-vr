@@ -43,21 +43,28 @@
   }
 
   .rows {
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .col {
     flex-direction: column;
-    gap: 7px;
-    padding-top: 12px;
-    padding-left: 18px;
-    padding-right: 18px;
+    gap: 6px;
+    width: 262px;
   }
 
   .row {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding-top: 9px;
-    padding-bottom: 9px;
-    padding-left: 14px;
-    padding-right: 14px;
+    gap: 6px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 10px;
+    padding-right: 8px;
     border-radius: 12px;
     background-color: #232c3b;
     cursor: pointer;
@@ -69,27 +76,29 @@
 
   .labels {
     flex-direction: column;
+    flex-shrink: 1;
   }
 
   .label {
     color: #fafaf7;
-    font-size: 17px;
+    font-size: 14px;
     font-weight: bold;
   }
 
   .help {
     color: #b8bcc6;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .value {
+    flex-shrink: 0;
     color: #fafaf7;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: bold;
-    padding-top: 4px;
-    padding-bottom: 4px;
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
     border-radius: 10px;
     background-color: #4a5568;
   }
@@ -97,8 +106,8 @@
   .actions {
     flex-direction: row;
     gap: 12px;
-    padding-top: 12px;
-    padding-bottom: 18px;
+    padding-top: 10px;
+    padding-bottom: 14px;
     padding-left: 22px;
     padding-right: 22px;
   }
@@ -142,18 +151,23 @@
   </div>
   <span class="summary" id="a11y-summary">Accessibilité : mains · sous-titres · texte M</span>
   <div class="rows">
-    <div class="row" id="set-highContrast"><div class="labels"><span class="label">Contraste élevé</span><span class="help">High contrast text and outlines</span></div><span class="value" id="set-highContrast-val">OFF</span></div>
-    <div class="row" id="set-textSize"><div class="labels"><span class="label">Taille du texte</span><span class="help">Text size: small, medium, large</span></div><span class="value" id="set-textSize-val">M</span></div>
-    <div class="row" id="set-slowSpeech"><div class="labels"><span class="label">Parler lentement</span><span class="help">Madame Lune speaks slower</span></div><span class="value" id="set-slowSpeech-val">OFF</span></div>
-    <div class="row" id="set-subtitles"><div class="labels"><span class="label">Sous-titres anglais</span><span class="help">English translation under every line</span></div><span class="value" id="set-subtitles-val">ON</span></div>
-    <div class="row" id="set-gazeDwell"><div class="labels"><span class="label">Sélection du regard</span><span class="help">Eyes only: look at a button for 1 second</span></div><span class="value" id="set-gazeDwell-val">OFF</span></div>
-    <div class="row" id="set-leftHanded"><div class="labels"><span class="label">Gaucher</span><span class="help">Left-hand mode: coins and mic on the left</span></div><span class="value" id="set-leftHanded-val">OFF</span></div>
-    <div class="row" id="set-reduceMotion"><div class="labels"><span class="label">Moins d'animations</span><span class="help">Reduce motion and confetti</span></div><span class="value" id="set-reduceMotion-val">OFF</span></div>
-    <div class="row" id="set-mixedReality"><div class="labels"><span class="label">Réalité mixte</span><span class="help">The cafe on your real table (passthrough)</span></div><span class="value" id="set-mixedReality-val">OFF</span></div>
-    <div class="row" id="set-voiceFirst"><div class="labels"><span class="label">Mains libres (voix)</span><span class="help">Lune listens after she speaks: no pinch needed</span></div><span class="value" id="set-voiceFirst-val">OFF</span></div>
-    <div class="row" id="set-realLife"><div class="labels"><span class="label">Vraie vie</span><span class="help">Like real Paris: natural pace, no English, no hints</span></div><span class="value" id="set-realLife-val">OFF</span></div>
-    <div class="row" id="set-pronunciationHelp"><div class="labels"><span class="label">Aide à la prononciation</span><span class="help">Sounds-like lines for English speakers</span></div><span class="value" id="set-pronunciationHelp-val">ON</span></div>
-    <div class="row" id="set-tutorial"><div class="labels"><span class="label">Revoir le tutoriel</span><span class="help">Replay the hand tutorial</span></div><span class="value" id="set-tutorial-val">GO</span></div>
+    <div class="col">
+      <div class="row" id="set-highContrast"><div class="labels"><span class="label">Contraste élevé</span><span class="help">High contrast</span></div><span class="value" id="set-highContrast-val">OFF</span></div>
+      <div class="row" id="set-textSize"><div class="labels"><span class="label">Taille du texte</span><span class="help">Small, medium, large</span></div><span class="value" id="set-textSize-val">M</span></div>
+      <div class="row" id="set-slowSpeech"><div class="labels"><span class="label">Parler lentement</span><span class="help">She speaks slower</span></div><span class="value" id="set-slowSpeech-val">OFF</span></div>
+      <div class="row" id="set-subtitles"><div class="labels"><span class="label">Sous-titres anglais</span><span class="help">English under each line</span></div><span class="value" id="set-subtitles-val">ON</span></div>
+      <div class="row" id="set-gazeDwell"><div class="labels"><span class="label">Sélection du regard</span><span class="help">Eyes only: look 1 s</span></div><span class="value" id="set-gazeDwell-val">OFF</span></div>
+      <div class="row" id="set-leftHanded"><div class="labels"><span class="label">Gaucher</span><span class="help">Coins and mic on the left</span></div><span class="value" id="set-leftHanded-val">OFF</span></div>
+      <div class="row" id="set-reduceMotion"><div class="labels"><span class="label">Moins d'animations</span><span class="help">Less motion and confetti</span></div><span class="value" id="set-reduceMotion-val">OFF</span></div>
+    </div>
+    <div class="col">
+      <div class="row" id="set-mixedReality"><div class="labels"><span class="label">Réalité mixte</span><span class="help">The café on your table</span></div><span class="value" id="set-mixedReality-val">OFF</span></div>
+      <div class="row" id="set-voiceFirst"><div class="labels"><span class="label">Mains libres (voix)</span><span class="help">She listens, no pinch</span></div><span class="value" id="set-voiceFirst-val">OFF</span></div>
+      <div class="row" id="set-realLife"><div class="labels"><span class="label">Vraie vie</span><span class="help">Real Paris: no English</span></div><span class="value" id="set-realLife-val">OFF</span></div>
+      <div class="row" id="set-pronunciationHelp"><div class="labels"><span class="label">Aide à la prononciation</span><span class="help">Sounds-like lines</span></div><span class="value" id="set-pronunciationHelp-val">ON</span></div>
+      <div class="row" id="set-trip"><div class="labels"><span class="label">Mon voyage à Paris</span><span class="help">Trip countdown: 7, 14, 30 days</span></div><span class="value" id="set-trip-val">AUCUN</span></div>
+      <div class="row" id="set-tutorial"><div class="labels"><span class="label">Revoir le tutoriel</span><span class="help">Replay the hand tutorial</span></div><span class="value" id="set-tutorial-val">GO</span></div>
+    </div>
   </div>
   <div class="actions">
     <div class="action" id="settings-back">

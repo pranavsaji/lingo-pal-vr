@@ -15,7 +15,7 @@ import { PLACE_ORDER } from '../places/places.js';
 import { PLACE_TEXT } from '../places/place-text.js';
 import { normalizeFrench } from './pronunciation.js';
 
-export type PanelId = 'home' | 'carnet' | 'settings' | 'map' | 'report';
+export type PanelId = 'home' | 'carnet' | 'settings' | 'map' | 'report' | 'ready';
 export type InputMode = 'hands' | 'eyes' | 'voice';
 export type ToggleSetting = 'highContrast' | 'subtitles' | 'gazeDwell' | 'leftHanded' | 'reduceMotion' | 'voiceFirst' | 'realLife';
 
@@ -110,6 +110,7 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
   if (/\b(passer|skip)\b/.test(n)) return { kind: 'skip' };
 
   // Panels.
+  if (/\b(pret pour paris|prete pour paris|ready for paris|mon voyage|my trip)\b/.test(n)) return { kind: 'open', panel: 'ready' };
   if (/\b(ma semaine|cette semaine|rapport|my week|weekly report|report|progres|progress)\b/.test(n)) return { kind: 'open', panel: 'report' };
   if (/\b(carnet|mes mots|vocabulaire|notebook|my words|words)\b/.test(n) && (!item || /\bmon carnet\b/.test(n))) return { kind: 'open', panel: 'carnet' };
   if (/\b(reglages|parametres|settings|options|accessibilite|accessibility)\b/.test(n)) return { kind: 'open', panel: 'settings' };
@@ -136,7 +137,7 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
 export function commandFeedback(cmd: VoiceCommand): string {
   switch (cmd.kind) {
     case 'open':
-      return { home: 'Accueil', carnet: 'Mon Carnet', settings: 'Réglages', map: 'Plan de Paris', report: 'Ma semaine' }[cmd.panel];
+      return { home: 'Accueil', carnet: 'Mon Carnet', settings: 'Réglages', map: 'Plan de Paris', report: 'Ma semaine', ready: 'Prêt pour Paris' }[cmd.panel];
     case 'close':
       return 'Fermé';
     case 'repeat':

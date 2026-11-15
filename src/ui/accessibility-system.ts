@@ -29,7 +29,7 @@ const OUTLINED: [string, string, { color: string; width: number }][] = [
   ...['choose-hands', 'choose-eyes', 'choose-voice', 'choose-text'].map(
     (id) => ['lesson-panel', id, { color: '#3a4558', width: 2 }] as [string, string, { color: string; width: number }],
   ),
-  ...['highContrast', 'textSize', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'realLife', 'pronunciationHelp', 'tutorial'].map(
+  ...['highContrast', 'textSize', 'slowSpeech', 'subtitles', 'gazeDwell', 'leftHanded', 'reduceMotion', 'mixedReality', 'voiceFirst', 'realLife', 'pronunciationHelp', 'trip', 'tutorial'].map(
     (k) => ['settings-panel', `set-${k}`, { color: '#000000', width: 0 }] as [string, string, { color: string; width: number }],
   ),
   ['settings-panel', 'settings-back', { color: '#000000', width: 0 }],

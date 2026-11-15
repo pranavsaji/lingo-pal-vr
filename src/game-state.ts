@@ -49,7 +49,7 @@ export const events = {
   /** The learner ordered without speaking (fingers + gaze); text is the phrase said for them. */
   voiceOrder: new Emitter<string>(),
   /** Show a panel in the home slot (voice command or button). */
-  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport'>(),
+  openPanel: new Emitter<'home' | 'carnet' | 'settings' | 'map' | 'report' | 'passport' | 'ready'>(),
   /** Start a spaced-repetition review of these word ids. */
   review: new Emitter<string[]>(),
   /** Replay the hand tutorial. */

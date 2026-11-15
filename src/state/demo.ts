@@ -85,7 +85,7 @@ export function demoProfile(today: Day, variant: DemoVariant = 'week'): Profile 
     lastVisit: `${lastPlayed}: Today: 2 words, 2 orders, 88% pronunciation, +110 XP. Ordered un café et un croissant.`,
     stats: { orders, payments: orders, phrases: 18, pronunciationTotal: 18 * 83, pronunciationCount: 18 },
     history,
-    passport: { stamps, placeOrders, croissants: 3, exactPayments: 2, listsDone: 1, bestPron: 88 },
+    passport: { stamps, placeOrders, croissants: 3, exactPayments: 2, listsDone: 1, bestPron: 88, placeSpoken: { cafe: 5, boulangerie: 3 }, placeExact: { cafe: 1, boulangerie: 1 }, placeRealLife: { boulangerie: 1 } },
     restDays: variant === 'rest' ? 1 : 0,
     restUsed: [],
     demo: variant,

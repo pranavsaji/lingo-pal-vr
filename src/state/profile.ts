@@ -26,6 +26,10 @@ export interface Settings {
   realLife: boolean;
   /** Sounds-like lines for English speakers under the reply chips ("duh ka-FAY"). */
   pronunciationHelp: boolean;
+  /** "Mon voyage à Paris": days from `tripSet` to the trip (0 = no trip), see src/state/readiness.ts. */
+  trip: number;
+  /** Day the trip goal was set (the countdown runs from it). */
+  tripSet: string;
 }
 
 export interface Profile {
@@ -90,6 +94,8 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceFirst: false,
   realLife: false,
   pronunciationHelp: true,
+  trip: 0,
+  tripSet: '',
 };
 
 export function defaultProfile(): Profile {
@@ -181,6 +187,9 @@ export function loadProfile(kv: KV | null): Profile {
           ...(stored.passport ?? {}),
           stamps: { ...(stored.passport?.stamps ?? {}) },
           placeOrders: { ...(stored.passport?.placeOrders ?? {}) },
+          placeSpoken: { ...(stored.passport?.placeSpoken ?? {}) },
+          placeExact: { ...(stored.passport?.placeExact ?? {}) },
+          placeRealLife: { ...(stored.passport?.placeRealLife ?? {}) },
         },
         restDays: Number(stored.restDays) || 0,
         restUsed: Array.isArray(stored.restUsed) ? stored.restUsed.filter((d): d is string => typeof d === 'string') : [],

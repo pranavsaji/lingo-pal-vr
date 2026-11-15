@@ -271,12 +271,157 @@
     font-size: 19px;
     font-weight: bold;
   }
+
+  .tabs {
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .tab {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    border-radius: 12px;
+    background-color: #232c3b;
+    border-width: 1px;
+    border-color: #3a4558;
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    border-color: #e2b857;
+  }
+
+  .tab-text {
+    color: #fafaf7;
+    font-size: 15px;
+    font-weight: bold;
+  }
+
+  .view {
+    flex-direction: column;
+  }
+
+  .pp {
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .pp-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .pp-title {
+    color: #e2b857;
+    font-size: 17px;
+    font-weight: bold;
+  }
+
+  .pp-trip {
+    color: #fafaf7;
+    font-size: 15px;
+    font-weight: bold;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    background-color: #3f8f78;
+  }
+
+  .pp-track {
+    width: 528px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #3a4558;
+  }
+
+  .pp-fill {
+    width: 6px;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #e2b857;
+  }
+
+  .prow {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pname {
+    width: 112px;
+    color: #fafaf7;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .chip {
+    flex-direction: row;
+    justify-content: center;
+    width: 98px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border-radius: 9px;
+    border-width: 1px;
+    border-color: #4a5568;
+    background-color: #1c2433;
+  }
+
+  .chip-text {
+    color: #9aa3b2;
+    font-size: 12px;
+  }
+
+  .plan {
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 12px;
+    background-color: #232c3b;
+  }
+
+  .plan-title {
+    color: #d9a962;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .plan-line {
+    color: #fafaf7;
+    font-size: 14px;
+  }
+
+  .plan-en {
+    color: #b8bcc6;
+    font-size: 11px;
+  }
 </style>
 <Panel class="root">
   <div class="header">
     <span class="brand">MA SEMAINE</span>
     <span class="sub" id="week-range">Your last 7 days</span>
   </div>
+  <div class="tabs">
+    <div class="tab" id="tab-week"><span class="tab-text">Ma semaine</span></div>
+    <div class="tab" id="tab-paris"><span class="tab-text">Prêt pour Paris</span></div>
+  </div>
+  <div class="view" id="week-view">
   <div class="chart">
     <div class="col"><span class="val" id="bar-0-xp">0</span><div class="bar" id="bar-0"></div><span class="day" id="bar-0-day">L</span></div>
     <div class="col"><span class="val" id="bar-1-xp">0</span><div class="bar" id="bar-1"></div><span class="day" id="bar-1-day">M</span></div>
@@ -312,6 +457,33 @@
   </div>
   <span class="hook" id="week-hook">Demain : une nouvelle liste.</span>
   <span class="hook-en" id="week-hook-en">Tomorrow: a new list.</span>
+  </div>
+  <div class="view" id="paris-view" style="display: none">
+    <div class="pp">
+      <div class="pp-head">
+        <span class="pp-title" id="pp-title">PRÊT POUR PARIS 0 %</span>
+        <span class="pp-trip" id="pp-trip">J-14</span>
+      </div>
+      <div class="pp-track"><div class="pp-fill" id="pp-fill"></div></div>
+      <span class="plan-en" id="pp-sub">0 / 28 real situations, each checked by the game</span>
+      <div class="prow" id="rp-cafe"><span class="pname" id="rp-cafe-name">Café Lune</span><div class="chip" id="rp-cafe-order"><span class="chip-text" id="rp-cafe-order-t">Commander</span></div><div class="chip" id="rp-cafe-speak"><span class="chip-text" id="rp-cafe-speak-t">Le dire</span></div><div class="chip" id="rp-cafe-pay"><span class="chip-text" id="rp-cafe-pay-t">Payer juste</span></div><div class="chip" id="rp-cafe-real"><span class="chip-text" id="rp-cafe-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-boulangerie"><span class="pname" id="rp-boulangerie-name">Boulangerie</span><div class="chip" id="rp-boulangerie-order"><span class="chip-text" id="rp-boulangerie-order-t">Commander</span></div><div class="chip" id="rp-boulangerie-speak"><span class="chip-text" id="rp-boulangerie-speak-t">Le dire</span></div><div class="chip" id="rp-boulangerie-pay"><span class="chip-text" id="rp-boulangerie-pay-t">Payer juste</span></div><div class="chip" id="rp-boulangerie-real"><span class="chip-text" id="rp-boulangerie-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-marche"><span class="pname" id="rp-marche-name">Marché</span><div class="chip" id="rp-marche-order"><span class="chip-text" id="rp-marche-order-t">Commander</span></div><div class="chip" id="rp-marche-speak"><span class="chip-text" id="rp-marche-speak-t">Le dire</span></div><div class="chip" id="rp-marche-pay"><span class="chip-text" id="rp-marche-pay-t">Payer juste</span></div><div class="chip" id="rp-marche-real"><span class="chip-text" id="rp-marche-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-bistrot"><span class="pname" id="rp-bistrot-name">Bistrot</span><div class="chip" id="rp-bistrot-order"><span class="chip-text" id="rp-bistrot-order-t">Commander</span></div><div class="chip" id="rp-bistrot-speak"><span class="chip-text" id="rp-bistrot-speak-t">Le dire</span></div><div class="chip" id="rp-bistrot-pay"><span class="chip-text" id="rp-bistrot-pay-t">Payer juste</span></div><div class="chip" id="rp-bistrot-real"><span class="chip-text" id="rp-bistrot-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-metro"><span class="pname" id="rp-metro-name">Métro</span><div class="chip" id="rp-metro-order"><span class="chip-text" id="rp-metro-order-t">Commander</span></div><div class="chip" id="rp-metro-speak"><span class="chip-text" id="rp-metro-speak-t">Le dire</span></div><div class="chip" id="rp-metro-pay"><span class="chip-text" id="rp-metro-pay-t">Payer juste</span></div><div class="chip" id="rp-metro-real"><span class="chip-text" id="rp-metro-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-pharmacie"><span class="pname" id="rp-pharmacie-name">Pharmacie</span><div class="chip" id="rp-pharmacie-order"><span class="chip-text" id="rp-pharmacie-order-t">Commander</span></div><div class="chip" id="rp-pharmacie-speak"><span class="chip-text" id="rp-pharmacie-speak-t">Le dire</span></div><div class="chip" id="rp-pharmacie-pay"><span class="chip-text" id="rp-pharmacie-pay-t">Payer juste</span></div><div class="chip" id="rp-pharmacie-real"><span class="chip-text" id="rp-pharmacie-real-t">Sans aide</span></div></div>
+      <div class="prow" id="rp-hotel"><span class="pname" id="rp-hotel-name">Hôtel</span><div class="chip" id="rp-hotel-order"><span class="chip-text" id="rp-hotel-order-t">Commander</span></div><div class="chip" id="rp-hotel-speak"><span class="chip-text" id="rp-hotel-speak-t">Le dire</span></div><div class="chip" id="rp-hotel-pay"><span class="chip-text" id="rp-hotel-pay-t">Payer juste</span></div><div class="chip" id="rp-hotel-real"><span class="chip-text" id="rp-hotel-real-t">Sans aide</span></div></div>
+      <div class="plan">
+        <span class="plan-title" id="plan-title">AUJOURD'HUI · 10 MIN</span>
+        <span class="plan-line" id="plan-0">1. Café Lune : Commander au comptoir</span>
+        <span class="plan-en" id="plan-0-en">Café: Order at the counter</span>
+        <span class="plan-line" id="plan-1">2.</span>
+        <span class="plan-en" id="plan-1-en"></span>
+        <span class="plan-line" id="plan-2">3.</span>
+        <span class="plan-en" id="plan-2-en"></span>
+      </div>
+    </div>
+  </div>
   <div class="actions">
     <div class="action" id="week-back">
       <span class="action-text">Retour</span>

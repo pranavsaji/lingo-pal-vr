@@ -13,7 +13,7 @@ import { localDay, type Day } from './dates.js';
 import { browserKV, loadProfile, saveProfile, type KV, type Profile, type Settings } from './profile.js';
 import { levelFor, newlyUnlocked, unlockedIds, XP, type XpReason } from './progression.js';
 import { dueWords, newCard, review, type Grade } from './srs.js';
-import { collectStamps, notePurchase, type StampFacts } from './passport.js';
+import { collectStamps, notePlace, notePurchase, type StampFacts } from './passport.js';
 import { touchStreakWithRest } from './rest-days.js';
 import { withDemoSeed } from './demo.js';
 import { goalLadder, returnMoment, tomorrowHook, type GoalLadder, type Line, type ReturnMoment } from './goals.js';
@@ -193,6 +193,7 @@ export class Store {
     log.pronCount += 1;
     this.profile.stats.phrases += 1;
     this.profile.passport.bestPron = Math.max(this.profile.passport.bestPron, Math.round(score));
+    if (score >= 70) notePlace(this.profile.passport.placeSpoken, appState.place); // "Prêt pour Paris": said it here
     if (score >= 70) this.award('phraseSpoken');
     else this.save();
   }
@@ -322,6 +323,7 @@ export class Store {
   recordRealLifeOrder(): void {
     const log = logFor(this.profile.history, this.today);
     log.realLife = (log.realLife ?? 0) + 1;
+    notePlace(this.profile.passport.placeRealLife, appState.place); // "Prêt pour Paris": no help, here
     this.save();
   }
 

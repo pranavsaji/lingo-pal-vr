@@ -192,17 +192,23 @@
     color: #e2b857;
   }
 
-  .pass {
+  .strips {
     flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    gap: 10px;
     margin-top: 10px;
     margin-left: 24px;
     margin-right: 24px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-left: 14px;
-    padding-right: 14px;
+  }
+
+  .pass {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    width: 206px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 12px;
+    padding-right: 12px;
     border-radius: 14px;
     border-width: 1px;
     border-color: #e2b857;
@@ -214,15 +220,41 @@
     background-color: #2e394b;
   }
 
+  .ready {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    flex-grow: 1;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 14px;
+    border-width: 1px;
+    border-color: #3f8f78;
+    background-color: #1f3a3a;
+    cursor: pointer;
+  }
+
+  .ready:hover {
+    background-color: #284848;
+  }
+
   .pass-title {
     color: #e2b857;
-    font-size: 15px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .ready-title {
+    color: #fafaf7;
+    font-size: 14px;
     font-weight: bold;
   }
 
   .pass-text {
     color: #c3cad6;
-    font-size: 15px;
+    font-size: 12px;
   }
 
   .tut {
@@ -299,9 +331,15 @@
     <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
     <span class="xp-label" id="xp-label">A1.2</span>
   </div>
-  <div class="pass" id="passport-button">
-    <span class="pass-title" id="passport-title">PASSEPORT 0 / 12</span>
-    <span class="pass-text" id="passport-label">Série 1 j · 0 jour de repos</span>
+  <div class="strips">
+    <div class="pass" id="passport-button">
+      <span class="pass-title" id="passport-title">PASSEPORT 0 / 16</span>
+      <span class="pass-text" id="passport-label">Série 1 j · 0 repos</span>
+    </div>
+    <div class="ready" id="ready-button">
+      <span class="ready-title" id="ready-title">PRÊT POUR PARIS 0 %</span>
+      <span class="pass-text" id="ready-label">0 / 28 situations · voir le plan</span>
+    </div>
   </div>
   <div class="tut" id="tut-row" style="display: none">
     <div class="tut-badge" id="tut-badge">
