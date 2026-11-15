@@ -3,21 +3,37 @@
 A hands-first French cafe for Meta Quest and Meta VR Glasses, built with Meta's
 Immersive Web SDK (WebXR). Entry for the Meta VR Start Developer Competition 2026.
 
-**Live:** https://lingo-pal-vr.vercel.app (open in Quest Browser, press Enter VR)
+**Live:** https://lingo-pal-vr.vercel.app (open in Quest Browser, press **Entrer au café**).
+The landing page also plays a 3-minute tour.
 
-- Order by holding up fingers while looking at an item, or by saying it in French.
-- Pay with real euro coins and notes; Madame Lune counts your change back aloud.
-- Madame Lune is an AI agent (Claude) whose actions are validated by a deterministic
-  game core; she looks at you, talks, gestures, and remembers you between visits.
-- Pronunciation score on every spoken reply; spaced-repetition word book (Mon Carnet);
-  streak, XP, CEFR-style levels, and cafe decor that unlocks as you progress.
-- Zero-text first-run tutorial with a ghost hand; accessibility settings (eyes-only
-  dwell, voice commands, high contrast, text size, slow speech, left-hand mode).
-- Optional mixed reality (passthrough) mode puts the counter in your room.
-- **Three shops on a Paris map**: Café Lune (Madame Lune), La Boulangerie (Monsieur
-  Paul) and Le Marché (Madame Rose), each with its own menu, prices, words, realistic
-  shopkeeper, 360° photo backdrop and lighting. The bakery opens after the tutorial,
-  the market after your first paid order. Pinch "Paris" or say "allons au marché".
+- **Order with your hands**: look at an item and hold up fingers (index-first or the French
+  thumb-first count), pinch reply chips, or simply say it in French.
+- **An AI shopkeeper who acts in the world** (Claude, with tools the game validates): she
+  serves the goods on the counter, quotes prices, counts your change back aloud, offers a
+  swap when stock runs out, tests you with wrong change on purpose, remembers you between
+  visits and plans tomorrow's practice from your weak words.
+- **Seven places on a tabletop Plan de Paris**: Café Lune, La Boulangerie, Le Marché,
+  Le Bistrot, Le Métro, La Pharmacie and L'Hôtel, each with its own shopkeeper, menu,
+  prices, words, 360° photo backdrop and a real-life curveball ("Sur place ou à emporter ?").
+  Pinch a pin on the little 3D Paris on the counter to travel.
+- **Prêt pour Paris**: readiness for a real trip in 28 situations (order, say it, pay the
+  exact amount, do it with no help, in each place), each ticked only by something the game
+  verified; today's 10-minute plan; an optional trip countdown ("J-12").
+- **Pay with real euros**: pinch coins and notes onto the tray, or a bank card at the hotel.
+- **Speak and be scored**: pronunciation score on every spoken line, on-device French speech
+  recognition (no key), natural shopkeeper voices; "Vraie vie" mode removes English and hints.
+- **Pal**, a sparrow on the counter you can ask in English ("How do I ask for the bill?").
+- **Come back tomorrow**: streaks with rest days, XP and A1 to A2 levels, Mon Carnet
+  (spaced repetition), a daily shopping list, Ma semaine, the Passeport de Paris (16 stamps).
+- **First five minutes**: landing page with real loading progress, a hands / eyes / voice
+  choice, a ghost-hand tutorial and a paid first order in about a minute.
+- **Accessibility**: voice for every action, eyes-only selection, high contrast, text size,
+  slow speech, subtitles, left-hand mode, reduced motion, seated by default.
+- **Mixed reality**: the café counter lands on your real table (planes, anchors, depth occlusion).
+- **Café à deux**: a friend joins from any browser, peer to peer, and takes turns ordering.
+- Built for Meta Quest 3 / 3S and Meta VR Glasses (narrow-view layout, gaze + pinch).
+
+Tested in the IWSDK emulator (Meta Quest 3 profile); on-device reports welcome (TESTING.md).
 
 ## Run it on your Mac
 
@@ -51,11 +67,13 @@ French voice model (114 MB, downloaded once). Subtitles are always on. Test engi
 
 ## Daily shopping list and weekly report
 
-- **La liste de courses**: every day, one thing to buy in each shop (café, bakery, market),
+- **La liste de courses**: every day, one thing to buy in three open shops,
   shown on the home panel; ticked when paid for in that shop; the full list is worth +60 XP.
   The shopkeeper knows what is on your list in their shop.
 - **Ma semaine**: XP per day for the last 7 days, minutes learning, new words, orders,
   average pronunciation, active days and streak, and the trend versus the week before.
+  Its **Prêt pour Paris** tab shows the 28-situation checklist and today's plan (also from
+  the home panel strip, or say "prêt pour Paris"). `src/state/readiness.ts`.
 
 ## Realistic look
 
