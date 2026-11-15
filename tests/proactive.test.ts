@@ -338,7 +338,7 @@ describe('agency in the world', () => {
     const c = collect();
     await orderAndPay(director);
     const missed = await director.handle({ kind: 'say', text: 'Merci, au revoir !', fingers: 0 });
-    expect(missed.turn.fr).toBe('Oh, pardon ! Je me suis trompée : je vous rends un euro quarante. À demain, Pranav !');
+    expect(missed.turn.fr).toBe('Oh, pardon ! Je me suis trompée : je vous rends un euro quarante. À demain, Pranav ! Prochaine étape pour Paris : acheter votre pain à la boulangerie.');
     expect(c.effects).toContainEqual({ kind: 'return_change', cents: 140, coins: [100, 20, 20] });
     expect(c.effects.some((e) => e.kind === 'goodbye')).toBe(true);
     expect(store.profile.coach.mistakes.some((m) => m.kind === 'payment' && m.want === '1,40 €' && m.got === '0,90 €')).toBe(true);
@@ -394,6 +394,18 @@ describe("tomorrow's plan", () => {
     expect(focused.tasks[0]).toEqual(plain.tasks[0]); // café sells neither
   });
 
+  it('names the next Prêt pour Paris step on goodbye, but not in Vraie vie', async () => {
+    const { store, director } = regular();
+    const bye = await director.handle({ kind: 'say', text: 'Au revoir !', fingers: 0 });
+    expect(bye.turn.fr).toMatch(/Prochaine étape pour Paris : .+\.$/);
+    expect(bye.turn.en).toMatch(/Next step for Paris: .+\.$/);
+    const again = regular();
+    again.store.setSetting('realLife', true);
+    const rl = await again.director.handle({ kind: 'say', text: 'Au revoir !', fingers: 0 });
+    expect(rl.turn.fr).not.toContain('Prochaine étape');
+    void store;
+  });
+
   it('says tomorrow\'s theme on goodbye and plans tomorrow\'s list from it', async () => {
     const kv = memoryKV();
     const { store, director } = regular(kv);
@@ -401,7 +413,7 @@ describe("tomorrow's plan", () => {
     store.profile.srs.pomme = card(1.8, 1);
     const c = collect();
     const bye = await director.handle({ kind: 'say', text: 'Au revoir !', fingers: 0 });
-    expect(bye.turn.fr).toBe('À demain, Pranav ! Bonne journée ! Demain, on travaille les fruits !');
+    expect(bye.turn.fr).toBe('À demain, Pranav ! Bonne journée ! Demain, on travaille les fruits ! Prochaine étape pour Paris : commander au comptoir du Café Lune.');
     expect(store.profile.coach.plan).toMatchObject({ day: '2026-11-14', themeFr: 'les fruits' });
     expect(c.notes).toContain('Lune note : demain, les fruits');
     const tomorrow = new Store(kv, '2026-11-14');
