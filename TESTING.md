@@ -59,3 +59,27 @@ and 100 records.) A line looks like:
 Healthy on Quest 3/3S: `avgFps` ≥ 70 at 72 Hz, `low1Fps` ≥ 60, `power` 0-1. A `power` of 2+ or a
 `foveation` of 1 means the headset was struggling: compare `place` and `drawCalls` across reports.
 Local overrides for experiments: `?res=1.0` (framebuffer scale), `?fov=0.4`, `?power=2`.
+
+## Render cost per place (measured in the emulator, 14 Nov 2026)
+
+Draw calls are per frame for both eyes plus the shadow pass (three.js `renderer.info`),
+at full quality (`?power=0`) and after the frame-rate guard stepped all the way down
+(power 5, which the slow Mac emulator reaches; a Quest should need far less).
+
+| Place | Draw calls, full | Triangles, full | Draw calls, power 5 | Triangles, power 5 |
+| --- | --- | --- | --- | --- |
+| Café Lune | 263 (about 121 per eye + 25 shadow) | 294k | 200 | 195k |
+| Boulangerie | 213 | 255k | 168 | 171k |
+| Marché | 188 | 280k | 156 | 205k |
+| Bistrot | 185 | 204k | 154 | 137k |
+| Métro | 154 | 142k | 126 | 85k |
+| Pharmacie | 157 | 154k | 128 | 95k |
+| Hôtel | 174 | 164k | 144 | 104k |
+| Café + Plan de Paris open | 249 | 288k | 192 | 196k |
+
+Triangles stay well under the ~750k Quest 3 guideline everywhere. The café at full quality
+is the heaviest scene (eight animated customers plus the decor); the guard drops the
+customers' cost at power 2, about 15 s after frames start missing (4 s warm-up, three
+foveation steps 1.5 s apart, then 3 s per level). Cold start (production, Mac, cache off):
+landing text in under 0.5 s, "Prêt" after about 8 s and 5-9 MB. `/api/agent` (Claude) took
+2.4-3.6 s per reply (p50 2.6 s over 3 calls); the chat shows "Alors... (réfléchit)" after 0.7 s so the wait reads as her thinking.
