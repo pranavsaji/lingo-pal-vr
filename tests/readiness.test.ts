@@ -118,7 +118,24 @@ describe("today's 10-minute plan", () => {
 
   it('goodbye line names the first next step', () => {
     const p = defaultProfile();
-    expect(nextSituationLine(p)?.fr).toBe('Prochaine étape pour Paris : Café Lune : Commander au comptoir.');
+    expect(nextSituationLine(p)?.fr).toBe('Prochaine étape pour Paris : commander au comptoir du Café Lune.');
+  });
+
+  it('goodbye line reads as one natural sentence for every kind of step', () => {
+    const p = defaultProfile();
+    p.onboarded = true;
+    p.stats.orders = 1;
+    p.passport.placeOrders.cafe = 1;
+    // Next: the bakery is open and never visited.
+    expect(nextSituationLine(p)).toEqual({ fr: 'Prochaine étape pour Paris : acheter votre pain à la boulangerie.', en: 'Next step for Paris: buy your bread at the bakery.' });
+    p.passport.placeOrders.boulangerie = 1;
+    p.passport.placeOrders.marche = 1;
+    // Everything open has been ordered in: say it out loud at the café.
+    expect(nextSituationLine(p)?.fr).toBe('Prochaine étape pour Paris : commander à voix haute au Café Lune.');
+    p.passport.placeSpoken.cafe = p.passport.placeSpoken.boulangerie = p.passport.placeSpoken.marche = 1;
+    p.passport.placeExact.cafe = p.passport.placeExact.boulangerie = p.passport.placeExact.marche = 1;
+    // All open situations done: what opens the bistrot.
+    expect(nextSituationLine(p)).toEqual({ fr: 'Prochaine étape pour Paris : encore 1 commande pour ouvrir le bistrot.', en: 'Next step for Paris: 1 more order to open the bistro.' });
   });
 });
 

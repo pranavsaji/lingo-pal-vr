@@ -56,7 +56,7 @@ describe('wow moment, offline agent', () => {
     expect(store.profile.memories.favorite_order).toBe('deux croissants');
 
     const bye = await director.handle({ kind: 'say', text: 'Au revoir !', fingers: 0 });
-    expect(bye.turn.fr).toBe('À demain, Pranav ! Bonne journée ! Demain, on travaille les viennoiseries !'); // she plans tomorrow from today
+    expect(bye.turn.fr).toBe('À demain, Pranav ! Bonne journée ! Demain, on travaille les viennoiseries ! Prochaine étape pour Paris : commander à voix haute au Café Lune.'); // she plans tomorrow from today
     expect(store.profile.lastVisit).toMatch(/2026-11-12/);
     off();
 

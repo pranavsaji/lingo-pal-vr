@@ -202,9 +202,70 @@ export function readinessStrip(r: Readiness, trip: string): string {
   return `PRÊT POUR PARIS ${r.percent} %${trip ? ` · ${trip}` : ''}`;
 }
 
-/** One line for the goodbye (scripted, no AI turn): the first item of tomorrow's plan. */
+/** "at the bakery" for spoken lines. */
+const AT_PLACE: Record<PlaceId, { fr: string; en: string }> = {
+  cafe: { fr: 'au Café Lune', en: 'at the café' },
+  boulangerie: { fr: 'à la boulangerie', en: 'at the bakery' },
+  marche: { fr: 'au marché', en: 'at the market' },
+  bistrot: { fr: 'au bistrot', en: 'at the bistro' },
+  metro: { fr: 'au métro', en: 'at the metro' },
+  pharmacie: { fr: 'à la pharmacie', en: 'at the pharmacy' },
+  hotel: { fr: 'à l’hôtel', en: 'at the hotel' },
+};
+
+/** "the bakery" as the object of a sentence. */
+const THE_PLACE: Record<PlaceId, string> = {
+  cafe: 'le Café Lune',
+  boulangerie: 'la boulangerie',
+  marche: 'le marché',
+  bistrot: 'le bistrot',
+  metro: 'le métro',
+  pharmacie: 'la pharmacie',
+  hotel: 'l’hôtel',
+};
+
+/** The order situation as she would say it ("acheter votre pain à la boulangerie"). */
+const SPOKEN_ORDER: Record<PlaceId, { fr: string; en: string }> = {
+  cafe: { fr: 'commander au comptoir du Café Lune', en: 'order at the café counter' },
+  boulangerie: { fr: 'acheter votre pain à la boulangerie', en: 'buy your bread at the bakery' },
+  marche: { fr: 'acheter des fruits au marché', en: 'buy fruit at the market' },
+  bistrot: { fr: 'commander un déjeuner au bistrot', en: 'order lunch at the bistro' },
+  metro: { fr: 'acheter un ticket au métro', en: 'buy a ticket at the metro' },
+  pharmacie: { fr: 'demander ce qu’il vous faut à la pharmacie', en: 'ask for what you need at the pharmacy' },
+  hotel: { fr: 'réserver une chambre à l’hôtel', en: 'book a room at the hotel' },
+};
+
+/** One natural sentence for the goodbye (appended to her turn, no extra AI call): the first step of the plan. */
 export function nextSituationLine(p: Facts & Pick<Profile, 'realLifeInvited'>): { fr: string; en: string } | null {
   const first = todaysPlan(p, [], 1)[0];
-  if (!first || first.kind === 'words') return null;
-  return { fr: `Prochaine étape pour Paris : ${first.fr}.`, en: `Next step for Paris: ${first.en}.` };
+  if (!first || !first.place || first.kind === 'words') return null;
+  const at = AT_PLACE[first.place];
+  let step: { fr: string; en: string };
+  switch (first.kind) {
+    case 'order':
+      step = SPOKEN_ORDER[first.place];
+      break;
+    case 'speak':
+      step = { fr: `commander à voix haute ${at.fr}`, en: `order out loud ${at.en}` };
+      break;
+    case 'pay':
+      step = { fr: `payer le compte juste ${at.fr}`, en: `pay the exact amount ${at.en}` };
+      break;
+    case 'real':
+      step = { fr: `commander sans aide ${at.fr}, comme à Paris`, en: `order with no help ${at.en}, like real Paris` };
+      break;
+    case 'unlock': {
+      if (!p.onboarded) return null; // the tutorial says what comes next
+      const need = Math.max(1, (PLACE_UNLOCK_ORDERS[first.place] ?? 0) - p.stats.orders);
+      const name = PLACE_LABEL[first.place];
+      step = {
+        fr: `encore ${need} commande${need > 1 ? 's' : ''} pour ouvrir ${THE_PLACE[first.place]}`,
+        en: `${need} more order${need > 1 ? 's' : ''} to open the ${name.en.toLowerCase()}`,
+      };
+      break;
+    }
+    default:
+      return null;
+  }
+  return { fr: `Prochaine étape pour Paris : ${step.fr}.`, en: `Next step for Paris: ${step.en}.` };
 }

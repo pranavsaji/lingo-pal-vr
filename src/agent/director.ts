@@ -14,6 +14,7 @@
 import { appState, events } from '../game-state.js';
 import { fingersConfusion, mistakeForPrompt, mistakeNote, numberConfusion } from '../state/mistakes.js';
 import { pendingHere } from '../state/quest.js';
+import { nextSituationLine } from '../state/readiness.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { caughtTrick, findElsewhere, lowStockToday, shouldTrickChange, trickAmount, trickOpenTurn, trickResolveTurn } from './agency.js';
 import { parseAmountCents, parseIntent } from './intent.js';
@@ -430,6 +431,9 @@ export class AgentDirector {
         if (e.reason === 'upsell') this.upsold = true;
       }
     }
+    // Goodbye: she names the next Prêt pour Paris step, appended to the validated turn
+    // (AI or script) so it costs no extra request. Not in Vraie vie (no coaching there).
+    if (effects.some((e) => e.kind === 'goodbye') && !req.scene.realLife) turn = withNextStep(turn, nextSituationLine(this.store.profile));
     if (turn.points > 0) this.store.addXp(turn.points);
     this.history.push({ role: 'lune', text: turn.fr });
     events.subtitle.emit({ who: 'lune', fr: turn.fr, en: turn.en });
@@ -531,4 +535,8 @@ export class AgentDirector {
   }
 }
 
-
+/** Appends one short line to both languages of a turn (null line: the turn unchanged). */
+export function withNextStep(turn: AgentTurn, line: { fr: string; en: string } | null): AgentTurn {
+  if (!line || turn.fr.includes(line.fr)) return turn;
+  return { ...turn, fr: `${turn.fr} ${line.fr}`, en: `${turn.en} ${line.en}` };
+}
