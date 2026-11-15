@@ -324,7 +324,7 @@
 </style>
 <Panel class="root">
   <div class="header" id="header">
-    <span class="brand">LINGO PAL CAFE</span>
+    <span class="brand">LINGO PAL PARIS</span>
     <span class="score" id="score">0 pts</span>
   </div>
   <div class="xp">
