@@ -30,7 +30,7 @@ No French? Pinch **Pal**, a sparrow on the counter, and ask in English; it answe
 
 ### How we built it
 
-Meta's Immersive Web SDK (three.js + ECS): WebXR hand tracking with finger counting on all 25 joints, gaze, plane detection, anchors, depth sensing and UIKitML panels. A deterministic game core owns the menu, prices, stock and every calculation; the agent proposes, the game validates, the world shows the result. Without the AI, the game still runs on its built-in scripted shopkeepers. Claude, Inworld voices and speech recognition run on Vercel server routes behind rate limits, so keys never reach the headset. 402 automated tests cover the game core, agent validation, finger counting and readiness.
+Meta's Immersive Web SDK (three.js + ECS): WebXR hand tracking with finger counting on all 25 joints, gaze, plane detection, anchors, depth sensing and UIKitML panels. A deterministic game core owns the menu, prices, stock and every calculation; the agent proposes, the game validates, the world shows the result. Without the AI, the game still runs on its built-in scripted shopkeepers. Claude, Inworld voices and speech recognition run on Vercel server routes behind rate limits, so keys never reach the headset. 405 automated tests cover the game core, agent validation, finger counting and readiness.
 
 Built and tested in the IWSDK emulator with the Quest 3 profile; we have not yet had a physical Quest. A frame-rate guard sheds extras if frames drop, and `?perf` mode reports frame rates from real headsets.
 
@@ -75,12 +75,14 @@ Every action in Lingo Pal VR works with bare hands, seated, end to end; no contr
 
 ## Demo video
 
-`lingo-pal-demo.mp4`, 2:59 (178.8 s), real gameplay recorded in the IWSDK emulator (Meta Quest 3
-profile) with the app's own audio. Every one of the seven places is shown with a real AI
-conversation (café, boulangerie, métro, marché, pharmacie, bistrot, hôtel), and the start page lists
-them. The emulator has no microphone, so the learner's lines are spoken by the app's learner voice
-and fed in as heard speech; the shopkeepers' replies are live. Shot list and timestamps in
-`.tmp/video/final/SHOTLIST.md` (not in git). A 720p copy plays from the start page ("Regarder la visite").
+`lingo-pal-demo.mp4`, 2:58 (177.6 s), 1080p30. It opens with a 10-second card narrated by Pal
+(what the app is, the three steps, the seven places), then real gameplay recorded in the IWSDK
+emulator (Meta Quest 3 profile) with the app's own audio, rendered at 1920 and captured at about
+30 fps. All seven places are shown in a real AI conversation (café, boulangerie, métro, marché,
+pharmacie, bistrot, hôtel), with orders served together on each shop's tray. The emulator has no
+microphone, so the learner's lines are spoken by the app's learner voice and fed in as heard speech;
+the shopkeepers' replies are live. Upload copy, chapters and thumbnail:
+`~/Downloads/Videos to upload/Lingo Pal VR/`. A 720p copy plays from the start page ("Regarder la visite").
 
 ## Before you press Submit
 
@@ -89,7 +91,7 @@ and fed in as heard speech; the shopkeepers' replies are live. Shot list and tim
 - [ ] Devpost: country of residence + the three eligibility checkboxes (age, jurisdiction, not a Meta employee)
 - [ ] Devpost: YouTube/Vimeo link (public or unlisted) in Project details
 - [ ] Link opens on Quest 3 and 3S in a logged-out browser; Enter VR works
-- [ ] Video public or unlisted, under 3:00 (current cut: 2:59, all seven places in conversation)
+- [ ] Video public or unlisted, under 3:00 (current cut: 2:58, intro card + all seven places in conversation)
 - [ ] Screenshots: hero cafe, wow moment, Carnet, high contrast, mixed reality
 - [ ] Anthropic console spend limit set; keep the Vercel project and key live until winners
       are announced (about Dec 11)
