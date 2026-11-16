@@ -149,3 +149,11 @@ export const CUSTOMERS: Record<PlaceId, CustomerSpec[]> = {
 export function nearFriendSeat(x: number, z: number): boolean {
   return Math.hypot(Math.abs(x) - 0.95, z + 0.62) < 1.0;
 }
+
+/** Café à deux: who the friend appears as (a person not already among this shop's customers). */
+export const FRIEND_MODELS = ['customer-m08', 'customer-f07', 'customer-m03', 'customer-f09'] as const;
+
+export function friendModelFor(place: PlaceId): string {
+  const used = new Set(CUSTOMERS[place].map((c) => c.assetId));
+  return FRIEND_MODELS.find((id) => !used.has(id)) ?? FRIEND_MODELS[0];
+}

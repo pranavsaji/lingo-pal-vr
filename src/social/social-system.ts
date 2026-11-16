@@ -9,6 +9,7 @@
  */
 
 import {
+  AssetManager,
   CanvasTexture,
   createSystem,
   type Entity,
@@ -26,7 +27,9 @@ import {
   VisibilityState,
 } from '@iwsdk/core';
 import { ensureAudioContext } from '../audio/audio-hub.js';
-import { events } from '../game-state.js';
+import { appState, events, type PlaceId } from '../game-state.js';
+import { friendModelFor } from '../world/characters/customers.js';
+import { HumanRig, prepareAvatar } from '../world/characters/human-rig.js';
 import { JOINT_NAMES } from '../hands/gestures.js';
 import { COUNTER_Y } from '../layout.js';
 import { addDwellTarget, onActivate } from '../ui/dwell.js';
@@ -178,6 +181,33 @@ export class SocialSystem extends createSystem({
     this.renderDom();
   }
 
+  /**
+   * The friend appears as a real person (a Rocketbox human like the shop's customers),
+   * one not already among this shop's customers, loaded when the friend first appears.
+   * The stand-in shows until it loads; a failed load keeps the stand-in.
+   */
+  private personModel: string | null = null;
+  private personWanted = false;
+  private async loadPerson(place: PlaceId): Promise<void> {
+    const id = friendModelFor(place);
+    if (this.personModel === id) return;
+    this.personModel = id;
+    try {
+      await AssetManager.loadGLTFById(id);
+      const gltf = AssetManager.getGLTF(id); // a fresh skeleton-aware clone
+      if (!gltf || this.personModel !== id) return;
+      const root = gltf.scene;
+      prepareAvatar(root, 'Friend (Café à deux)');
+      root.traverse((o) => {
+        if ((o as { isSkinnedMesh?: boolean }).isSkinnedMesh) o.frustumCulled = false;
+      });
+      this.avatar.setPerson(root, new HumanRig(root, { legs: true }));
+    } catch (err) {
+      console.warn('[social] friend avatar model unavailable; keeping the stand-in', err);
+      this.personModel = null;
+    }
+  }
+
   /** The full share link, with the room key in the fragment. */
   private get url(): string {
     return social.invite ? inviteUrl(location.origin, social.invite) : '';
@@ -190,6 +220,8 @@ export class SocialSystem extends createSystem({
     this.built = true;
     this.avatar = new FriendAvatar();
     this.world.createTransformEntity(this.avatar.root, { persistent: true });
+    // Loaded only once a friend is actually here (solo players never download it).
+    this.cleanupFuncs.push(events.place.on((place) => void (this.personWanted && this.loadPerson(place))));
 
     this.card = new Group();
     this.card.name = 'InviteCard';
@@ -478,9 +510,13 @@ export class SocialSystem extends createSystem({
     // No fresh packet (stale): the avatar keeps its last placement.
     const flags = this.interp.sample(this.clockMs, this.view);
     if (flags >= 0) {
+      if (!this.personWanted) {
+        this.personWanted = true;
+        void this.loadPerson(appState.place);
+      }
       this.origin.copy(this.player.position);
       this.world.camera.getWorldPosition(this.viewer);
-      this.avatar.apply(flags, this.view, friendSeat(social.role ?? 'host'), this.origin, this.viewer);
+      this.avatar.apply(flags, this.view, friendSeat(social.role ?? 'host'), this.origin, this.viewer, Math.min(delta, 0.1));
     }
     if (this.bubbleUntil > 0 && this.clockMs > this.bubbleUntil) {
       this.bubbleUntil = -1;

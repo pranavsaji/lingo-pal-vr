@@ -1,5 +1,9 @@
 /**
- * The friend at the counter: a stylized, low-poly avatar.
+ * The friend at the counter. Shown as a real person (a Rocketbox human, the same
+ * rig as the shop's customers: `setPerson`) standing at the counter end: the body
+ * turns with the friend's head, the head looks where they look, the mouth moves
+ * when they talk. Until that model has loaded (or if it fails) a stylized low-poly
+ * stand-in is shown:
  *  - head (with a headset visor) and a simple torso that follows the head's yaw;
  *  - both hands as 25 joint spheres each, in ONE InstancedMesh;
  *  - for a browser (2D) friend, a pointer: a dot where their mouse points on the
@@ -13,6 +17,7 @@ import {
   BufferGeometry,
   CanvasTexture,
   CapsuleGeometry,
+  type Object3D,
   Group,
   InstancedMesh,
   Line,
@@ -27,6 +32,8 @@ import {
   SphereGeometry,
   Vector3,
 } from '@iwsdk/core';
+import { createPose, type CharacterPose } from '../world/characters/character-pose.js';
+import type { HumanRig } from '../world/characters/human-rig.js';
 import { F_LEFT, F_POINTER, F_RIGHT, JOINTS, P_HEAD, P_LEFT, P_POINTER, P_RIGHT, seatPoint, seatQuat, type Seat } from './protocol.js';
 
 const SKIN = 0x2a9d8f;
@@ -52,6 +59,12 @@ export class FriendAvatar {
   private fwd = new Vector3();
   private p = new Float32Array(4);
   private shown = { left: false, right: false };
+  /** The human body, once loaded: root (feet), rig, pose, current body yaw. */
+  private person: { root: Object3D; rig: HumanRig; pose: CharacterPose; yaw: number; placed: boolean } | null = null;
+  private talk = 0;
+  private blinkIn = 2.5;
+  private blinkT = -1;
+  private headBone = new Vector3();
 
   constructor() {
     this.root.name = 'FriendAvatar';
@@ -126,13 +139,29 @@ export class FriendAvatar {
   /** Voice activity (0..1) brightens the head. */
   setTalking(level: number): void {
     this.headMat.emissiveIntensity = 0.08 + Math.min(1, level) * 0.6;
+    this.talk = Math.min(1, level);
+  }
+
+  /** Swap the stand-in for a real person (a prepared Rocketbox avatar and its rig). */
+  setPerson(root: Object3D, rig: HumanRig): void {
+    if (this.person) this.root.remove(this.person.root);
+    this.person = { root, rig, pose: createPose(), yaw: 0, placed: false };
+    this.root.add(root);
+    this.head.visible = false;
+    this.body.visible = false;
+    this.joints.visible = false; // their arms are the person's own; floating joint dots would read as a ghost
+  }
+
+  /** True once the friend is shown as a person (not the stand-in). */
+  get isPerson(): boolean {
+    return this.person !== null;
   }
 
   /**
    * Place the avatar from a pose in the friend's own space, seen from `seat`.
    * `origin` is my player rig position (world = player space + origin).
    */
-  apply(flags: number, d: Float32Array, seat: Seat, origin: Vector3, viewer: Vector3): void {
+  apply(flags: number, d: Float32Array, seat: Seat, origin: Vector3, viewer: Vector3, dt = 1 / 72): void {
     this.root.visible = true;
     this.root.position.copy(origin);
     const p = this.p;
@@ -147,8 +176,11 @@ export class FriendAvatar {
     this.body.position.set(this.head.position.x + Math.sin(yaw) * 0.06, this.head.position.y - NECK, this.head.position.z + Math.cos(yaw) * 0.06);
     this.body.rotation.set(0, yaw, 0);
 
-    this.hand(flags & F_LEFT, d, P_LEFT, 0, seat, 'left');
-    this.hand(flags & F_RIGHT, d, P_RIGHT, JOINTS, seat, 'right');
+    if (this.person) this.posePerson(this.person, dt);
+    else {
+      this.hand(flags & F_LEFT, d, P_LEFT, 0, seat, 'left');
+      this.hand(flags & F_RIGHT, d, P_RIGHT, JOINTS, seat, 'right');
+    }
 
     const pointer = (flags & F_POINTER) !== 0;
     this.dot.visible = pointer;
@@ -166,8 +198,51 @@ export class FriendAvatar {
       (this.beam.geometry.getAttribute('position') as BufferAttribute).needsUpdate = true;
     }
 
-    this.tag.position.set(this.head.position.x, this.head.position.y + 0.21, this.head.position.z);
+    if (this.person) {
+      // Above the person's own head (a standing body can be taller than a seated friend's eyes).
+      this.person.rig.head.getWorldPosition(this.headBone).sub(this.root.position);
+      this.tag.position.set(this.headBone.x, this.headBone.y + 0.24, this.headBone.z);
+    } else this.tag.position.set(this.head.position.x, this.head.position.y + 0.21, this.head.position.z);
     this.tag.lookAt(viewer);
+  }
+
+  /**
+   * The person stands at the counter end under the friend's head: the body turns
+   * toward where they face (lagging, like a real turn), the head covers the rest
+   * (up to ~60 degrees), pitch from the headset. Blinks, breathes, talks.
+   */
+  private posePerson(p: NonNullable<FriendAvatar['person']>, dt: number): void {
+    const f = this.fwd; // head forward, set in apply()
+    const face = Math.atan2(f.x, f.z); // 0 faces +Z, the Rocketbox convention
+    if (!p.placed) {
+      p.yaw = face;
+      p.placed = true;
+    }
+    let rel = Math.atan2(Math.sin(face - p.yaw), Math.cos(face - p.yaw));
+    // The body follows once the head is turned well past the shoulders.
+    if (Math.abs(rel) > 0.5) p.yaw += (rel - Math.sign(rel) * 0.5) * Math.min(1, dt * 3);
+    p.yaw += rel * Math.min(1, dt * 0.6);
+    rel = Math.atan2(Math.sin(face - p.yaw), Math.cos(face - p.yaw));
+    p.root.rotation.set(0, p.yaw, 0);
+    // Feet on the floor, a little behind the eyes (the head sits forward of the spine).
+    p.root.position.set(this.head.position.x - Math.sin(p.yaw) * 0.08, 0, this.head.position.z - Math.cos(p.yaw) * 0.08);
+    const pose = p.pose;
+    pose.headYaw = Math.max(-1.05, Math.min(1.05, rel));
+    pose.headPitch = Math.max(-0.6, Math.min(0.7, -Math.asin(Math.max(-1, Math.min(1, f.y)))));
+    pose.torsoYaw = pose.headYaw * 0.15;
+    pose.mouthOpen += (this.talk * 0.9 - pose.mouthOpen) * Math.min(1, dt * 14);
+    pose.breath = Math.sin(performance.now() / 700);
+    this.blinkIn -= dt;
+    if (this.blinkIn <= 0) {
+      this.blinkT = 0;
+      this.blinkIn = 2 + Math.random() * 3;
+    }
+    if (this.blinkT >= 0) {
+      this.blinkT += dt;
+      pose.blink = this.blinkT < 0.08 ? this.blinkT / 0.08 : Math.max(0, 1 - (this.blinkT - 0.08) / 0.1);
+      if (this.blinkT > 0.18) this.blinkT = -1;
+    }
+    p.rig.apply(pose);
   }
 
   private hand(on: number, d: Float32Array, start: number, base: number, seat: Seat, side: 'left' | 'right'): void {
