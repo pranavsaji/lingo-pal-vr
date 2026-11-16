@@ -33,7 +33,7 @@ The landing page also plays a 3-minute tour.
 - **Accessibility**: voice for every action, eyes-only selection, high contrast, text size,
   slow speech, subtitles, left-hand mode, reduced motion, seated by default.
 - **Mixed reality**: the café counter lands on your real table (planes, anchors, depth occlusion).
-- **Café à deux**: a friend joins from any browser, peer to peer, and takes turns ordering.
+- **Café à deux**: a friend joins from any browser, peer to peer, appears at the counter as a person, and takes turns ordering.
 - Built for Meta Quest 3 / 3S and Meta VR Glasses (narrow-view layout, gaze + pinch).
 
 Tested in the IWSDK emulator (Meta Quest 3 profile); on-device reports welcome (TESTING.md).
