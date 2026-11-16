@@ -9,12 +9,14 @@ The landing page also plays a 3-minute tour.
 - **Order with your hands**: look at an item and hold up fingers (index-first or the French
   thumb-first count), pinch reply chips, or simply say it in French.
 - **An AI shopkeeper who acts in the world** (Claude, with tools the game validates): she
-  serves the goods on the counter, quotes prices, counts your change back aloud, offers a
+  serves your order on the shop's tray (the game holds her to the number you asked for),
+  quotes prices, counts your change back aloud, offers a
   swap when stock runs out, tests you with wrong change on purpose, remembers you between
   visits and plans tomorrow's practice from your weak words.
 - **Seven places on a tabletop Plan de Paris**: Café Lune, La Boulangerie, Le Marché,
   Le Bistrot, Le Métro, La Pharmacie and L'Hôtel, each with its own shopkeeper, menu,
-  prices, words, 360° photo backdrop and a real-life curveball ("Sur place ou à emporter ?").
+  prices, words, 360° photo backdrop, a display that fits the shop (a glass pastry case,
+  produce crates, a pharmacy rack, a ticket rack) and a real-life curveball ("Sur place ou à emporter ?").
   Pinch a pin on the little 3D Paris on the counter to travel.
 - **Prêt pour Paris**: readiness for a real trip in 28 situations (order, say it, pay the
   exact amount, do it with no help, in each place), each ticked only by something the game
@@ -22,7 +24,8 @@ The landing page also plays a 3-minute tour.
 - **Pay with real euros**: pinch coins and notes onto the tray, or a bank card at the hotel.
 - **Speak and be scored**: pronunciation score on every spoken line, on-device French speech
   recognition (no key), natural shopkeeper voices; "Vraie vie" mode removes English and hints.
-- **Pal**, a sparrow on the counter you can ask in English ("How do I ask for the bill?").
+- **Pal**, a sparrow on the counter you can ask in English ("How do I ask for the bill?");
+  Pal and the shopkeepers never talk over each other.
 - **Come back tomorrow**: streaks with rest days, XP and A1 to A2 levels, Mon Carnet
   (spaced repetition), a daily shopping list, Ma semaine, the Passeport de Paris (16 stamps).
 - **First five minutes**: landing page with real loading progress, a hands / eyes / voice
