@@ -125,24 +125,6 @@ export function attachLanding(world: World): void {
   mr?.addEventListener('click', () => go(mr, true));
   twoD?.addEventListener('click', () => setVisible(false));
 
-  // "Regarder la visite": the 3-minute tour, fetched only when asked for (cold start stays light).
-  const tourBox = el<HTMLDivElement>('tour-box');
-  const tourVideo = el<HTMLVideoElement>('tour-video');
-  const closeTour = () => {
-    tourVideo?.pause();
-    if (tourBox) tourBox.hidden = true;
-  };
-  el<HTMLButtonElement>('tour-open')?.addEventListener('click', () => {
-    if (!tourBox || !tourVideo) return;
-    if (!tourVideo.src) tourVideo.src = `${import.meta.env.BASE_URL}media/lingo-pal-tour-720p.mp4`;
-    tourBox.hidden = false;
-    void tourVideo.play().catch(() => undefined);
-  });
-  el<HTMLButtonElement>('tour-close')?.addEventListener('click', closeTour);
-  tourBox?.addEventListener('click', (e) => {
-    if (e.target === tourBox) closeTour();
-  });
-
   let wasImmersive = false;
   world.visibilityState.subscribe((v) => {
     const immersive = v !== VisibilityState.NonImmersive;

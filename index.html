@@ -158,6 +158,26 @@
       <video id="tour-video" controls playsinline preload="none"></video>
     </div>
     <script>
+      // "Regarder la visite": inline so the link works the moment the page shows, while the
+      // café (the app bundle) is still loading. The video is fetched only when asked for.
+      (function () {
+        var box = document.getElementById('tour-box');
+        var video = document.getElementById('tour-video');
+        var open = document.getElementById('tour-open');
+        if (!box || !video || !open) return;
+        function close() { video.pause(); box.hidden = true; }
+        open.addEventListener('click', function () {
+          if (!video.getAttribute('src')) video.src = 'media/lingo-pal-tour-720p.mp4';
+          box.hidden = false;
+          var p = video.play();
+          if (p && p.catch) p.catch(function () {});
+        });
+        document.getElementById('tour-close').addEventListener('click', close);
+        box.addEventListener('click', function (e) { if (e.target === box) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+      })();
+    </script>
+    <script>
       // Progress animation: eases toward the real progress and creeps (never past
       // the next milestone) so the page never looks frozen. src/ui/landing.ts calls set().
       (function () {
