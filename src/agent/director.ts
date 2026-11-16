@@ -18,7 +18,7 @@ import { nextSituationLine } from '../state/readiness.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { caughtTrick, findElsewhere, lowStockToday, shouldTrickChange, trickAmount, trickOpenTurn, trickResolveTurn } from './agency.js';
 import { askedCounts, parseAmountCents, parseIntent } from './intent.js';
-import { holdToAskedCounts } from './order-guard.js';
+import { freeExtras, holdToAskedCounts } from './order-guard.js';
 import { MENU, menuItem, PLACES, priceToDigits, priceToFrench } from './menu.js';
 import { hintTurn } from './proactive.js';
 import { acceptsInvite, advanceCurveball, asksSlower, celebration, findCurveball, INVITE, invitationDue, inviteReply, pickCurveball } from './real-life.js';
@@ -429,7 +429,9 @@ export class AgentDirector {
       this.rejectedLog.push(...rejected);
       console.warn('[agent] rejected tool calls', rejected);
     }
-    this.store.setOrder(state);
+    // She handed over something free (the bistrot's carafe): it goes on the tray too.
+    const gifts = event.kind === 'say' ? freeExtras(appState.place, event.text, turn.fr, state) : [];
+    this.store.setOrder(gifts.length ? { ...state, free: [...(state.free ?? []), ...gifts] } : state);
     for (const e of effects) {
       if (e.kind === 'memory') this.store.remember(e.key, e.value);
       if (e.kind === 'goodbye') {

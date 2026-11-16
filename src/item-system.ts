@@ -370,6 +370,10 @@ export class ItemSystem extends createSystem({
       const f = this.footprints.get(l.itemId);
       if (f && l.qty > 0) groups.push({ id: l.itemId, qty: l.qty, w: f.w, d: f.d, h: f.h });
     }
+    for (const id of order.free ?? []) {
+      const f = this.footprints.get(id);
+      if (f && !groups.some((g) => g.id === id)) groups.push({ id, qty: 1, w: f.w, d: f.d, h: f.h });
+    }
     const keepOuts = [...counterKeepOuts(store.profile.settings.leftHanded), ...displayStandRects(), ...this.displayRects];
     const { placed, trays, oneTray } = layoutOrder(groups, keepOuts, appState.narrowView);
     this.syncTrays(trays ?? [], !!oneTray);

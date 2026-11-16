@@ -10,6 +10,7 @@
 import { numberToFrench } from './menu.js';
 import type { AgentTurn } from './protocol.js';
 import type { OrderState } from './tools.js';
+import { normalizeFrench } from '../voice/pronunciation.js';
 
 export interface CountFix {
   itemId: string;
@@ -56,4 +57,28 @@ export function holdToAskedCounts(
     en = swapWord(en, EN[f.from], EN[f.to]);
   }
   return { turn: { ...turn, actions, fr, en }, fixes };
+}
+
+/** Things a shop gives away: where, the item, and the word that names it. */
+const FREE: readonly { place: string; itemId: string; word: RegExp }[] = [{ place: 'bistrot', itemId: 'carafe', word: /\bcarafes?\b/ }];
+const REFUSE = /\b(desole|desolee|pas de carafe|plus de carafe|n avons pas|n a pas|malheureusement)\b/;
+const GIVE = /\b(voila|voici|gratuit|gratuite|bien sur|tout de suite|je vous (l )?apporte|avec plaisir|je vous en (apporte|donne|sers))\b/;
+
+/**
+ * Free extras the shopkeeper just handed over, so the tray shows what she says:
+ * at the bistrot, "Une carafe d'eau ? Bien sûr, c'est gratuit !" puts the carafe
+ * on the tray. Needs the learner to have asked for it, or her own "voilà", and
+ * never fires on a refusal. Never priced (orderTotal ignores `free`).
+ */
+export function freeExtras(place: string, learnerText: string, shopFr: string, order: OrderState): string[] {
+  const learner = normalizeFrench(learnerText);
+  const shop = normalizeFrench(shopFr);
+  const out: string[] = [];
+  for (const f of FREE) {
+    if (f.place !== place || order.free?.includes(f.itemId)) continue;
+    if (!f.word.test(shop) || REFUSE.test(shop) || !GIVE.test(shop)) continue;
+    if (!f.word.test(learner) && !/\b(voila|voici)\b/.test(shop)) continue;
+    out.push(f.itemId);
+  }
+  return out;
 }

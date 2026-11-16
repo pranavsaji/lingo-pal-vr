@@ -26,6 +26,8 @@ export interface OrderState {
   changeCents: number;
   /** Change already handed back by the agent. */
   changeGiven: boolean;
+  /** Free extras on the tray, never priced (the bistrot's carafe d'eau); see freeExtras in order-guard.ts. */
+  free?: string[];
 }
 
 export function emptyOrder(): OrderState {
