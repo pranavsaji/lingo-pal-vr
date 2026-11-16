@@ -255,21 +255,27 @@ async function speakCloud(text: string, slow: boolean, who: Who): Promise<boolea
   const buf = await fetchCloud(speaker, text, slow, ctx);
   if (!buf) return false;
   if (token !== speakToken) return true; // a newer line took over
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  // The shopkeeper's voice comes from where they stand; the learner's own phrases are not positioned.
-  src.connect(who === 'lune' ? (audioHub.voice ?? ctx.destination) : ctx.destination);
-  current = src;
-  if (who === 'lune') {
-    if (fallbackTimer) clearTimeout(fallbackTimer);
-    luneSpeaking.emit(true);
-    src.onended = () => {
-      if (token === speakToken) endLune();
-    };
-    // Covers a suspended audio context (no ended event).
-    fallbackTimer = setTimeout(endLune, buf.duration * 1000 + 600);
-  }
-  src.start();
+  const begin = () => {
+    if (token !== speakToken) return; // a newer line took over while this one waited
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    // The shopkeeper's voice comes from where they stand; the learner's own phrases are not positioned.
+    src.connect(who === 'lune' ? (audioHub.voice ?? ctx.destination) : ctx.destination);
+    current = src;
+    if (who === 'lune') {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      luneSpeaking.emit(true);
+      src.onended = () => {
+        if (token === speakToken) endLune();
+      };
+      // Covers a suspended audio context (no ended event).
+      fallbackTimer = setTimeout(endLune, buf.duration * 1000 + 600);
+    }
+    src.start();
+  };
+  // Pal may have started talking while this line was on its way: wait for it (one voice at a time).
+  if (who !== 'learner' && palTalking) whenPalQuiet(begin);
+  else begin();
   return true;
 }
 
