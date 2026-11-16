@@ -5,6 +5,7 @@
 
 import { createSystem, type UIKit, type UIKitMLAsset, VisibilityState } from '@iwsdk/core';
 import { appState, events } from './game-state.js';
+import { PLACES } from './agent/menu.js';
 import { UNLOCKS } from './state/progression.js';
 import { store } from './state/store.js';
 import { applyFrenchFont } from './fonts.js';
@@ -23,6 +24,7 @@ export class LessonSystem extends createSystem({}) {
   private score = 0;
   private lastWord = '';
   private el: Record<string, UIKit.Text | undefined> = {};
+  private greetedPlace = appState.place;
 
   init(): void {
     const session = store.startSession();
@@ -52,6 +54,18 @@ export class LessonSystem extends createSystem({}) {
         if (levelUp) this.celebrate(`NIVEAU ${levelUp} !`, `Level up: ${levelUp}`);
       }),
       events.review.on((ids) => this.startMission(ids, 'review')),
+      // A new shop: the home panel greets it (no notice left over from the last one).
+      events.place.on((place) => {
+        // The first shop of the session keeps its welcome ("Bon retour !", the tutorial).
+        if (place === this.greetedPlace) return;
+        this.greetedPlace = place;
+        if (appState.lessonActive) return;
+        const info = PLACES[place];
+        if (!info) return;
+        this.set('eyebrow', info.fr.toUpperCase());
+        this.set('word', info.shopkeeper.name);
+        this.set('english', `${info.en}: pinch anything to hear its French name, or order from ${info.shopkeeper.name}.`);
+      }),
       events.effects.on((fx) => {
         if (fx.some((e) => e.kind === 'goodbye')) this.showSummary();
       }),
@@ -114,6 +128,7 @@ export class LessonSystem extends createSystem({}) {
 
   private celebrate(fr: string, en: string): void {
     this.set('eyebrow', fr);
+    this.set('word', 'Bravo !');
     this.set('english', en);
     this.flashHeader('#d9a962');
   }

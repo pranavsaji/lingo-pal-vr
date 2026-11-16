@@ -573,6 +573,10 @@ export class DioramaSystem extends createSystem({
       // Entity roots may sit one level down (under the level root).
       for (const o of [child, ...child.children]) if (o.name === 'Payment Tray' || o.name.startsWith('Served ')) consider(o);
     }
+    // The middle of the display stand (display-fixture.ts) and the order's tray.
+    this.world.scene.traverse((o) => {
+      if (o.userData.displayStand || o.userData.serveTray) consider(o);
+    });
   }
 
   private restoreCounter(): void {

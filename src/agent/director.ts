@@ -17,7 +17,8 @@ import { pendingHere } from '../state/quest.js';
 import { nextSituationLine } from '../state/readiness.js';
 import { normalizeFrench } from '../voice/pronunciation.js';
 import { caughtTrick, findElsewhere, lowStockToday, shouldTrickChange, trickAmount, trickOpenTurn, trickResolveTurn } from './agency.js';
-import { parseAmountCents, parseIntent } from './intent.js';
+import { askedCounts, parseAmountCents, parseIntent } from './intent.js';
+import { holdToAskedCounts } from './order-guard.js';
 import { MENU, menuItem, PLACES, priceToDigits, priceToFrench } from './menu.js';
 import { hintTurn } from './proactive.js';
 import { acceptsInvite, advanceCurveball, asksSlower, celebration, findCurveball, INVITE, invitationDue, inviteReply, pickCurveball } from './real-life.js';
@@ -414,6 +415,15 @@ export class AgentDirector {
     if (epoch !== this.epoch) return staleTurn(); // the learner travelled while this reply was on its way
     if (req.scene.realLife) turn = this.afterRealLife(event, turn);
     if (event.kind === 'paid') turn = this.withPaidExtra(turn);
+    if (event.kind === 'say') {
+      // The learner said how many: the game serves that many, whatever the model heard.
+      const held = holdToAskedCounts(turn, askedCounts(event.text, event.fingers), this.store.order, this.stock());
+      if (held.fixes.length) {
+        turn = held.turn;
+        this.rejectedLog.push(...held.fixes.map((f) => ({ action: f, reason: `quantity ${f.from} held to the asked ${f.to}` })));
+        console.warn('[agent] serve count held to the order', held.fixes);
+      }
+    }
     const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
     if (rejected.length) {
       this.rejectedLog.push(...rejected);

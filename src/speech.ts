@@ -24,6 +24,63 @@ let frenchVoice: SpeechSynthesisVoice | null = null;
 /** true while Madame Lune's line is being spoken. */
 export const luneSpeaking = new Emitter<boolean>();
 
+// ---- one voice at a time -----------------------------------------------------
+// Pal speaks English (pal/pal-voice.ts), the shop speaks French: they never talk over
+// each other. A French line waits for Pal to finish; Pal waits for the shopkeeper; the
+// learner's own line cuts Pal short (they have moved on). Each wait gives up after
+// FLOOR_WAIT_MS so a lost "ended" event can never silence the game.
+
+const FLOOR_WAIT_MS = 12000;
+let shopTalking = false;
+luneSpeaking.on((on) => (shopTalking = on));
+let palTalking = false;
+let palStopper: (() => void) | null = null;
+let afterPal: (() => void)[] = [];
+
+/** pal-voice.ts: Pal's audio started (true) or ended / was stopped (false). */
+export function setPalTalking(on: boolean): void {
+  palTalking = on;
+  if (on) return;
+  const waiting = afterPal;
+  afterPal = [];
+  for (const f of waiting) f();
+}
+
+/** pal-voice.ts: how to cut Pal short when the learner speaks. */
+export function registerPalStopper(stop: () => void): void {
+  palStopper = stop;
+}
+
+/** Run `f` once Pal is quiet (now if Pal is not talking). */
+function whenPalQuiet(f: () => void): void {
+  if (!palTalking) return f();
+  let done = false;
+  const once = () => {
+    if (done) return;
+    done = true;
+    f();
+  };
+  afterPal.push(once);
+  setTimeout(once, FLOOR_WAIT_MS);
+}
+
+/** Run `f` once the shopkeeper has finished her line (now if she is quiet). */
+export function whenShopQuiet(f: () => void): void {
+  if (!shopTalking) return f();
+  let done = false;
+  let off: (() => void) | null = null;
+  const once = () => {
+    if (done) return;
+    done = true;
+    off?.();
+    f();
+  };
+  off = luneSpeaking.on((on) => {
+    if (!on) once();
+  });
+  setTimeout(once, FLOOR_WAIT_MS);
+}
+
 const hasBrowserTts = typeof window !== 'undefined' && 'speechSynthesis' in window;
 const forced = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('tts') : null;
 /** Which engine speaks: decided once the browser has listed its voices. */
@@ -236,6 +293,11 @@ export type Who = 'lune' | 'learner' | 'other';
  * own phrase, 'other' = a word or prompt (said in the shopkeeper's voice).
  */
 export function speakFrench(text: string, rate?: number, who: Who = 'other'): void {
+  if (who === 'learner') palStopper?.();
+  else if (palTalking) {
+    whenPalQuiet(() => speakFrench(text, rate, who));
+    return;
+  }
   const r = rate ?? (store.profile.settings.slowSpeech ? 0.7 : 0.9);
   if (engine === 'cloud' || (forced === 'cloud' && cloudOk)) {
     if (hasBrowserTts) window.speechSynthesis.cancel();

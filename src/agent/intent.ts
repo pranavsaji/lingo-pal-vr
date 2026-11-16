@@ -37,6 +37,11 @@ const NUMBER_WORDS: Record<string, number> = {
  * "pain au chocolat" is not also read as "pain" (a baguette or a bread roll).
  */
 function findItems(norm: string, fingers: number): { itemId: string; qty: number }[] {
+  return findItemsDetailed(norm, fingers).map(({ itemId, qty }) => ({ itemId, qty }));
+}
+
+/** Like findItems; `explicit` when the learner gave the count (a number word, or fingers held up). */
+function findItemsDetailed(norm: string, fingers: number): { itemId: string; qty: number; explicit: boolean }[] {
   const toks = norm.split(' ');
   const matches: { itemId: string; at: number; len: number }[] = [];
   for (const item of MENU) {
@@ -49,7 +54,7 @@ function findItems(norm: string, fingers: number): { itemId: string; qty: number
   }
   matches.sort((a, b) => b.len - a.len || a.at - b.at);
   const used = new Array<boolean>(toks.length).fill(false);
-  const found: { itemId: string; qty: number; at: number }[] = [];
+  const found: { itemId: string; qty: number; at: number; explicit: boolean }[] = [];
   for (const m of matches) {
     if (found.some((f) => f.itemId === m.itemId)) continue;
     let free = true;
@@ -66,10 +71,24 @@ function findItems(norm: string, fingers: number): { itemId: string; qty: number
       }
       if (w !== 'de' && w !== 'des' && w !== 'petit' && w !== 'petits' && w !== 'grand') break;
     }
+    const explicit = qty > 0 || fingers > 0;
     if (qty === 0) qty = fingers > 0 ? fingers : 1;
-    found.push({ itemId: m.itemId, qty: Math.min(MAX_QUANTITY, qty), at: m.at });
+    found.push({ itemId: m.itemId, qty: Math.min(MAX_QUANTITY, qty), at: m.at, explicit });
   }
-  return found.sort((a, b) => a.at - b.at).map(({ itemId, qty }) => ({ itemId, qty }));
+  return found.sort((a, b) => a.at - b.at).map(({ itemId, qty, explicit }) => ({ itemId, qty, explicit }));
+}
+
+/**
+ * The counts the learner clearly asked for in an order ("deux croissants", or
+ * "croissant" with two fingers up): the game holds the shopkeeper to these
+ * (director.ts). Empty for anything that is not a plain order.
+ */
+export function askedCounts(text: string, fingers = 0): { itemId: string; qty: number }[] {
+  const intent = parseIntent(text, fingers);
+  if (intent.kind !== 'order') return [];
+  return findItemsDetailed(normalizeFrench(text), fingers)
+    .filter((f) => f.explicit)
+    .map(({ itemId, qty }) => ({ itemId, qty }));
 }
 
 const has = (norm: string, re: RegExp) => re.test(norm);

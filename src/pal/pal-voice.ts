@@ -6,7 +6,7 @@
  */
 
 import { ensureAudioContext } from '../audio/audio-hub.js';
-import { speechEngine } from '../speech.js';
+import { registerPalStopper, setPalTalking, speechEngine, whenShopQuiet } from '../speech.js';
 
 let token = 0;
 let current: AudioBufferSourceNode | null = null;
@@ -51,7 +51,9 @@ export function stopPal(): void {
   current = null;
   if (typeof window !== 'undefined' && 'speechSynthesis' in window && speaking) window.speechSynthesis.cancel();
   speaking = false;
+  setPalTalking(false);
 }
+registerPalStopper(stopPal);
 
 let speaking = false;
 
@@ -65,7 +67,12 @@ function englishVoice(): SpeechSynthesisVoice | null {
   );
 }
 
-function speakBrowser(text: string, mine: number, onEnd: () => void): void {
+function speakBrowser(text: string, mine: number, done: () => void): void {
+  const onEnd = () => {
+    setPalTalking(false);
+    done();
+  };
+  setPalTalking(true);
   const estimate = Math.min(12000, 600 + text.length * 60);
   endTimer = setTimeout(() => mine === token && onEnd(), estimate);
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
@@ -99,28 +106,41 @@ export function speakEnglish(text: string, onStart: () => void, onEnd: () => voi
     return;
   }
   const ctx = speechEngine() === 'cloud' ? ensureAudioContext() : null;
+  // Pal never talks over the shopkeeper: the line starts once her French has ended.
   if (!ctx) {
-    onStart();
-    speakBrowser(line, mine, onEnd);
+    whenShopQuiet(() => {
+      if (mine !== token) return;
+      onStart();
+      speakBrowser(line, mine, onEnd);
+    });
     return;
   }
-  void fetchPal(line, ctx).then((buf) => {
-    if (mine !== token) return;
-    onStart();
-    if (!buf) {
-      speakBrowser(line, mine, onEnd);
-      return;
-    }
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.onended = () => {
+  void fetchPal(line, ctx).then((buf) =>
+    whenShopQuiet(() => {
       if (mine !== token) return;
-      if (endTimer) clearTimeout(endTimer);
-      onEnd();
-    };
-    endTimer = setTimeout(() => mine === token && onEnd(), buf.duration * 1000 + 600); // suspended context
-    current = src;
-    src.start();
-  });
+      onStart();
+      if (!buf) {
+        speakBrowser(line, mine, onEnd);
+        return;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      let ended = false;
+      const finish = () => {
+        if (ended || mine !== token) return;
+        ended = true;
+        if (endTimer) clearTimeout(endTimer);
+        endTimer = null;
+        current = null;
+        setPalTalking(false);
+        onEnd();
+      };
+      src.onended = finish;
+      endTimer = setTimeout(finish, buf.duration * 1000 + 600); // suspended context
+      current = src;
+      setPalTalking(true);
+      src.start();
+    }),
+  );
 }

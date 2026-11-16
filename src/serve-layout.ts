@@ -13,6 +13,10 @@
  * - Groups are placed closest to the learner's center first and never touch a
  *   keep-out zone or each other. A line that cannot fit anywhere (eight
  *   different goods at once) is reported in `hidden` instead of overlapping.
+ *
+ * `layoutOrder` (what the game uses) serves the whole order together on one
+ * tray when it fits in front of the display goods, so the learner sees at a
+ * glance what is theirs; otherwise each line gets its own thin mat.
  */
 
 /** Axis-aligned rectangle on the counter top (meters, world XZ; z0 < z1, z1 is nearer the learner). */
@@ -57,6 +61,10 @@ export interface ServeLayout {
   placed: ServeGroupOut[];
   /** Order lines that could not be set down without overlapping something. */
   hidden: string[];
+  /** Trays (one under the whole order) or mats (one per line) under the goods; empty for a bare layout. */
+  trays?: Rect[];
+  /** True when `trays` are rimmed trays holding whole lines (one, or two for a big order); false: one thin mat per line. */
+  oneTray?: boolean;
 }
 
 export const SERVE_AREA = {
@@ -212,4 +220,103 @@ export function layoutServed(groups: ServeGroupIn[], keepOuts: Rect[], narrow = 
     }
   }
   return best ?? { placed: [], hidden: [] };
+}
+
+// ---- the order on a tray -----------------------------------------------------
+
+/** Rim around the goods on a tray, and the gap between two lines on it. */
+export const TRAY_PAD = 0.014;
+const TRAY_GAP = 0.02;
+/** Margin of a per-line mat (under half of CLEAR, so neighbouring mats never touch). */
+export const MAT_PAD = 0.007;
+/** Goods stand on the tray's or mat's floor, this far above the counter. */
+export const TRAY_LIFT = 0.005;
+
+/** Every line side by side on one tray, or null when the tray does not fit anywhere in [x0, x1]. */
+function trayAttempt(groups: ServeGroupIn[], keepOuts: Rect[], cap: number, scale: number, x0: number, x1: number): ServeLayout | null {
+  const lines = groups.filter((g) => g.qty > 0);
+  if (!lines.length) return { placed: [], hidden: [], trays: [], oneTray: false };
+  const arr = lines.map((g) => ({ g, a: arrange(g, Math.min(g.qty, copyCapacity(g), cap), scale) }));
+  const innerW = arr.reduce((sum, { a }) => sum + a.gw, 0) + TRAY_GAP * (arr.length - 1);
+  const innerD = Math.max(...arr.map(({ a }) => a.gd));
+  const w = innerW + 2 * TRAY_PAD;
+  const d = innerD + 2 * TRAY_PAD;
+  const z1 = SERVE_AREA.frontZ;
+  const z0 = z1 - d;
+  if (z0 < SERVE_AREA.backZ) return null;
+  for (const x of candidates(w / 2, x0, x1)) {
+    const tray: Rect = { x0: x - w / 2, x1: x + w / 2, z0, z1 };
+    if (keepOuts.some((k) => rectsOverlap(tray, k, CLEAR))) continue;
+    const front = z1 - TRAY_PAD;
+    let left = tray.x0 + TRAY_PAD;
+    const placed: ServeGroupOut[] = arr.map(({ g, a }) => {
+      const gx = left + a.gw / 2;
+      left += a.gw + TRAY_GAP;
+      return {
+        id: g.id,
+        qty: g.qty,
+        shown: a.shown,
+        scale,
+        rect: { x0: gx - a.gw / 2, x1: gx + a.gw / 2, z0: front - a.gd, z1: front },
+        top: a.top + TRAY_LIFT,
+        badge: a.shown < g.qty,
+        copies: a.offsets.map((o) => ({ x: gx + o.x, y: o.y + TRAY_LIFT, z: front + o.z })),
+      };
+    });
+    return { placed, hidden: [], trays: [tray], oneTray: true };
+  }
+  return null;
+}
+
+/** A loose layout with a thin mat under each line. */
+function withMats(out: ServeLayout): ServeLayout {
+  const placed = out.placed.map((g) => ({ ...g, top: g.top + TRAY_LIFT, copies: g.copies.map((c) => ({ ...c, y: c.y + TRAY_LIFT })) }));
+  const trays = placed.map((g) => ({ x0: g.rect.x0 - MAT_PAD, x1: g.rect.x1 + MAT_PAD, z0: g.rect.z0 - MAT_PAD, z1: g.rect.z1 + MAT_PAD }));
+  return { placed, hidden: out.hidden, trays, oneTray: false };
+}
+
+/**
+ * A big order on two trays: the lines split in two runs (in order), the first
+ * tray nearest the learner's centre, the second wherever it fits clear of it.
+ */
+function twoTrays(groups: ServeGroupIn[], keepOuts: Rect[], scale: number, x0: number, x1: number): ServeLayout | null {
+  const lines = groups.filter((g) => g.qty > 0);
+  for (let k = 1; k < lines.length; k++) {
+    for (const [a, b] of [[lines.slice(0, k), lines.slice(k)], [lines.slice(k), lines.slice(0, k)]]) {
+      const first = trayAttempt(a, keepOuts, Infinity, scale, x0, x1);
+      if (!first?.trays) continue;
+      const second = trayAttempt(b, [...keepOuts, ...first.trays], Infinity, scale, x0, x1);
+      if (!second?.trays) continue;
+      return { placed: [...first.placed, ...second.placed], hidden: [], trays: [...first.trays, ...second.trays], oneTray: true };
+    }
+  }
+  return null;
+}
+
+/**
+ * The order as the shopkeeper sets it down: on one tray at the learner's edge
+ * when every copy fits there; else on two trays; else every copy loose (each
+ * line on its own mat) when that shows the whole order; else a tray with fewer
+ * copies ("x5" badges); else the best loose layout.
+ */
+export function layoutOrder(groups: ServeGroupIn[], keepOuts: Rect[], narrow = false): ServeLayout {
+  const bands: [number, number][] = narrow ? [[-NARROW_X, NARROW_X], [SERVE_AREA.x0, SERVE_AREA.x1]] : [[SERVE_AREA.x0, SERVE_AREA.x1]];
+  const tryTray = (attempts: { cap: number; scale: number }[]): ServeLayout | null => {
+    for (const [x0, x1] of bands) {
+      for (const { cap, scale } of attempts) {
+        const t = trayAttempt(groups, keepOuts, cap, scale, x0, x1);
+        if (t) return t;
+      }
+    }
+    return null;
+  };
+  const full = tryTray([{ cap: Infinity, scale: 1 }, { cap: Infinity, scale: 0.85 }]);
+  if (full) return full;
+  for (const [x0, x1] of bands) for (const s of [1, 0.85]) {
+    const two = twoTrays(groups, keepOuts, s, x0, x1);
+    if (two) return two;
+  }
+  const loose = layoutServed(groups, keepOuts, narrow);
+  if (!loose.hidden.length && loose.placed.every((p) => !p.badge && p.scale === 1)) return withMats(loose);
+  return tryTray(ATTEMPTS.slice(1)) ?? withMats(loose);
 }

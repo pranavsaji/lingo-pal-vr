@@ -113,7 +113,7 @@ export class PlaceSystem extends createSystem({
     const look = PLACE_LOOKS[place];
     const sets = new Map<string, TextureSet | null>();
     for (const s of [look.floor, look.counterTop, look.counterFront, look.backTop, look.backFront]) sets.set(s.tex, await loadSurface(s.tex));
-    const shop = buildShopSet(look, sets, (id) => AssetManager.getGLTF(id)?.scene ?? null);
+    const shop = buildShopSet(look, sets, (id) => AssetManager.getGLTF(id)?.scene ?? null, place);
     if (this.set) {
       // Cached model instances share geometry and materials with the asset cache: detach, then dispose the rest.
       for (const prop of this.set.shop.props) prop.removeFromParent();

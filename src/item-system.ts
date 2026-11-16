@@ -18,15 +18,18 @@ import {
   MeshBasicMaterial,
   DoubleSide,
   PlaneGeometry,
+  ExtrudeGeometry,
+  Shape,
+  Path,
 } from '@iwsdk/core';
 import { director } from './agent/runtime.js';
 import { emptyOrder, type OrderState } from './agent/tools.js';
 import { buildHitArea, buildItem } from './cafe-builder.js';
 import { VocabItem } from './components.js';
-import { appState, events } from './game-state.js';
-import { COUNTER_Y, counterKeepOuts } from './layout.js';
+import { appState, events, type PlaceId } from './game-state.js';
+import { COUNTER_Y, counterKeepOuts, displayStandRects } from './layout.js';
 import { makeCanvasTexture } from './models/model-kit.js';
-import { layoutServed, type Rect, type ServeGroupIn, type ServeGroupOut } from './serve-layout.js';
+import { layoutOrder, type Rect, type ServeGroupIn, type ServeGroupOut } from './serve-layout.js';
 import { store } from './state/store.js';
 import { addDwellTarget } from './ui/dwell.js';
 import { VOCAB, vocabById, type VocabEntry } from './vocab.js';
@@ -107,6 +110,69 @@ interface ServedVisual {
   size: number;
 }
 
+/** What the order is served on, per shop: a café tray, a bread board, a market crate tray... */
+const TRAY_LOOK: Record<PlaceId, { floor: number; rim: number; roughness: number; metalness?: number }> = {
+  cafe: { floor: 0x3b2618, rim: 0xc9a24a, roughness: 0.45, metalness: 0.2 },
+  boulangerie: { floor: 0xc79a64, rim: 0x9a6c3e, roughness: 0.7 },
+  marche: { floor: 0xb58a55, rim: 0x6e4a2a, roughness: 0.85 },
+  bistrot: { floor: 0x2b2f33, rim: 0x16181b, roughness: 0.6 },
+  metro: { floor: 0x2b4a7a, rim: 0x1b2f50, roughness: 0.5 },
+  pharmacie: { floor: 0xf4f6f3, rim: 0x2a9d48, roughness: 0.4 },
+  hotel: { floor: 0x4a2c1c, rim: 0xc9a227, roughness: 0.5, metalness: 0.2 },
+};
+const TRAY_FLOOR_H = 0.005;
+const TRAY_RIM_H = 0.016;
+const TRAY_RIM_W = 0.008;
+
+/** A rounded rectangle centred on the origin (shape space; extruded, then laid flat). */
+function roundRect(path: Shape | Path, w: number, d: number, r: number): void {
+  const x = -w / 2;
+  const y = -d / 2;
+  path.moveTo(x + r, y);
+  path.lineTo(x + w - r, y);
+  path.quadraticCurveTo(x + w, y, x + w, y + r);
+  path.lineTo(x + w, y + d - r);
+  path.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
+  path.lineTo(x + r, y + d);
+  path.quadraticCurveTo(x, y + d, x, y + d - r);
+  path.lineTo(x, y + r);
+  path.quadraticCurveTo(x, y, x + r, y);
+}
+
+/** The tray (rim: true) or a thin mat under served goods, `rect` on the counter top. */
+function buildTray(rect: Rect, place: PlaceId, rim: boolean): Group {
+  const look = TRAY_LOOK[place];
+  const w = rect.x1 - rect.x0;
+  const d = rect.z1 - rect.z0;
+  const r = Math.min(0.02, w / 4, d / 4);
+  const g = new Group();
+  g.name = rim ? 'Serving tray' : 'Serving mat';
+  g.userData.serveTray = true;
+  const floorShape = new Shape();
+  roundRect(floorShape, w, d, r);
+  const floorMat = new MeshStandardMaterial({ color: look.floor, roughness: look.roughness, metalness: look.metalness ?? 0 });
+  const floor = new Mesh(new ExtrudeGeometry(floorShape, { depth: TRAY_FLOOR_H, bevelEnabled: false, curveSegments: 4 }), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = 0.001;
+  floor.receiveShadow = true;
+  g.add(floor);
+  if (rim) {
+    const ring = new Shape();
+    roundRect(ring, w, d, r);
+    const hole = new Path();
+    roundRect(hole, w - 2 * TRAY_RIM_W, d - 2 * TRAY_RIM_W, Math.max(0.002, r - TRAY_RIM_W));
+    ring.holes.push(hole);
+    const rimMat = new MeshStandardMaterial({ color: look.rim, roughness: look.roughness, metalness: look.metalness ?? 0 });
+    const rimMesh = new Mesh(new ExtrudeGeometry(ring, { depth: TRAY_RIM_H, bevelEnabled: false, curveSegments: 4 }), rimMat);
+    rimMesh.rotation.x = -Math.PI / 2;
+    rimMesh.position.y = 0.001;
+    rimMesh.receiveShadow = true;
+    g.add(rimMesh);
+  }
+  g.position.set((rect.x0 + rect.x1) / 2, COUNTER_Y, (rect.z0 + rect.z1) / 2);
+  return g;
+}
+
 interface ServedBadge {
   key: string;
   entity: Entity;
@@ -124,6 +190,7 @@ export class ItemSystem extends createSystem({
   private ring!: Mesh;
   private served: ServedVisual[] = [];
   private badges: ServedBadge[] = [];
+  private trays: { key: string; entity: Entity; root: Group }[] = [];
   /** Per shop: measured footprints, and the display goods' rectangles that served goods keep clear of. */
   private footprints = new Map<string, Footprint>();
   private displayRects: Rect[] = [];
@@ -303,8 +370,9 @@ export class ItemSystem extends createSystem({
       const f = this.footprints.get(l.itemId);
       if (f && l.qty > 0) groups.push({ id: l.itemId, qty: l.qty, w: f.w, d: f.d, h: f.h });
     }
-    const keepOuts = [...counterKeepOuts(store.profile.settings.leftHanded), ...this.displayRects];
-    const { placed } = layoutServed(groups, keepOuts, appState.narrowView);
+    const keepOuts = [...counterKeepOuts(store.profile.settings.leftHanded), ...displayStandRects(), ...this.displayRects];
+    const { placed, trays, oneTray } = layoutOrder(groups, keepOuts, appState.narrowView);
+    this.syncTrays(trays ?? [], !!oneTray);
 
     const old = new Map<string, ServedVisual>();
     for (const v of this.served) old.set(v.key, v);
@@ -336,6 +404,28 @@ export class ItemSystem extends createSystem({
     for (const v of old.values()) v.entity.dispose();
     this.served = next;
     this.syncBadges(placed);
+  }
+
+  /** The tray under the whole order (or one mat per line); kept while its rectangle does not change. */
+  private syncTrays(rects: Rect[], oneTray: boolean): void {
+    const keys = rects.map((r) => `${appState.place}|${oneTray ? 'tray' : 'mat'}|${[r.x0, r.x1, r.z0, r.z1].map((v) => v.toFixed(3)).join(',')}`);
+    const keep = this.trays.filter((t) => keys.includes(t.key));
+    for (const t of this.trays) {
+      if (keep.includes(t)) continue;
+      t.root.traverse((o) => {
+        if (o instanceof Mesh) {
+          o.geometry.dispose();
+          (o.material as MeshStandardMaterial).dispose();
+        }
+      });
+      t.entity.dispose();
+    }
+    this.trays = keep;
+    rects.forEach((r, i) => {
+      if (this.trays.some((t) => t.key === keys[i])) return;
+      const root = buildTray(r, appState.place, oneTray);
+      this.trays.push({ key: keys[i], root, entity: this.world.createTransformEntity(root) });
+    });
   }
 
   /** "x5" tags for groups that show fewer copies than were ordered. */

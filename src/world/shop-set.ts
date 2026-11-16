@@ -19,7 +19,9 @@ import {
   MeshStandardMaterial,
   type Object3D,
 } from '@iwsdk/core';
+import type { PlaceId } from '../game-state.js';
 import { buildPlaceDressing } from '../models/place-items.js';
+import { buildDisplayStand } from './display-fixture.js';
 import type { PlaceLook, Surface } from '../places/places.js';
 import { freezeStatic, mergeStaticMeshes, stripTransmission } from './static-merge.js';
 import { surfaceMaterial, type TextureSet } from './surfaces.js';
@@ -82,7 +84,7 @@ function bistroTable(top: MeshStandardMaterial, metal: MeshStandardMaterial): Gr
   return g;
 }
 
-export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) => Object3D | null): ShopSet {
+export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) => Object3D | null, place: PlaceId): ShopSet {
   const root = new Group();
   root.name = 'Shop Set';
   const props: Object3D[] = [];
@@ -164,6 +166,8 @@ export function buildShopSet(look: PlaceLook, sets: Sets, getProp: (id: string) 
     props.push(mesh);
     geometries.push(mesh.geometry);
   }
+  // The display stand (display-fixture.ts) merges on its own: its middle hides under the Plan de Paris board.
+  for (const g of buildDisplayStand(place, look.accent)) root.add(g);
   freezeStatic(root);
 
   return { root, props, geometries };

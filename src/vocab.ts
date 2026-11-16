@@ -5,6 +5,7 @@
  */
 
 import type { PlaceId } from './game-state.js';
+import { DISPLAY_LIFT } from './layout.js';
 import type { PlaceItemShape } from './models/place-items.js';
 
 export type ItemShape =
@@ -46,12 +47,15 @@ export interface VocabEntry {
 
 // Counter top sits at y = 1.0 m, about 0.9 m in front of the player.
 const C = 1.0; // models are grounded (lowest point on the counter top) in item-system
+const S = C + DISPLAY_LIFT; // top of the display stand
 const T = 0.765; // side tables: top of the bistro table (0.75 + half its 0.03 thickness)
 
 /** Display spots shared by every shop: eight along the counter, four on the side tables. */
 export const SLOTS: [number, number, number][] = [
-  [-0.62, C, -0.95], [-0.36, C, -0.9], [-0.08, C, -0.9], [0.18, C, -0.88],
-  [0.36, C, -0.96], [0.58, C, -0.93], [0.98, C, -0.94], [-0.86, C, -1.02],
+  // On the shop's display stand (layout.ts DISPLAY_*): deep at the sides, shallow in the middle
+  // in front of the payment tray. [7] is the stand's far-left end.
+  [-0.66, S, -0.965], [-0.44, S, -0.965], [-0.19, S, -0.94], [0.05, S, -0.932],
+  [0.29, S, -0.943], [0.53, S, -0.943], [0.8, S, -0.936], [-0.92, S, -0.965],
   // Side tables: the cafe and bistro customers' coffee sits on the outer side of each table.
   [1.25, T, -0.6], [1.08, T, -0.78], [1.18, T, -0.42], [-1.2, T, -0.66],
 ];
@@ -62,7 +66,7 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
   cafe: [
     { id: 'croissant', fr: 'le croissant', en: 'the croissant', tip: 'kwah-SAHN, silent t', shape: 'croissant', color: 0xd9a441, position: SLOTS[0], model: prop('croissant'), rotY: 0.4 },
     { id: 'cafe', fr: 'le café', en: 'the coffee', tip: 'ka-FAY, stress the end', shape: 'cup', color: 0xf3efe7, position: SLOTS[1], model: prop('cafe_cup'), rotY: 0.5 },
-    { id: 'baguette', fr: 'la baguette', en: 'the baguette', tip: 'ba-GET, feminine: la', shape: 'baguette', color: 0xc98a3c, position: SLOTS[2], model: prop('3DBread011'), modelScale: 1.9, rotY: 0.35 },
+    { id: 'baguette', fr: 'la baguette', en: 'the baguette', tip: 'ba-GET, feminine: la', shape: 'baguette', color: 0xc98a3c, position: SLOTS[2], model: prop('3DBread011'), modelScale: 1.9, rotY: 0.08 },
     { id: 'pomme', fr: 'la pomme', en: 'the apple', tip: 'POM, rhymes with "come"', shape: 'apple', color: 0xc8262c, position: SLOTS[3], model: prop('food_apple_01') },
     { id: 'orange', fr: "l'orange", en: 'the orange', tip: 'lo-RAHNJ, soft j sound', shape: 'orange', color: 0xf08a1c, position: SLOTS[4], model: prop('orange') },
     { id: 'fromage', fr: 'le fromage', en: 'the cheese', tip: 'fro-MAHJ', shape: 'cheese', color: 0xf2c94c, position: SLOTS[5] },
@@ -74,7 +78,7 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
     { id: 'fleur', fr: 'la fleur', en: 'the flower', tip: 'FLUR, round your lips', shape: 'flower', color: 0xe8457a, position: SLOTS[11], model: prop('orchid') },
   ],
   boulangerie: [
-    { id: 'baguette', fr: 'la baguette', en: 'the baguette', tip: 'ba-GET, feminine: la', shape: 'baguette', color: 0xc98a3c, position: SLOTS[2], model: prop('3DBread011'), modelScale: 1.9, rotY: 0.35 },
+    { id: 'baguette', fr: 'la baguette', en: 'the baguette', tip: 'ba-GET, feminine: la', shape: 'baguette', color: 0xc98a3c, position: SLOTS[2], model: prop('3DBread011'), modelScale: 1.9, rotY: 0.08 },
     { id: 'croissant', fr: 'le croissant', en: 'the croissant', tip: 'kwah-SAHN, silent t', shape: 'croissant', color: 0xd9a441, position: SLOTS[0], model: prop('3DPastry001'), modelScale: 1.2, rotY: 0.4 },
     { id: 'pain_chocolat', fr: 'le pain au chocolat', en: 'the chocolate croissant', tip: 'pan oh sho-ko-LAH', shape: 'pain_chocolat', color: 0xcf8f3e, position: SLOTS[1], model: prop('3DPastry002'), modelScale: 0.8, rotY: 1.57 },
     { id: 'petit_pain', fr: 'le petit pain', en: 'the bread roll', tip: 'puh-tee PAN, nasal an', shape: 'model', color: 0xd9a441, position: SLOTS[3], model: prop('3DBread007'), rotY: 0.3 },
@@ -88,7 +92,7 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
   marche: [
     { id: 'pomme', fr: 'la pomme', en: 'the apple', tip: 'POM, rhymes with "come"', shape: 'apple', color: 0xc8262c, position: SLOTS[0], model: prop('food_apple_01') },
     { id: 'poire', fr: 'la poire', en: 'the pear', tip: 'PWAHR', shape: 'model', color: 0xc9b458, position: SLOTS[1], model: prop('food_pears_asian_01') },
-    { id: 'banane', fr: 'la banane', en: 'the banana', tip: 'ba-NAN', shape: 'model', color: 0xf2d04c, position: SLOTS[2], model: prop('bananas'), modelScale: 0.5, rotY: 0.2 },
+    { id: 'banane', fr: 'la banane', en: 'the banana', tip: 'ba-NAN', shape: 'model', color: 0xf2d04c, position: SLOTS[2], model: prop('bananas'), modelScale: 0.5, rotY: 0.05 },
     { id: 'citron', fr: 'le citron', en: 'the lemon', tip: 'see-TROHN, nasal on', shape: 'model', color: 0xf2e04c, position: SLOTS[3], model: prop('lemon'), modelY: 0.052 },
     { id: 'kiwi', fr: 'le kiwi', en: 'the kiwi', tip: 'kee-WEE', shape: 'model', color: 0x8a6a3a, position: SLOTS[4], model: prop('food_kiwi_01') },
     { id: 'avocat', fr: "l'avocat", en: 'the avocado', tip: 'la-vo-KAH (also "lawyer")', shape: 'model', color: 0x2f4a24, position: SLOTS[5], model: prop('food_avocado_01') },
@@ -100,10 +104,10 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
   ],
   bistrot: [
     { id: 'plat_du_jour', fr: 'le plat du jour', en: 'the dish of the day', tip: 'pla du ZHOOR, silent t', shape: 'plat', color: 0x6b3a22, position: SLOTS[0] },
-    { id: 'soupe', fr: "la soupe à l'oignon", en: 'the onion soup', tip: "SOOP a lo-NYOHN", shape: 'soupe', color: 0xb8743a, position: SLOTS[1] },
+    { id: 'soupe', fr: "la soupe à l'oignon", en: 'the onion soup', tip: "SOOP a lo-NYOHN", shape: 'soupe', color: 0xb8743a, position: SLOTS[4] },
     { id: 'salade', fr: 'la salade', en: 'the salad', tip: 'sa-LAD', shape: 'salade', color: 0x5fae3b, position: SLOTS[2] },
-    { id: 'crepe', fr: 'la crêpe', en: 'the crepe', tip: 'KREP, short e', shape: 'crepe', color: 0xe0a95b, position: SLOTS[3] },
-    { id: 'jus_orange', fr: "le jus d'orange", en: 'the orange juice', tip: 'zhoo do-RAHNJ, silent s', shape: 'jus', color: 0xf39a1d, position: SLOTS[4] },
+    { id: 'crepe', fr: 'la crêpe', en: 'the crepe', tip: 'KREP, short e', shape: 'crepe', color: 0xe0a95b, position: SLOTS[1] },
+    { id: 'jus_orange', fr: "le jus d'orange", en: 'the orange juice', tip: 'zhoo do-RAHNJ, silent s', shape: 'jus', color: 0xf39a1d, position: SLOTS[3] },
     { id: 'eau', fr: "la bouteille d'eau", en: 'the bottle of water', tip: 'boo-TAY doh', shape: 'bottle', color: 0x5aa9e6, position: SLOTS[5], model: prop('water_bottle') },
     { id: 'carafe', fr: "la carafe d'eau", en: 'the jug of tap water', tip: 'ka-RAF doh. Free in every restaurant!', shape: 'carafe', color: 0xcfe8f2, position: SLOTS[6] },
     { id: 'addition', fr: "l'addition", en: 'the bill', tip: 'la-dee-SYOHN. "L\'addition, s\'il vous plait !"', shape: 'addition', color: 0xfbfaf6, position: SLOTS[9] },
@@ -124,8 +128,8 @@ export const PLACE_VOCAB: Record<PlaceId, VocabEntry[]> = {
   hotel: [
     { id: 'nuit', fr: 'la nuit', en: 'the night (the room key)', tip: 'NWEE. "Deux nuits": hold up two fingers', shape: 'nuit', color: 0xc9a227, position: SLOTS[1] },
     { id: 'petit_dejeuner', fr: 'le petit-déjeuner', en: 'the breakfast', tip: 'puh-tee day-zhuh-NAY', shape: 'petit_dej', color: 0xe0a95b, position: SLOTS[2] },
-    { id: 'plan_ville', fr: 'le plan de la ville', en: 'the city map', tip: 'plahn duh la VEEL', shape: 'plan_ville', color: 0xf6f1e4, position: SLOTS[3] },
-    { id: 'carte_postale', fr: 'la carte postale', en: 'the postcard', tip: 'kart pos-TAL', shape: 'carte_postale', color: 0xf2a65a, position: SLOTS[4] },
+    { id: 'plan_ville', fr: 'le plan de la ville', en: 'the city map', tip: 'plahn duh la VEEL', shape: 'plan_ville', color: 0xf6f1e4, position: SLOTS[4] },
+    { id: 'carte_postale', fr: 'la carte postale', en: 'the postcard', tip: 'kart pos-TAL', shape: 'carte_postale', color: 0xf2a65a, position: SLOTS[3] },
     { id: 'parapluie', fr: 'le parapluie', en: 'the umbrella', tip: 'pa-ra-PLWEE', shape: 'parapluie', color: 0x1f3b63, position: SLOTS[5] },
     { id: 'sonnette', fr: 'la sonnette', en: 'the desk bell', tip: 'so-NET. Ding!', shape: 'sonnette', color: 0xd9b54a, position: SLOTS[6] },
   ],

@@ -147,8 +147,11 @@ describe('served goods on the counter', () => {
     for (const place of PLACES)
       for (const v of PLACE_VOCAB[place]) {
         if (v.position[1] < 0.9) continue;
-        const r = 0.085; // the widest round goods (tart, cake plate) are 16-21 cm across
-        const rect = { x0: v.position[0] - r, x1: v.position[0] + r, z0: v.position[2] - r, z1: v.position[2] + r };
+        // The item's measured footprint (long side along the counter, as on the stand), else the widest goods' 17 cm.
+        const fp = MEASURED[place]?.fp[v.id];
+        const hx = fp ? fp[0] / 2 : 0.085;
+        const hz = fp ? fp[1] / 2 : 0.085;
+        const rect = { x0: v.position[0] - hx, x1: v.position[0] + hx, z0: v.position[2] - hz, z1: v.position[2] + hz };
         expect(rectsOverlap(rect, register), `${place} ${v.id}`).toBe(false);
         expect(rectsOverlap(rect, tray), `${place} ${v.id}`).toBe(false);
       }

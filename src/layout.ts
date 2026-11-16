@@ -10,6 +10,26 @@ export type V3 = [number, number, number];
 
 export const COUNTER_Y = 1.0;
 
+/**
+ * The shop's display stand (src/world/display-fixture.ts): the goods for sale stand on
+ * it, raised and behind a glass case in the food shops, behind the strip at the
+ * learner's edge where the order is served (serve-layout.ts). Stand top: COUNTER_Y + DISPLAY_LIFT.
+ */
+export const DISPLAY_LIFT = 0.05;
+export const DISPLAY_FRONT_Z = -0.87;
+/**
+ * Stand segments [x0, x1, backZ]: deeper at the sides, shallow in front of the payment
+ * tray and the register. Split at the Plan de Paris board's edges (|x| <= 0.31) so the
+ * pieces under the board can be hidden while it is open (diorama-system clearCounter).
+ */
+export const DISPLAY_SEGMENTS: readonly (readonly [number, number, number])[] = [
+  [-1.07, -0.34, -1.06],
+  [-0.34, -0.09, -1.06],
+  [-0.09, 0.19, -0.995],
+  [0.19, 0.34, -1.015],
+  [0.34, 0.97, -1.015],
+];
+
 
 /** The learner's money dish (mirrored in left-hand mode). */
 export function dishPos(leftHanded: boolean): V3 {
@@ -54,6 +74,11 @@ const around = (c: V3, hx: number, z0: number, z1: number): CounterRect => ({ x0
  * model bounds plus a little room): register, payment tray, money dish, the
  * notes and bank card beside it, Pal (who hops a little) and the streak candle.
  */
+/** The display stand's footprint: served goods never go there. */
+export function displayStandRects(): CounterRect[] {
+  return DISPLAY_SEGMENTS.map(([x0, x1, z0]) => ({ x0, x1, z0, z1: DISPLAY_FRONT_Z }));
+}
+
 export function counterKeepOuts(leftHanded: boolean): CounterRect[] {
   const dish = dishPos(leftHanded);
   const outward = leftHanded ? -1 : 1;
