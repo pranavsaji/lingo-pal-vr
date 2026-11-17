@@ -118,7 +118,8 @@ export const CUSTOMERS: Record<PlaceId, CustomerSpec[]> = {
     },
     {
       assetId: 'customer-f07', name: 'Customer (metro, poster)', source: 'Female_Adult_07',
-      pos: [-1.95, -1.9], yaw: yawToward(-1.95, -1.9, -1.0, -2.44), posture: 'standing', activity: 'browse', seed: 47,
+      // Reading the Plan du métro on the pillar left of the window (map-props-system POSTER_PILLAR).
+      pos: [-2.05, -0.3], yaw: yawToward(-2.05, -0.3, -1.69, -0.86), posture: 'standing', activity: 'browse', seed: 47,
     },
   ],
   // Pharmacy: one studies the shelves, one waits their turn.

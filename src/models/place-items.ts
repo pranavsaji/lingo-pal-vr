@@ -435,7 +435,7 @@ function bistrotDressing(): Group {
   return g;
 }
 
-/** The ticket window: a slim enamel-blue frame over the counter with its sign, and a network poster. */
+/** The ticket window: a slim enamel-blue frame over the counter with its sign. */
 function metroDressing(): Group {
   const g = new Group();
   g.name = 'Metro Dressing';
@@ -460,53 +460,7 @@ function metroDressing(): Group {
   }, 0x1f4e8c);
   plate.position.set(0, 2.3, -1.25);
   g.add(plate);
-  // A made-up network (no real line names) on a poster behind the back counter.
-  const poster = sign('Network Poster', 0.7, 0.5, 512, (c, w, h) => {
-    c.fillStyle = '#f7f4ea';
-    c.fillRect(0, 0, w, h);
-    c.fillStyle = '#1f4e8c';
-    c.fillRect(0, 0, w, h * 0.12);
-    c.fillStyle = '#ffffff';
-    c.font = `bold ${Math.round(h * 0.07)}px ${SIGN_FONT}`;
-    c.textAlign = 'left';
-    c.textBaseline = 'middle';
-    c.fillText('PLAN DU MÉTRO', 14, h * 0.06);
-    c.strokeStyle = '#9fc6e0';
-    c.lineWidth = 10;
-    c.beginPath();
-    c.moveTo(0, h * 0.62);
-    c.bezierCurveTo(w * 0.3, h * 0.5, w * 0.55, h * 0.8, w, h * 0.6);
-    c.stroke();
-    const rand = makeRandom(21);
-    const colors = ['#2a9d48', '#f2c230', '#d1495b', '#3d6fb6', '#9b5de5', '#f28c28'];
-    c.lineCap = 'round';
-    c.lineJoin = 'round';
-    for (const col of colors) {
-      c.strokeStyle = col;
-      c.lineWidth = 6;
-      c.beginPath();
-      let x = rand() * w * 0.2;
-      let y = h * 0.2 + rand() * h * 0.7;
-      c.moveTo(x, y);
-      for (let k = 0; k < 4; k++) {
-        x += w * (0.18 + rand() * 0.1);
-        y = Math.min(h * 0.95, Math.max(h * 0.18, y + (rand() - 0.5) * h * 0.4));
-        c.lineTo(x, y);
-      }
-      c.stroke();
-    }
-    c.fillStyle = '#ffffff';
-    c.strokeStyle = '#2b2d33';
-    c.lineWidth = 3;
-    for (let k = 0; k < 14; k++) {
-      c.beginPath();
-      c.arc(w * (0.1 + rand() * 0.8), h * (0.22 + rand() * 0.7), 6, 0, Math.PI * 2);
-      c.fill();
-      c.stroke();
-    }
-  }, 0xf7f4ea);
-  poster.position.set(-1.0, 1.42, -2.44);
-  g.add(poster);
+  // The "Plan du métro" poster is on the tiled wall beside the window (models/map-props.ts, MapPropsSystem).
   return g;
 }
 

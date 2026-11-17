@@ -46,6 +46,17 @@ export function palPos(leftHanded: boolean): V3 {
   return [leftHanded ? 0.44 : -0.44, COUNTER_Y, -0.7];
 }
 
+/**
+ * The folded Plan de Paris on the counter (MapPropsSystem): front edge, on Pal's side
+ * between Pal and the streak candle (mirrored in left-hand mode), clear of the board.
+ * Turned MAP_YAW toward the seat: fully facing it would push the corners off the front
+ * edge (z = -0.66) and into the display stand (z = -0.87).
+ */
+export const MAP_YAW = 0.26;
+export function mapPropPos(leftHanded: boolean): V3 {
+  return [leftHanded ? 0.72 : -0.72, COUNTER_Y, -0.765];
+}
+
 /** Payment tray in front of Madame Lune. */
 export const TRAY: V3 = [0.05, COUNTER_Y, -1.13];
 export const TRAY_RADIUS = 0.17; // drop zone (generous: hands and rays are imprecise)
@@ -72,7 +83,7 @@ const around = (c: V3, hx: number, z0: number, z1: number): CounterRect => ({ x0
 /**
  * Fixed things on the counter that served goods must never cover (measured
  * model bounds plus a little room): register, payment tray, money dish, the
- * notes and bank card beside it, Pal (who hops a little) and the streak candle.
+ * notes and bank card beside it, Pal (who hops a little), the streak candle and the folded map.
  */
 /** The display stand's footprint: served goods never go there. */
 export function displayStandRects(): CounterRect[] {
@@ -90,5 +101,6 @@ export function counterKeepOuts(leftHanded: boolean): CounterRect[] {
     around(money, 0.08, -0.13, 0.055),
     around(palPos(leftHanded), 0.09, -0.09, 0.08),
     around(FLAME, 0.05, -0.05, 0.05),
+    around(mapPropPos(leftHanded), 0.155, -0.1, 0.1),
   ];
 }

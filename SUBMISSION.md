@@ -50,7 +50,7 @@ Testing on Quest 3 and 3S hardware, more cities (Madrid, Rome), a teacher mode, 
 - Mixed reality: press "Dans ma pièce" on the start page (Quest 3: set up your room first)
 - No French? Pinch Pal (the sparrow on the front-left of the counter) and ask in English
 - Real-life mode: say "vraie vie" (or Réglages → Vraie vie)
-- Plan de Paris: pinch "Paris" on the left panel; touch a pin on the tabletop map to travel
+- Plan de Paris: pinch "Paris" on the left panel, or the folded map on the counter (at the métro, also the "Plan du métro" poster); touch a pin on the tabletop map to travel
   (with `?demo=week` all seven places are open)
 - Café à deux: Paris map → "Inviter un ami", then open the shown link on a laptop or phone
 - Prêt pour Paris: the teal strip on the home panel (or say "prêt pour Paris"); set a trip

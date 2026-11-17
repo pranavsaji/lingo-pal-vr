@@ -100,7 +100,9 @@ describe('served goods on the counter', () => {
         }
       }
     }
-  }, 30_000);
+    // Thousands of layouts (a few ms each); the folded map's spot on the front edge makes the
+    // search work harder (~20 s here, more on a loaded machine), not the result: all still fit.
+  }, 90_000);
 
   it('worst case (every menu item x5) never overlaps; at most a line or two cannot be set down', () => {
     for (const place of PLACES) {
