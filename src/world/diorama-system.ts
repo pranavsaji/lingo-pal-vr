@@ -128,6 +128,8 @@ export class DioramaSystem extends createSystem({
   private tipPrimed = [false, false];
   private hidden: Hidden[] = [];
   private flash: string | null = null;
+  /** The pin (or close card) a ray pinch went down on; it acts when the pinch opens. */
+  private armed: Entity | null = null;
   private flashAt = 0;
   private pending: { id: string; at: number } | null = null;
   private hereAt: MapXZ & { h: number } = { x: 0, z: 0, h: 0 };
@@ -157,10 +159,19 @@ export class DioramaSystem extends createSystem({
       events.settings.on(() => (this.dirty = true)),
       events.stamp.on(() => (this.dirty = true)),
     );
+    // Ray pinch and mouse press act on RELEASE, like a click: acting on the press
+    // folded the board while the pinch was still held, the release then reached
+    // nothing, and the hand's pointer stayed "down", so the first pinch after the
+    // trip (on the folded map, an item...) was swallowed. A release off the target
+    // (Hovered already gone) cancels. Fingertip presses are decided in update() (see TOUCH_NEAR).
     this.queries.pressed.subscribe('qualify', (e) => {
+      if (this.targets.has(e) && !this.fingertipNear(e)) this.armed = e;
+    });
+    this.queries.pressed.subscribe('disqualify', (e) => {
+      if (e !== this.armed) return;
+      this.armed = null;
       const t = this.targets.get(e);
-      // Ray pinch and mouse press here; fingertip presses are decided in update() (see TOUCH_NEAR).
-      if (t && !this.fingertipNear(e)) this.activate(t);
+      if (t && e.hasComponent(Hovered)) this.activate(t);
     });
     this.queries.hovered.subscribe('qualify', (e) => {
       const t = this.targets.get(e);
@@ -189,6 +200,7 @@ export class DioramaSystem extends createSystem({
     for (const p of this.proxies) p.obj.pointerEvents = show ? 'auto' : 'none';
     this.hoverRing.visible = false;
     this.pending = null;
+    this.armed = null;
     this.tipPrimed[0] = this.tipPrimed[1] = false;
     if (show) {
       this.openedAt = this.clock;
@@ -588,6 +600,18 @@ export class DioramaSystem extends createSystem({
     };
     for (const e of this.queries.items.entities) consider(e.object3D);
     for (const e of this.queries.coins.entities) consider(e.object3D);
+    // Every other shop item and coin stays visible but cannot catch a pinch while
+    // the map is open: a tall display item (the métro's carnet, a market crate)
+    // stood in the ray path to the back pins and swallowed the press.
+    const mute = (obj: Object3D | null | undefined) => {
+      obj?.traverse((o) => {
+        if (o.pointerEvents === 'none') return;
+        this.hidden.push({ obj: o, visible: o.visible, pointerEvents: o.pointerEvents });
+        o.pointerEvents = 'none';
+      });
+    };
+    for (const e of this.queries.items.entities) if (e.object3D?.visible) mute(e.object3D);
+    for (const e of this.queries.coins.entities) if (e.object3D?.visible) mute(e.object3D);
     for (const child of this.world.scene.children) {
       // Entity roots may sit one level down (under the level root).
       for (const o of [child, ...child.children]) if (o.name === 'Payment Tray' || o.name.startsWith('Served ')) consider(o);
