@@ -1,6 +1,6 @@
-# Lingo Pal VR: Cafe Lune
+# Lingo Pal VR: Speak French in Paris
 
-A hands-first French cafe for Meta Quest and Meta VR Glasses, built with Meta's
+Hands-first French at seven Paris shop counters for Meta Quest and Meta VR Glasses, built with Meta's
 Immersive Web SDK (WebXR). Entry for the Meta VR Start Developer Competition 2026.
 
 **Live:** https://lingo-pal-vr.vercel.app (open in Quest Browser, press **Entrer au café**).

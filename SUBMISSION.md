@@ -6,8 +6,8 @@ re-read it after any Quest device report and remove anything that did not hold u
 
 ## Form fields
 
-- **Project name:** Lingo Pal VR: Café Lune
-- **Tagline (≤140 chars, 136):** Speak French to an AI shopkeeper who serves you, counts your change and tests you. Hands-first, on your real table. Get prêt pour Paris.
+- **Project name:** Lingo Pal VR: Speak French in Paris
+- **Elevator pitch (≤200 chars):** Speak French at seven Paris counters with your hands. AI shopkeepers serve you, count your change and test you; Pal helps in English. On your real table. Get prêt pour Paris.
 - **Track / division:** Productivity, New Experience
 - **New Experience eligibility:** this repository was created for the competition. Its first commit is dated 2026-11-12, inside the window that opened 2026-09-24, and every line of the VR app was written from scratch in it. It shares only the "Lingo Pal" name with the founder's separate mobile app, not code or builds. Proof: `git log --reverse` (first commit c52ca52, 2026-11-12).
 - **Playable link:** https://lingo-pal-vr.vercel.app (the start page also plays the 3-minute tour)
