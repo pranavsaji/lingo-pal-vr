@@ -88,7 +88,7 @@ page ("Regarder la visite").
 
 ## Before you press Submit
 
-- [x] Membership approved (Meta VR Start): welcome email 2026-11-11 to pranavs9876@gmail.com
+- [x] Membership approved (Meta VR Start): welcome email 2026-11-11
 - [x] Devpost draft filled 2026-11-15 (overview, story, 16 tags, try-it link, 12 captioned images, additional info)
 - [ ] Devpost: country of residence + the three eligibility checkboxes (age, jurisdiction, not a Meta employee)
 - [x] Devpost: YouTube link in Project details: https://www.youtube.com/watch?v=g5gRP86egSk (Public, Pranav Innovates, posted 2026-11-16 via Replybird)

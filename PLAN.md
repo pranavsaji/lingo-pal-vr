@@ -19,7 +19,7 @@ time, finishing each phase's acceptance checklist before starting the next.
 
 ### Eligibility and status
 - Must be a **Meta VR Start member** by the time of submission. Application submitted Nov 11
-  (account pranavs9876@gmail.com). If no approval by Nov 13 evening, file a support case in the
+ . If no approval by Nov 13 evening, file a support case in the
   Meta Developer Support Center and mention the Nov 18 deadline.
 - Devpost registration: done (draft project exists).
 - **One entry per person. One prize per entry.** If an entry is considered for several prizes,
