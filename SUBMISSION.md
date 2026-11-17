@@ -91,9 +91,9 @@ page ("Regarder la visite").
 - [x] Membership approved (Meta VR Start): welcome email 2026-11-11 to pranavs9876@gmail.com
 - [x] Devpost draft filled 2026-11-15 (overview, story, 16 tags, try-it link, 12 captioned images, additional info)
 - [ ] Devpost: country of residence + the three eligibility checkboxes (age, jurisdiction, not a Meta employee)
-- [ ] Devpost: YouTube/Vimeo link (public or unlisted) in Project details
+- [x] Devpost: YouTube link in Project details: https://www.youtube.com/watch?v=g5gRP86egSk (Public, Pranav Innovates, posted 2026-11-16 via Replybird)
 - [ ] Link opens on Quest 3 and 3S in a logged-out browser; Enter VR works
-- [ ] Video public or unlisted, under 3:00 (current cut: 2:53, narrated, all seven places in conversation)
+- [x] Video public, under 3:00 (2:53, narrated, all seven places in conversation)
 - [ ] Screenshots: hero cafe, wow moment, Carnet, high contrast, mixed reality
 - [ ] Anthropic console spend limit set; keep the Vercel project and key live until winners
       are announced (about Dec 11)
