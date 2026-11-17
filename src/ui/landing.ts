@@ -10,7 +10,9 @@
  */
 
 import { type World, VisibilityState } from '@iwsdk/core';
-import { events } from '../game-state.js';
+import { appState, events, type PlaceId } from '../game-state.js';
+import { store } from '../state/store.js';
+import { tutorialState } from './input-mode.js';
 import { launchMode } from '../world/mixed-reality-system.js';
 import { type BootMark, bootView } from './boot.js';
 
@@ -56,10 +58,21 @@ function render(): void {
     enter.disabled = !v.ready;
     const mr = el<HTMLButtonElement>('enter-mr');
     if (mr) mr.disabled = !v.ready;
+    for (const b of placeButtons()) b.disabled = !v.ready;
     if (v.ready) enter.focus({ preventScroll: true });
   }
   if (v.ready && !lastReady) document.body.classList.add('landing-ready');
   lastReady = v.ready;
+}
+
+/** The seven place buttons under the promise (index.html). */
+function placeButtons(): HTMLButtonElement[] {
+  return typeof document === 'undefined' ? [] : [...document.querySelectorAll<HTMLButtonElement>('.places button[data-place]')];
+}
+
+/** Gold on the shop the learner is in. */
+function markHere(place: string): void {
+  for (const b of placeButtons()) b.classList.toggle('here', b.dataset.place === place);
 }
 
 /** Record a milestone and refresh the page. */
@@ -122,6 +135,23 @@ export function attachLanding(world: World): void {
     }
   };
   enter?.addEventListener('click', () => go(enter, false));
+  // A place button goes straight there, then enters like the main button (same click, so XR can start).
+  for (const b of placeButtons()) {
+    b.addEventListener('click', () => {
+      const place = b.dataset.place as PlaceId | undefined;
+      if (!place || b.disabled) return;
+      if (place !== appState.place) {
+        // Picking another shop first is a clear choice: skip the café's first-run tutorial (Réglages can replay it).
+        if (tutorialState.running) events.tutorial.emit();
+        else if (!store.profile.onboarded) store.markOnboarded();
+        appState.travelAnyway = place;
+        events.travel.emit(place);
+      }
+      markHere(place);
+      go(enter, false);
+    });
+  }
+  events.place.on((place) => markHere(place));
   mr?.addEventListener('click', () => go(mr, true));
   twoD?.addEventListener('click', () => setVisible(false));
 

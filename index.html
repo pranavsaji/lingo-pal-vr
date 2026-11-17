@@ -54,8 +54,10 @@
       }
       .promise { font-size: clamp(16px, 2.6vw, 20px); color: var(--muted); margin: 0 auto 26px; max-width: 30em; line-height: 1.4; }
       .places { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0; margin: -10px auto 12px; max-width: 34em; }
-      .places li { font-size: 14px; font-weight: 600; padding: 5px 12px; border-radius: 14px; border: 1px solid rgba(226, 184, 87, 0.45); color: var(--ink); background: rgba(253, 248, 236, 0.06); }
-      .places li.here { background: var(--gold); color: var(--night); border-color: var(--gold); }
+      .places button { font: inherit; font-size: 14px; font-weight: 600; padding: 7px 13px; min-height: 34px; border-radius: 14px; border: 1px solid rgba(226, 184, 87, 0.45); color: var(--ink); background: rgba(253, 248, 236, 0.06); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+      .places button:hover:not(:disabled), .places button:focus-visible { border-color: var(--gold); background: rgba(226, 184, 87, 0.18); outline: none; }
+      .places button.here { background: var(--gold); color: var(--night); border-color: var(--gold); }
+      .places button:disabled { cursor: progress; opacity: 0.7; }
       .extras { font-size: 14px; color: var(--muted); margin: 0 auto 26px; max-width: 34em; line-height: 1.5; }
       .extras b { color: var(--ink); font-weight: 600; }
       .steps { list-style: none; display: flex; justify-content: center; gap: clamp(12px, 4vw, 34px); padding: 0; margin: 0 0 28px; }
@@ -113,9 +115,9 @@
         <div class="awning" aria-hidden="true"></div>
         <div class="brand">Lingo Pal VR · Paris</div>
         <h1 id="landing-title">Commandez votre croissant à Paris.</h1>
-        <p class="promise">Speak French with Paris shopkeepers who answer back. Start at Café Lune; six more places open as you order. Seated, hands only, first order in about a minute.</p>
+        <p class="promise">Speak French with Paris shopkeepers who answer back. Seven places in Paris: start at Café Lune, or pick a place below to go straight there. Seated, hands only, first order in about a minute.</p>
         <ul class="places" aria-label="Seven places in Paris">
-          <li class="here">Café Lune</li><li>Boulangerie</li><li>Marché</li><li>Bistrot</li><li>Métro</li><li>Pharmacie</li><li>Hôtel</li>
+          <li><button data-place="cafe" class="here" disabled>Café Lune</button></li><li><button data-place="boulangerie" disabled>Boulangerie</button></li><li><button data-place="marche" disabled>Marché</button></li><li><button data-place="bistrot" disabled>Bistrot</button></li><li><button data-place="metro" disabled>Métro</button></li><li><button data-place="pharmacie" disabled>Pharmacie</button></li><li><button data-place="hotel" disabled>Hôtel</button></li>
         </ul>
         <p class="extras"><b>Prêt pour Paris</b>: 28 real-trip situations · <b>Pal</b> helps in English · <b>mixed reality</b> on your table · <b>Café à deux</b> with a friend</p>
         <ul class="steps" aria-label="How it works">
