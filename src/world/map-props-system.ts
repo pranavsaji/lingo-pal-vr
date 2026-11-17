@@ -81,7 +81,8 @@ export class MapPropsSystem extends createSystem({
       if (e === this.foldPick) this.foldHoverTarget = 0;
     });
     this.cleanupFuncs.push(
-      events.openPanel.on((slot) => {
+      // What is actually showing (panel buttons switch slots without an openPanel request).
+      events.panelShown.on((slot) => {
         this.mapOpen = slot === 'map';
       }),
       events.place.on((place) => {

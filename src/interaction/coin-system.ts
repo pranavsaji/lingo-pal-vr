@@ -21,7 +21,8 @@ import { director } from '../agent/runtime.js';
 import { Coin } from '../components.js';
 import { appState, events } from '../game-state.js';
 import { dishPos, LUNE_HAND, REGISTER, TRAY, TRAY_RADIUS, type V3 } from '../layout.js';
-import { buildMoney, buildMoneyDish, buildRegisterDisplay, buildTray, moneyStyle, styleMoney } from '../models/cafe-models.js';
+import { buildMoney, buildMoneyDish, buildRegisterDisplay, buildTray, disposeObject, moneyStyle, styleMoney } from '../models/cafe-models.js';
+import { SHARED_GEOMETRIES, SHARED_MATERIALS } from '../models/model-kit.js';
 import { buildBankCard } from '../models/place-items.js';
 import { addDwellTarget } from '../ui/dwell.js';
 import { needsCard, pickCoins, WALLET } from './pick-coins.js';
@@ -42,6 +43,8 @@ const COIN_ROWS = [-0.045, 0, 0.045];
 /** Shared invisible pick sphere for coins (raycast only, no draw call). */
 const COIN_PICK_GEO = new SphereGeometry(0.021, 10, 8);
 const COIN_PICK_MAT = new MeshBasicMaterial({ visible: false });
+SHARED_GEOMETRIES.add(COIN_PICK_GEO);
+SHARED_MATERIALS.add(COIN_PICK_MAT);
 /** homeFor() slot index reserved for the bank card. */
 const CARD_SLOT = -1;
 
@@ -71,6 +74,8 @@ interface Money {
   undwell: () => void;
   /** The bank card (pays the rest of the bill, then comes back to the dish). */
   card: boolean;
+  /** Already counted on the tray: pinching it again only names it, it never pays twice. */
+  counted: boolean;
 }
 
 export class CoinSystem extends createSystem({
@@ -228,6 +233,7 @@ export class CoinSystem extends createSystem({
       grabStart: 0, grabPos: new Vector3(),
       undwell: () => undefined,
       card,
+      counted: false,
     };
     // Eyes-only: a one-second look at a coin in the dish sends it to the tray while paying,
     // and otherwise names it.
@@ -247,7 +253,10 @@ export class CoinSystem extends createSystem({
   private refillWallet(): void {
     for (const m of this.money) {
       m.undwell();
-      m.entity.dispose();
+      // Keep the shared coin/note materials and textures: IWSDK's default dispose freed them on
+      // every refill, so the coin shader recompiled (a frame hitch) just as the learner ordered.
+      m.entity.dispose({ disposeResources: false });
+      disposeObject(m.root);
     }
     this.money = [];
     this.unreported = 0;
@@ -275,6 +284,7 @@ export class CoinSystem extends createSystem({
   }
 
   private fly(m: Money, to: V3 | Vector3, dur: number, arc: number, after: State, delay = 0): void {
+    if (after !== State.Tray) m.counted = false; // leaving the tray (change, back to the dish, refill)
     m.from.copy(m.root.position);
     if (Array.isArray(to)) m.to.set(to[0], to[1], to[2]);
     else m.to.copy(to);
@@ -286,6 +296,11 @@ export class CoinSystem extends createSystem({
   }
 
   private release(m: Money): void {
+    if (m.counted) {
+      // A piece already paid onto the tray (pinched to hear its name): back to its spot, not counted again.
+      this.fly(m, m.to, 0.3, 0.05, State.Tray);
+      return;
+    }
     m.root.getWorldPosition(this.tmp);
     const dx = this.tmp.x - TRAY[0];
     const dz = this.tmp.z - TRAY[2];
@@ -340,6 +355,7 @@ export class CoinSystem extends createSystem({
 
   private landedOnTray(m: Money): void {
     const due = orderTotal(store.order.lines) - store.order.trayCents;
+    m.counted = true;
     const amount = m.card ? Math.max(0, due - this.unreported) : m.cents;
     this.unreported += amount;
     this.lastDropAt = this.clock;
@@ -392,7 +408,7 @@ export class CoinSystem extends createSystem({
       if (t >= 1) {
         m.root.position.copy(m.to);
         m.state = m.after;
-        if (m.after === State.Tray) this.landedOnTray(m);
+        if (m.after === State.Tray && !m.counted) this.landedOnTray(m);
         if (m.after === State.Gone) {
           m.root.visible = false;
           m.root.position.y = -50; // out of ray reach until the purse refills

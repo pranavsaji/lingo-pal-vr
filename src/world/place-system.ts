@@ -78,11 +78,12 @@ export class PlaceSystem extends createSystem({
   }
 
   async travel(place: PlaceId, initial = false): Promise<void> {
-    if (this.busy || (!initial && place === appState.place)) return;
     const anyway = appState.travelAnyway === place;
     appState.travelAnyway = null;
+    if (this.busy || (!initial && place === appState.place)) return;
     if (!anyway && !placeUnlocked(place, store.profile)) return;
     this.busy = true;
+    appState.travelling = true;
     try {
       if (!initial) await this.fadeTo(1);
       await Promise.race([this.preload(place), new Promise((r) => setTimeout(r, LOAD_TIMEOUT_MS))]);
@@ -108,6 +109,7 @@ export class PlaceSystem extends createSystem({
       }
     } finally {
       this.busy = false;
+      appState.travelling = false;
     }
   }
 

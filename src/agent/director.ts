@@ -424,7 +424,16 @@ export class AgentDirector {
         console.warn('[agent] serve count held to the order', held.fixes);
       }
     }
-    const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
+    const ctx = { vocabIds: this.vocabIds, stock: this.stock() };
+    let { state, effects, rejected } = applyActions(this.store.order, turn.actions, ctx);
+    if (event.kind === 'paid' && !this.trick && state.phase === 'paid' && !state.changeGiven) {
+      // The model thanked the learner but forgot give_change: the game hands it back, or
+      // the shop would refuse every later order ("give change first") until a trip.
+      const fix = applyActions(state, [{ type: 'give_change' }], ctx);
+      ({ state } = fix);
+      effects = [...effects, ...fix.effects];
+      this.rejectedLog.push({ action: { type: 'give_change' }, reason: 'missing give_change added by the game' });
+    }
     if (rejected.length) {
       this.rejectedLog.push(...rejected);
       console.warn('[agent] rejected tool calls', rejected);

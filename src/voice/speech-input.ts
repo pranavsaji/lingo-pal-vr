@@ -88,7 +88,11 @@ export class SpeechInput {
     return this.engine !== 'none';
   }
 
+  /** The last start() was called off by stop() before the microphone opened (not a blocked mic). */
+  cancelled = false;
+
   async start(lang: SttLang = 'fr'): Promise<boolean> {
+    this.cancelled = false;
     if (this.listening || this.engine === 'none') return false;
     this.listening = true;
     this.lang = sttLang(lang);
@@ -97,6 +101,10 @@ export class SpeechInput {
       else this.startBrowser();
     } catch {
       this.listening = false;
+      return false;
+    }
+    if (!this.listening) {
+      this.cancelled = true; // stopped while the microphone permission prompt was open
       return false;
     }
     this.autoStop = setTimeout(() => this.onAutoStop?.(), MAX_RECORD_MS);
@@ -120,6 +128,9 @@ export class SpeechInput {
     if (!this.stream) {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     }
+    // The learner let go (palm down, "Parler" again) during the first permission prompt: no recorder
+    // that nobody will stop (it would swallow the next utterance).
+    if (!this.listening) return;
     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => MediaRecorder.isTypeSupported?.(m)) ?? '';
     this.chunks = [];
     this.recorder = new MediaRecorder(this.stream, mime ? { mimeType: mime } : undefined);

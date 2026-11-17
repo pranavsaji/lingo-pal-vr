@@ -10,7 +10,7 @@ import { UNLOCKS } from './state/progression.js';
 import { store } from './state/store.js';
 import { applyFrenchFont } from './fonts.js';
 import { speakFrench } from './speech.js';
-import { MISSIONS, moneyWordById, vocabById } from './vocab.js';
+import { MISSIONS, moneyWordById, VOCAB, vocabById } from './vocab.js';
 import { launchMode } from './world/mixed-reality-system.js';
 import { onActivate } from './ui/dwell.js';
 
@@ -53,9 +53,21 @@ export class LessonSystem extends createSystem({}) {
         this.renderScore();
         if (levelUp) this.celebrate(`NIVEAU ${levelUp} !`, `Level up: ${levelUp}`);
       }),
-      events.review.on((ids) => this.startMission(ids, 'review')),
+      events.review.on((ids) => {
+        // Only words whose object is in this shop: a word from another shop has nothing to pinch here.
+        const here = ids.filter((id) => VOCAB.some((v) => v.id === id));
+        if (here.length) this.startMission(here, 'review');
+        else this.startMission();
+      }),
       // A new shop: the home panel greets it (no notice left over from the last one).
       events.place.on((place) => {
+        // A mission or review belongs to the shop it started in: travelling ends it.
+        if (appState.lessonActive) {
+          this.mode = 'explore';
+          appState.lessonActive = false;
+          events.missionTarget.emit('');
+          this.set('start-label', 'Commencer la mission');
+        }
         // The first shop of the session keeps its welcome ("Bon retour !", the tutorial).
         if (place === this.greetedPlace) return;
         this.greetedPlace = place;
@@ -141,7 +153,7 @@ export class LessonSystem extends createSystem({}) {
   private startMission(ids: string[] = MISSIONS, mode: 'mission' | 'review' = 'mission'): void {
     this.mode = mode;
     appState.lessonActive = true;
-    this.missionIds = ids;
+    this.missionIds = [...ids]; // a copy: MISSIONS is refilled in place when the shop changes
     this.missionStep = 0;
     this.stepMistakes = 0;
     this.set('start-label', 'Recommencer');

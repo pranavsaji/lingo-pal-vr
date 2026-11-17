@@ -49,7 +49,7 @@ export async function handleTts(query, env = process.env, ip = 'local', headers 
   const key = env.INWORLD_API_KEY;
   if (query.probe) return key ? json(200, { ok: true, provider: 'inworld' }) : json(503, { ok: false });
   if (!key) return json(503, { error: 'INWORLD_API_KEY not set' });
-  const speaker = SPEAKERS[query.s];
+  const speaker = typeof query.s === 'string' && Object.hasOwn(SPEAKERS, query.s) ? SPEAKERS[query.s] : undefined; // not 'constructor' etc.
   const text = typeof query.t === 'string' ? query.t.replace(/\s+/g, ' ').trim() : '';
   if (!speaker || !text) return json(400, { error: 'need s (speaker) and t (text)' });
   if (text.length > MAX_CHARS) return json(413, { error: 'text too long' });

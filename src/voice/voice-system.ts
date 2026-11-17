@@ -12,6 +12,7 @@
 import { createSystem, type UIKit, type UIKitMLAsset } from '@iwsdk/core';
 import { parseIntent } from '../agent/intent.js';
 import { director } from '../agent/runtime.js';
+import { validPayCents } from '../agent/tools.js';
 import { appState, events } from '../game-state.js';
 import { handState } from '../hands/hand-state.js';
 import { speakFrench } from '../speech.js';
@@ -103,6 +104,11 @@ export class VoiceSystem extends createSystem({}) {
     this.palMode = lang === 'en';
     const ok = await this.mic.start(lang);
     if (!ok) {
+      if (this.mic.cancelled) {
+        if (this.palMode) events.palState.emit('idle');
+        this.palMode = false;
+        return; // let go during the permission prompt: finish() already said so
+      }
       this.set('heard', 'Microphone blocked. Allow it in the browser, or pinch a reply.');
       if (this.palMode) events.palState.emit('idle');
       this.palMode = false;
@@ -246,7 +252,7 @@ export class VoiceSystem extends createSystem({}) {
       events.travel.emit(intent.place);
       return;
     }
-    if (intent.kind === 'pay' && intent.cents && store.order.phase === 'paying') {
+    if (intent.kind === 'pay' && intent.cents && validPayCents(intent.cents) && store.order.phase === 'paying') {
       void director.pay(intent.cents, true);
       return;
     }

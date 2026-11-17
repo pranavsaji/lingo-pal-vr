@@ -32,7 +32,7 @@ import { tutorialState } from '../ui/input-mode.js';
 import { voiceInput } from '../voice/voice-system.js';
 import { askPal } from './pal-client.js';
 import { isBeginner, offlinePal, palHint, palIntro, palIntroDue, shouldPalHint, whatDidSheSay, type PalAnswer, type PalContext } from './pal-brain.js';
-import { speakEnglish, stopPal } from './pal-voice.js';
+import { onPalInterrupted, speakEnglish, stopPal } from './pal-voice.js';
 
 type State = 'idle' | 'listening' | 'thinking' | 'talking';
 
@@ -68,6 +68,10 @@ export class PalSystem extends createSystem({
   private epoch = 0;
 
   init(): void {
+    // The learner spoke over Pal: back to idle (otherwise the ring pulses on and beginner hints stop).
+    onPalInterrupted(() => {
+      if (this.state === 'talking') this.setState('idle');
+    });
     this.rig = buildPal();
     this.rig.root.visible = store.profile.palIntroduced;
     this.placePal();

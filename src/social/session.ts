@@ -42,7 +42,7 @@ export interface GameBridge {
     remember(key: string, value: string): void;
     readonly profile: { name: string; memories: Record<string, string> };
   };
-  appState: { place: PlaceId };
+  appState: { place: PlaceId; travelling?: boolean };
   /** Is the shopkeeper talking right now? (announcements wait for her to finish) */
   speaking(): boolean;
   /** Am I in an immersive session? */
@@ -423,10 +423,20 @@ export class SocialSession {
       case 'travel':
         if (m.place !== this.g.appState.place) {
           this.g.events.travel.emit(m.place);
-          // Not open for me yet (or still loading): tell the guest where we really are.
-          this.later(() => {
-            if (this.g.appState.place !== m.place) this.send({ t: 'place', place: this.g.appState.place });
-          }, 5000);
+          // If I could not go (not open for me, another trip running), tell the guest where I
+          // really am. A cold load can take longer than 5 s: wait for it (up to 25 s) instead of
+          // sending the old shop and bouncing us both back.
+          let waited = 0;
+          const check = () => {
+            if (this.g.appState.place === m.place) return;
+            if (this.g.appState.travelling && waited < 25000) {
+              waited += 1000;
+              this.later(check, 1000);
+              return;
+            }
+            this.send({ t: 'place', place: this.g.appState.place });
+          };
+          this.later(check, 5000);
         }
         break;
     }

@@ -235,9 +235,18 @@ export function applyActions(
  * The learner pays (coins dropped on the tray). Deterministic: the agent is
  * then told the outcome, it does not decide it.
  */
+/** Most a learner can hand over at once (cents): well above any order, below a mis-heard "mille euros". */
+export const MAX_PAY_CENTS = 50_000;
+
+/** A payment the game can take: whole 10-cent steps (the smallest coin), 10 c to 500 €. */
+export function validPayCents(cents: number): boolean {
+  return Number.isInteger(cents) && cents > 0 && cents % 10 === 0 && cents <= MAX_PAY_CENTS;
+}
+
 export function payWith(state: OrderState, cents: number): { state: OrderState; ok: boolean; shortByCents: number } {
   const total = orderTotal(state.lines);
-  if (state.lines.length === 0 || state.phase === 'paid') return { state, ok: false, shortByCents: 0 };
+  // An amount no coin can make (a spoken "3,45 €") or a mis-heard huge one is ignored: change could not be given.
+  if (state.lines.length === 0 || state.phase === 'paid' || !validPayCents(cents)) return { state, ok: false, shortByCents: 0 };
   const tray = state.trayCents + cents;
   if (tray < total) {
     return { state: { ...state, trayCents: tray, phase: 'paying' }, ok: false, shortByCents: total - tray };

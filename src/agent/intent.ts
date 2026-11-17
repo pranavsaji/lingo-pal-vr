@@ -117,7 +117,15 @@ const TRAVEL = new RegExp(
 /** The shop a travel sentence names, or null. */
 export function travelPlace(norm: string): PlaceId | null {
   const m = norm.match(TRAVEL);
-  return m ? (PLACE_NAMES.find(([w]) => w === m[1])?.[1] ?? null) : null;
+  if (!m) return null;
+  const place = PLACE_NAMES.find(([w]) => w === m[1])?.[1] ?? null;
+  const phrase = ` ${m[0]} `;
+  // "prendre" goes somewhere only by métro: "je vais prendre le café" is an order.
+  if (/ prendre /.test(phrase)) return place === 'metro' ? place : null;
+  // Otherwise a trip needs a preposition ("au marché", "à la boulangerie") or "retour"/"direction":
+  // "ça va, le marché ?" is not a trip.
+  if (!/ (a|au|aux|en|vers|chez) /.test(phrase) && !/ (retour|retourner|direction) /.test(phrase)) return null;
+  return place;
 }
 
 /** True when the sentence names something sold in the current shop ("un carnet de tickets"). */

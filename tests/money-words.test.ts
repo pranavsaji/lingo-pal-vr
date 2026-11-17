@@ -29,3 +29,16 @@ describe('every piece of money has a French name', () => {
     }
   });
 });
+
+import { payWith, validPayCents } from '../src/agent/tools';
+
+describe('paying a spoken amount', () => {
+  const order = { lines: [{ itemId: 'croissant', qty: 2 }], phase: 'paying', trayCents: 0, changeCents: 0, changeGiven: false } as never;
+  it('ignores an amount no coin can make, or a mis-heard huge one (no crash, order unchanged)', () => {
+    for (const c of [345, 5, 0, -100, 1.5, 100_000]) {
+      expect(validPayCents(c), String(c)).toBe(false);
+      expect(payWith(order, c).state).toBe(order);
+    }
+    expect(validPayCents(500)).toBe(true);
+  });
+});

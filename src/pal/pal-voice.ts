@@ -53,7 +53,15 @@ export function stopPal(): void {
   speaking = false;
   setPalTalking(false);
 }
-registerPalStopper(stopPal);
+let interrupted: (() => void) | null = null;
+/** PalSystem: Pal was cut off from outside (the learner spoke), so its talking state ends too. */
+export function onPalInterrupted(fn: () => void): void {
+  interrupted = fn;
+}
+registerPalStopper(() => {
+  stopPal();
+  interrupted?.();
+});
 
 let speaking = false;
 

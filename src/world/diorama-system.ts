@@ -633,7 +633,12 @@ export class DioramaSystem extends createSystem({
   // ------------------------------------------------------------------ frame
 
   update(delta: number): void {
-    if (!this.shown) return;
+    if (!this.shown) {
+      // The 2D map is still showing after an interruption (tutorial, table placement, input
+      // choice) hid the board: bring it back once that is over. Cheap checks, no allocation.
+      if (this.slotIsMap && this.wanted()) this.setShown(true);
+      return;
+    }
     this.clock += delta;
     if (tutorialState.running || appState.placingCafe || appState.choosingInput) {
       this.setShown(false);

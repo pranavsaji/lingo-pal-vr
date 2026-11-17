@@ -270,10 +270,12 @@ export class SocialSystem extends createSystem({
     canvas.addEventListener('pointermove', move);
     canvas.addEventListener('pointerdown', move);
     // Browsers only play sound after a click or tap.
-    const unlock = () => {
+    const unlock = (e: PointerEvent) => {
       ensureAudioContext();
       void this.audio?.el.play().catch(() => undefined);
-      this.renderDom();
+      // Not when pressing the bar itself: rebuilding it on pointerdown detached the pressed
+      // button (Copier), so its click never fired. The bar's buttons re-render it themselves.
+      if (!(e.target instanceof Node && this.dom?.root.contains(e.target))) this.renderDom();
     };
     window.addEventListener('pointerdown', unlock);
     this.cleanupFuncs.push(() => {

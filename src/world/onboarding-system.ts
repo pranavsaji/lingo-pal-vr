@@ -231,7 +231,17 @@ export class OnboardingSystem extends createSystem({}) {
           if (ok && this.step === 'choose') events.listenNow.emit();
         });
       }),
-      events.tutorial.on(() => (this.running ? this.finish(true) : this.begin())),
+      events.tutorial.on(() => {
+        if (this.running) this.finish(true);
+        else if (appState.place !== 'cafe') {
+          // The tutorial is Madame Lune's croissant: replaying it from another shop goes to the café first.
+          const off = events.place.on((p) => {
+            off();
+            if (p === 'cafe') this.begin();
+          });
+          events.travel.emit('cafe');
+        } else this.begin();
+      }),
       // Entering VR: restart the current step so she says it in the headset, with fresh timers.
       this.world.visibilityState.subscribe((v) => {
         const immersive = v !== VisibilityState.NonImmersive;
