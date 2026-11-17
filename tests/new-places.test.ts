@@ -61,18 +61,12 @@ function triangles(o: Object3D): number {
 }
 
 describe('every shop on the map is complete', () => {
-  it('opens in map order, the new shops one paid order apart', () => {
+  it('opens every shop once the tutorial is done (judges can try all seven at once)', () => {
     expect(PLACE_ORDER).toEqual(['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel']);
     const at = (orders: number) => PLACE_ORDER.filter((p) => placeUnlocked(p, { onboarded: true, stats: { orders } } as never));
-    expect(at(1)).toEqual(['cafe', 'boulangerie', 'marche']);
-    expect(at(2)).toContain('bistrot');
-    expect(at(2)).not.toContain('metro');
-    expect(at(3)).toContain('metro');
-    expect(at(4)).toContain('pharmacie');
-    expect(at(4)).not.toContain('hotel');
-    expect(at(5)).toEqual(PLACE_ORDER);
+    expect(at(0)).toEqual(PLACE_ORDER);
     expect(placeUnlocked('bistrot', { onboarded: false, stats: { orders: 9 } } as never)).toBe(false);
-    expect(unlockHint('metro').en).toBe('Opens after your third paid order');
+    expect(unlockHint('metro').en).toBe('Opens after the tutorial');
     // ?demo=week opens every shop (and their scenario unlocks).
     const demo = demoProfile('2026-11-13');
     for (const p of PLACE_ORDER) expect(placeUnlocked(p, demo), p).toBe(true);

@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { lockedMessage, ordersToUnlock, placeUnlocked } from '../src/places/places';
+import { lockedMessage, ordersToUnlock, placeUnlocked, PLACE_ORDER } from '../src/places/places';
 
-const prof = (orders: number) => ({ onboarded: true, stats: { orders } }) as never;
+const prof = (onboarded: boolean, orders = 0) => ({ onboarded, stats: { orders } }) as never;
 
-describe('locked shops on the Plan de Paris', () => {
-  it('counts the paid orders still to go', () => {
-    expect(ordersToUnlock('bistrot', prof(1))).toBe(1);
-    expect(ordersToUnlock('hotel', prof(1))).toBe(4);
-    expect(ordersToUnlock('marche', prof(1))).toBe(0);
-    expect(placeUnlocked('marche', prof(1))).toBe(true);
+describe('shops on the Plan de Paris', () => {
+  it('are all open after the tutorial, with no orders needed', () => {
+    for (const p of PLACE_ORDER) {
+      expect(placeUnlocked(p, prof(true)), p).toBe(true);
+      expect(ordersToUnlock(p, prof(true)), p).toBe(0);
+    }
   });
 
-  it('says what opens it and that choosing again goes anyway', () => {
-    const m = lockedMessage('bistrot', { fr: 'Le Bistrot', en: 'The Bistro' }, prof(1));
-    expect(m.fr).toBe('Le Bistrot : après votre deuxième commande.');
-    expect(m.en).toBe('The Bistro opens after your second paid order (1 more to go). Choose it again to visit now.');
+  it('before the tutorial, only the café; a locked choice explains itself and a second choice goes anyway', () => {
+    expect(placeUnlocked('cafe', prof(false))).toBe(true);
+    expect(placeUnlocked('bistrot', prof(false))).toBe(false);
+    const m = lockedMessage('bistrot', { fr: 'Le Bistrot', en: 'The Bistro' }, prof(false));
+    expect(m.fr).toBe('Le Bistrot : après le tutoriel.');
+    expect(m.en).toBe('The Bistro opens after the tutorial. Choose it again to visit now.');
   });
 });

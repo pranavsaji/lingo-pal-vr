@@ -130,12 +130,11 @@ describe("today's 10-minute plan", () => {
     expect(nextSituationLine(p)).toEqual({ fr: 'Prochaine étape pour Paris : acheter votre pain à la boulangerie.', en: 'Next step for Paris: buy your bread at the bakery.' });
     p.passport.placeOrders.boulangerie = 1;
     p.passport.placeOrders.marche = 1;
-    // Everything open has been ordered in: say it out loud at the café.
+    // Every shop is open after the tutorial: the next one on the map is the bistrot.
+    expect(nextSituationLine(p)?.fr).toBe('Prochaine étape pour Paris : commander un déjeuner au bistrot.');
+    for (const pl of ['bistrot', 'metro', 'pharmacie', 'hotel'] as const) p.passport.placeOrders[pl] = 1;
+    // Everything has been ordered in: say it out loud at the café.
     expect(nextSituationLine(p)?.fr).toBe('Prochaine étape pour Paris : commander à voix haute au Café Lune.');
-    p.passport.placeSpoken.cafe = p.passport.placeSpoken.boulangerie = p.passport.placeSpoken.marche = 1;
-    p.passport.placeExact.cafe = p.passport.placeExact.boulangerie = p.passport.placeExact.marche = 1;
-    // All open situations done: what opens the bistrot.
-    expect(nextSituationLine(p)).toEqual({ fr: 'Prochaine étape pour Paris : encore 1 commande pour ouvrir le bistrot.', en: 'Next step for Paris: 1 more order to open the bistro.' });
   });
 });
 

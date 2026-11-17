@@ -90,7 +90,7 @@ export const UNLOCKS: Unlock[] = [
   { id: 'boulangerie', kind: 'scenario', fr: 'la boulangerie', en: 'the bakery', level: 1 },
   { id: 'gramophone', kind: 'decor', fr: 'le gramophone', en: 'the gramophone', streak: 3 },
   { id: 'marche', kind: 'scenario', fr: 'le marché', en: 'the market', level: 2 },
-  // The newer shops open with paid orders (src/places/places.ts PLACE_UNLOCK_ORDERS).
+  // Milestone toasts for the newer shops (the shops themselves are open from the start: src/places/places.ts).
   { id: 'bistrot', kind: 'scenario', fr: 'le bistrot', en: 'the bistro', orders: 2 },
   { id: 'metro', kind: 'scenario', fr: 'le métro', en: 'the metro', orders: 3 },
   { id: 'pharmacie', kind: 'scenario', fr: 'la pharmacie', en: 'the pharmacy', orders: 4 },

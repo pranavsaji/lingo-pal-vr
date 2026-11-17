@@ -13,12 +13,17 @@ import type { Profile } from '../state/profile.js';
 export const PLACE_ORDER: PlaceId[] = ['cafe', 'boulangerie', 'marche', 'bistrot', 'metro', 'pharmacie', 'hotel'];
 
 /**
- * Paid orders (any shop) that open each shop after the tutorial. Shops open fast
- * enough that a first-time visitor (or a judge) sees the first three within
- * minutes: the bakery after the first-run tutorial, the market after the first
- * paid order, then one more shop per order. `?demo=week` (10 orders) opens all.
+ * Paid orders (any shop) that open each shop after the tutorial. Every shop is
+ * open as soon as the first-run tutorial is done (or skipped): a first-time
+ * visitor, or a judge with a few minutes, can try all seven places from the
+ * Plan de Paris. Progress comes from readiness, the passport and the level
+ * ladder instead. Raise a number here to gate a shop behind paid orders again.
  */
-export const PLACE_UNLOCK_ORDERS: Record<PlaceId, number> = { cafe: 0, boulangerie: 0, marche: 1, bistrot: 2, metro: 3, pharmacie: 4, hotel: 5 };
+export const PLACE_UNLOCK_ORDERS: Record<PlaceId, number> = { cafe: 0, boulangerie: 0, marche: 0, bistrot: 0, metro: 0, pharmacie: 0, hotel: 0 };
+
+/** Shops warmed up in the background at start (the rest load on the first trip there). */
+const PRELOAD_AHEAD = 2;
+export const PRELOAD_PLACES: PlaceId[] = ['boulangerie', 'marche'].slice(0, PRELOAD_AHEAD) as PlaceId[];
 
 export function placeUnlocked(place: PlaceId, p: Pick<Profile, 'onboarded' | 'stats'>): boolean {
   if (place === 'cafe') return true;

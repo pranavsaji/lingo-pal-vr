@@ -64,7 +64,7 @@ describe('switching shops', () => {
     expect(placeUnlocked('cafe', fresh)).toBe(true);
     expect(placeUnlocked('boulangerie', fresh)).toBe(false);
     expect(placeUnlocked('boulangerie', { onboarded: true, stats: { orders: 0 } } as never)).toBe(true);
-    expect(placeUnlocked('marche', { onboarded: true, stats: { orders: 1 } } as never)).toBe(true);
+    expect(placeUnlocked('hotel', { onboarded: true, stats: { orders: 0 } } as never)).toBe(true);
   });
   it('each shopkeeper greets in their own shop with their special', () => {
     for (const p of places) {

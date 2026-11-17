@@ -25,7 +25,7 @@ import { refreshVocabIds, director } from '../agent/runtime.js';
 import { setMenuPlace } from '../agent/menu.js';
 import { emptyOrder } from '../agent/tools.js';
 import { appState, events, type PlaceId } from '../game-state.js';
-import { PLACE_LOOKS, PLACE_ORDER, PLACE_UNLOCK_ORDERS, placeModelIds, placeUnlocked } from '../places/places.js';
+import { PLACE_LOOKS, PLACE_ORDER, placeModelIds, placeUnlocked, PRELOAD_PLACES } from '../places/places.js';
 import { store } from '../state/store.js';
 import { PLACE_VOCAB, setVocabPlace } from '../vocab.js';
 import { buildShopSet, type ShopSet } from './shop-set.js';
@@ -57,7 +57,7 @@ export class PlaceSystem extends createSystem({
     void this.travel('cafe', true);
     // Warm the other shops' assets in the background once the cafe is up.
     setTimeout(() => {
-      for (const p of PLACE_ORDER) if (p !== 'cafe' && (PLACE_UNLOCK_ORDERS[p] <= 1 || placeUnlocked(p, store.profile))) void this.preload(p);
+      for (const p of PRELOAD_PLACES) void this.preload(p); // the others load on the first trip (keeps start-up memory low on Quest)
     }, 15000);
   }
 

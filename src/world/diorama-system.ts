@@ -345,7 +345,8 @@ export class DioramaSystem extends createSystem({
     if (locked) {
       // The header explains the knock: how many orders open it, and that a second choice goes anyway.
       const left = ordersToUnlock(locked.id as PlaceId, store.profile);
-      const sub = subtitles ? `Opens in ${left} more order${left === 1 ? '' : 's'} · choose again to go` : 'Encore une fois pour y aller';
+      const when = left > 0 ? `Opens in ${left} more order${left === 1 ? '' : 's'}` : 'Opens after the tutorial';
+      const sub = subtitles ? `${when} · choose again to go` : 'Encore une fois pour y aller';
       this.drawPlain(g, 8, `${locked.fr} : pas encore`, sub, '#3a2a12', '#e2b857');
     } else this.drawPlain(g, 8, 'Plan de Paris', subtitles ? (eyes ? 'Look at a pin to travel' : 'Touch or pinch a pin to travel') : '', '#1d2633', '#e2b857');
     this.drawPlain(g, 9, '×  Fermer', subtitles ? 'Close the map' : '', '#3b3d43', '#fafaf7');
