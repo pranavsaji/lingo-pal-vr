@@ -127,6 +127,8 @@ export const appState = {
   interceptReply: null as ((fr: string) => boolean) | null,
   /** Frame-rate guard: extras dropped to hold the frame rate (0 = none; see src/world/power.ts). */
   powerLevel: 0,
+  /** A trip chosen on the start page: it begins already black, so the café never flashes up first. */
+  travelCovered: null as PlaceId | null,
   /** A trip is under way (fade, loading the next shop): PlaceSystem sets it. */
   travelling: false,
   /** A locked shop the learner chose twice (or named by voice): PlaceSystem lets this one trip through. */

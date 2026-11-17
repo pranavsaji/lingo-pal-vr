@@ -45,7 +45,7 @@ export class PlaceSystem extends createSystem({
   private fadeTarget = 0;
   private busy = false;
   /** A trip asked for while another was under way: taken as soon as that one ends (the latest wins). */
-  private queued: { place: PlaceId; anyway: boolean } | null = null;
+  private queued: { place: PlaceId; anyway: boolean; covered: boolean } | null = null;
   private loaded = new Map<PlaceId, Promise<void>>();
 
   init(): void {
@@ -83,9 +83,13 @@ export class PlaceSystem extends createSystem({
   async travel(place: PlaceId, initial = false): Promise<void> {
     const anyway = appState.travelAnyway === place;
     appState.travelAnyway = null;
+    const covered = appState.travelCovered === place;
+    appState.travelCovered = null;
+    // Black at once (start page): the headset view opens on black, not on the café, until this shop is up.
+    if (covered && !initial && place !== appState.place) this.coverNow();
     if (this.busy) {
       // Not dropped: the map already folded away, so the learner expects to go there next.
-      if (!initial) this.queued = { place, anyway };
+      if (!initial) this.queued = { place, anyway, covered };
       return;
     }
     if (!initial && place === appState.place) return;
@@ -93,7 +97,7 @@ export class PlaceSystem extends createSystem({
     this.busy = true;
     appState.travelling = true;
     try {
-      if (!initial) await this.fadeTo(1);
+      if (!initial && !covered) await this.fadeTo(1);
       await Promise.race([this.preload(place), new Promise((r) => setTimeout(r, LOAD_TIMEOUT_MS))]);
 
       // Data first: menu, words, order, conversation.
@@ -126,6 +130,7 @@ export class PlaceSystem extends createSystem({
       this.queued = null;
       if (next && next.place !== appState.place) {
         appState.travelAnyway = next.anyway ? next.place : null;
+        appState.travelCovered = next.covered ? next.place : null;
         setTimeout(() => void this.travel(next.place), 0);
       }
     }
@@ -198,6 +203,15 @@ export class PlaceSystem extends createSystem({
   }
 
   private fadeResolve: (() => void) | null = null;
+
+  /** Fully black this frame, no fade (the trip then fades in as usual). */
+  private coverNow(): void {
+    this.fadeResolve?.();
+    this.fadeResolve = null;
+    this.fadeTarget = 1;
+    this.fadeMat.opacity = 1;
+    this.fade.visible = true;
+  }
 
   private fadeTo(target: number): Promise<void> {
     this.fadeTarget = target;

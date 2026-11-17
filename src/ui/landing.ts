@@ -145,6 +145,7 @@ export function attachLanding(world: World): void {
         if (tutorialState.running) events.tutorial.emit();
         else if (!store.profile.onboarded) store.markOnboarded();
         appState.travelAnyway = place;
+        appState.travelCovered = place; // starts black: no glimpse of the café before this place
         events.travel.emit(place);
       }
       markHere(place);
