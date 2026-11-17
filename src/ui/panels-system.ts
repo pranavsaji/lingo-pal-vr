@@ -7,8 +7,9 @@
  */
 
 import { createSystem, type Object3D, Quaternion, type UIKit, type UIKitMLAsset, Vector3, VisibilityState } from '@iwsdk/core';
-import { appState, events } from '../game-state.js';
-import { PLACE_ORDER, placeUnlocked, unlockHint } from '../places/places.js';
+import { appState, events, type PlaceId } from '../game-state.js';
+import { lockedMessage, PLACE_ORDER, placeUnlocked } from '../places/places.js';
+import { placeNames } from '../places/paris-map.js';
 import { applyFrenchFont } from '../fonts.js';
 import { speakFrench } from '../speech.js';
 import type { Settings } from '../state/profile.js';
@@ -86,6 +87,8 @@ export class PanelsSystem extends createSystem({}) {
   private homeY = new Map<string, number>();
   private slot: Slot = 'home';
   private visited = new Set<string>(['cafe']);
+  private lockedChoice: PlaceId | null = null;
+  private lockedAt = 0;
   private basePos = new Map<string, Vector3>();
   private baseQuat = new Map<string, Quaternion>();
   private fitScale = 1;
@@ -145,10 +148,17 @@ export class PanelsSystem extends createSystem({}) {
           return;
         }
         if (!placeUnlocked(place, store.profile)) {
-          const hint = unlockHint(place);
-          this.text('map-panel', 'map-hint', `${hint.fr}. ${hint.en}.`);
-          return;
+          if (this.lockedChoice !== place || performance.now() - this.lockedAt > 10000) {
+            // First press: say what opens it; a second press goes anyway.
+            this.lockedChoice = place;
+            this.lockedAt = performance.now();
+            const msg = lockedMessage(place, placeNames(place), store.profile);
+            this.text('map-panel', 'map-hint', `${msg.fr} ${msg.en}`);
+            return;
+          }
+          appState.travelAnyway = place;
         }
+        this.lockedChoice = null;
         this.visited.add(place);
         this.show('home');
         events.travel.emit(place);

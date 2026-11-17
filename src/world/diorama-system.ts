@@ -47,7 +47,7 @@ import {
   BOARD, DIORAMA_WORLD, dioramaPins, distanceToBox, LABEL, LABEL_EYE, labelCentre, type MapXZ, pickBox, type PickBox, pinColor, pinSubtitle,
   type PinView, PIN_COLORS, seinePoint, segmentHitsBox, underBoard,
 } from '../places/paris-map.js';
-import { PLACE_ORDER, placeUnlocked, unlockHint } from '../places/places.js';
+import { lockedMessage, ordersToUnlock, PLACE_ORDER, placeUnlocked, unlockHint } from '../places/places.js';
 import { speakFrench } from '../speech.js';
 import { store } from '../state/store.js';
 import { addDwellTarget } from '../ui/dwell.js';
@@ -79,6 +79,8 @@ const TOUCH_JUMP = 0.1; // longer frame-to-frame moves are tracking jumps: test 
 const HANDS = ['left', 'right'] as const;
 /** Ignore the pinch that opened the map; leave a beat between the plop and the trip. */
 const OPEN_GRACE_S = 0.45;
+/** A second choice of the same locked pin within this many seconds goes there anyway. */
+const AGAIN_S = 10;
 const TRAVEL_DELAY_S = 0.35;
 const BOAT_LAP_S = 46;
 
@@ -126,6 +128,7 @@ export class DioramaSystem extends createSystem({
   private tipPrimed = [false, false];
   private hidden: Hidden[] = [];
   private flash: string | null = null;
+  private flashAt = 0;
   private pending: { id: string; at: number } | null = null;
   private hereAt: MapXZ & { h: number } = { x: 0, z: 0, h: 0 };
   private popUntil = 0;
@@ -338,7 +341,13 @@ export class DioramaSystem extends createSystem({
       this.drawCard(g, i, p, pinSubtitle(p, hint, subtitles));
     });
     const eyes = store.profile.settings.gazeDwell;
-    this.drawPlain(g, 8, 'Plan de Paris', subtitles ? (eyes ? 'Look at a pin to travel' : 'Touch or pinch a pin to travel') : '', '#1d2633', '#e2b857');
+    const locked = this.flash ? this.pins.find((p) => p.id === this.flash && p.state === 'locked') : undefined;
+    if (locked) {
+      // The header explains the knock: how many orders open it, and that a second choice goes anyway.
+      const left = ordersToUnlock(locked.id as PlaceId, store.profile);
+      const sub = subtitles ? `Opens in ${left} more order${left === 1 ? '' : 's'} · choose again to go` : 'Encore une fois pour y aller';
+      this.drawPlain(g, 8, `${locked.fr} : pas encore`, sub, '#3a2a12', '#e2b857');
+    } else this.drawPlain(g, 8, 'Plan de Paris', subtitles ? (eyes ? 'Look at a pin to travel' : 'Touch or pinch a pin to travel') : '', '#1d2633', '#e2b857');
     this.drawPlain(g, 9, '×  Fermer', subtitles ? 'Close the map' : '', '#3b3d43', '#fafaf7');
     a.tex.needsUpdate = true;
   }
@@ -446,13 +455,22 @@ export class DioramaSystem extends createSystem({
       return;
     }
     if (pin.state === 'locked') {
-      // No trip: a low double knock, the card flashes, the hint is spoken.
-      this.plop(240, 0.9);
-      this.plop(200, 0.9, 0.12);
-      this.flash = pin.id;
-      this.drawAtlas();
-      speakFrench(unlockHint(pin.id as PlaceId).fr, store.profile.settings.slowSpeech ? 0.7 : 0.9);
-      return;
+      if (this.flash !== pin.id || this.clock - this.flashAt > AGAIN_S) {
+        // First touch: a low double knock, the card flashes, the header and the
+        // chat panel say what opens it, and the hint is spoken. No trip yet.
+        this.plop(240, 0.9);
+        this.plop(200, 0.9, 0.12);
+        this.flash = pin.id;
+        this.flashAt = this.clock;
+        this.drawAtlas();
+        const msg = lockedMessage(pin.id as PlaceId, pin, store.profile);
+        events.agentNote.emit(store.profile.settings.subtitles ? `${msg.fr} ${msg.en}` : msg.fr);
+        speakFrench(unlockHint(pin.id as PlaceId).fr, store.profile.settings.slowSpeech ? 0.7 : 0.9);
+        return;
+      }
+      // Chosen again: go anyway (a lock suggests an order, it never traps the learner).
+      appState.travelAnyway = pin.id as PlaceId;
+      events.agentNote.emit('');
     }
     // Plop, the gold halo hops onto the chosen pin, then the trip (fade) starts.
     this.plop(720, 0.5);

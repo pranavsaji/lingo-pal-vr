@@ -79,7 +79,9 @@ export class PlaceSystem extends createSystem({
 
   async travel(place: PlaceId, initial = false): Promise<void> {
     if (this.busy || (!initial && place === appState.place)) return;
-    if (!placeUnlocked(place, store.profile)) return;
+    const anyway = appState.travelAnyway === place;
+    appState.travelAnyway = null;
+    if (!anyway && !placeUnlocked(place, store.profile)) return;
     this.busy = true;
     try {
       if (!initial) await this.fadeTo(1);

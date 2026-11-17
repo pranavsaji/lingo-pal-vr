@@ -34,6 +34,27 @@ export function unlockHint(place: PlaceId): { fr: string; en: string } {
   return { fr: `Après votre ${ORDINAL_FR[n] ?? `${n}e`} commande`, en: `Opens after your ${ORDINAL_EN[n] ?? `${n}th`} paid order` };
 }
 
+/** Paid orders still to go before a shop opens (0 once open; the tutorial is not counted). */
+export function ordersToUnlock(place: PlaceId, p: Pick<Profile, 'onboarded' | 'stats'>): number {
+  if (placeUnlocked(place, p)) return 0;
+  return Math.max(0, (PLACE_UNLOCK_ORDERS[place] ?? 0) - p.stats.orders);
+}
+
+/**
+ * What a locked shop says when its pin (or its map button) is chosen: what opens
+ * it, how many orders are left, and that choosing it again goes there anyway
+ * (locks suggest an order to learn in; they never trap the learner).
+ */
+export function lockedMessage(place: PlaceId, name: { fr: string; en: string }, p: Pick<Profile, 'onboarded' | 'stats'>): { fr: string; en: string } {
+  const hint = unlockHint(place);
+  const left = ordersToUnlock(place, p);
+  const more = left > 0 ? ` (${left} more to go)` : '';
+  return {
+    fr: `${name.fr} : ${hint.fr.charAt(0).toLowerCase()}${hint.fr.slice(1)}.`,
+    en: `${name.en} opens ${hint.en.replace(/^Opens /, '')}${more}. Choose it again to visit now.`,
+  };
+}
+
 /** A PBR surface from public/textures/<id>/ with a tiling density (repeats per meter). */
 export interface Surface {
   tex: string;

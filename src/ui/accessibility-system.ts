@@ -129,6 +129,7 @@ export class AccessibilitySystem extends createSystem({}) {
         events.payExact.emit();
         return;
       case 'travel':
+        appState.travelAnyway = c.place; // naming a shop is a clear choice: go even if it is not open yet
         events.travel.emit(c.place);
         return;
       case 'mode':

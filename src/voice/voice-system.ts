@@ -242,6 +242,7 @@ export class VoiceSystem extends createSystem({}) {
       }
     }
     if (intent.kind === 'travel') {
+      appState.travelAnyway = intent.place; // naming a shop is a clear choice: go even if it is not open yet
       events.travel.emit(intent.place);
       return;
     }

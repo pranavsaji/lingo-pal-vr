@@ -127,6 +127,8 @@ export const appState = {
   interceptReply: null as ((fr: string) => boolean) | null,
   /** Frame-rate guard: extras dropped to hold the frame rate (0 = none; see src/world/power.ts). */
   powerLevel: 0,
+  /** A locked shop the learner chose twice (or named by voice): PlaceSystem lets this one trip through. */
+  travelAnyway: null as PlaceId | null,
   /** Narrow-view headset (Meta VR Glasses, 37 deg to each side): see PanelsSystem.fitView. */
   narrowView: false,
 };
