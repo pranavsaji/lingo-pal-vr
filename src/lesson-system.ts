@@ -10,7 +10,7 @@ import { UNLOCKS } from './state/progression.js';
 import { store } from './state/store.js';
 import { applyFrenchFont } from './fonts.js';
 import { speakFrench } from './speech.js';
-import { MISSIONS, vocabById } from './vocab.js';
+import { MISSIONS, moneyWordById, vocabById } from './vocab.js';
 import { launchMode } from './world/mixed-reality-system.js';
 import { onActivate } from './ui/dwell.js';
 
@@ -175,7 +175,20 @@ export class LessonSystem extends createSystem({}) {
 
   private onItemPicked(id: string): void {
     const entry = vocabById(id);
-    if (!entry) return;
+    if (!entry) {
+      // Money: say and show its name; never a Carnet card, never a mission answer.
+      const word = moneyWordById(id);
+      if (!word) return;
+      this.lastWord = word.fr;
+      speakFrench(word.fr);
+      if (this.mode !== 'mission' && this.mode !== 'review') {
+        this.set('eyebrow', "L'ARGENT");
+        this.set('word', word.fr);
+        this.set('english', word.en);
+        this.set('tip', word.tip);
+      }
+      return;
+    }
     this.lastWord = entry.fr;
     speakFrench(entry.fr);
 

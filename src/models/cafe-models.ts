@@ -517,7 +517,7 @@ export function styleMoney(root: Object3D, cents: number, highContrast: boolean)
   const spec = COINS[key];
   const mat = highContrast ? coinMaterialHC(key, spec) : coinMaterial(key, spec);
   root.traverse((o) => {
-    if (o instanceof Mesh) o.material = mat;
+    if (o instanceof Mesh && !o.userData.pick) o.material = mat; // pick spheres stay invisible
   });
 }
 

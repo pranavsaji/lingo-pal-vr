@@ -21,7 +21,7 @@ The landing page also plays a 3-minute tour.
 - **Prêt pour Paris**: readiness for a real trip in 28 situations (order, say it, pay the
   exact amount, do it with no help, in each place), each ticked only by something the game
   verified; today's 10-minute plan; an optional trip countdown ("J-12").
-- **Pay with real euros**: pinch coins and notes onto the tray, or a bank card at the hotel.
+- **Pay with real euros**: pinch coins and notes onto the tray, or a bank card at the hotel; pinch (or look at) any coin or note to hear its name (« le billet de cinq euros »).
 - **Speak and be scored**: pronunciation score on every spoken line, on-device French speech
   recognition (no key), natural shopkeeper voices; "Vraie vie" mode removes English and hints.
 - **Pal**, a sparrow on the counter you can ask in English ("How do I ask for the bill?");

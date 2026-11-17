@@ -14,7 +14,7 @@
  * High contrast gives coins a black-on-white face so value never relies on colour.
  */
 
-import { createSystem, DistanceGrabbable, type Entity, Grabbed, Group, MovementMode, RayInteractable, Vector3 } from '@iwsdk/core';
+import { createSystem, DistanceGrabbable, type Entity, Grabbed, Group, Mesh, MeshBasicMaterial, MovementMode, RayInteractable, SphereGeometry, Vector3 } from '@iwsdk/core';
 import { priceToDigits } from '../agent/menu.js';
 import { orderTotal } from '../agent/tools.js';
 import { director } from '../agent/runtime.js';
@@ -26,6 +26,7 @@ import { buildBankCard } from '../models/place-items.js';
 import { addDwellTarget } from '../ui/dwell.js';
 import { needsCard, pickCoins, WALLET } from './pick-coins.js';
 import { store } from '../state/store.js';
+import { moneyWordId } from '../vocab.js';
 
 /** The bank card's `cents`: it pays whatever is still due (see landedOnTray). */
 const CARD = 0;
@@ -38,6 +39,9 @@ const TRAY_AIM_DEG = 11;
 /** Coin grid in the dish (meters from the dish center): 3 rows of 4, every coin individually targetable. */
 const COIN_COLS = [-0.075, -0.025, 0.025, 0.075];
 const COIN_ROWS = [-0.045, 0, 0.045];
+/** Shared invisible pick sphere for coins (raycast only, no draw call). */
+const COIN_PICK_GEO = new SphereGeometry(0.021, 10, 8);
+const COIN_PICK_MAT = new MeshBasicMaterial({ visible: false });
 /** homeFor() slot index reserved for the bank card. */
 const CARD_SLOT = -1;
 
@@ -113,6 +117,8 @@ export class CoinSystem extends createSystem({
       m.state = State.Held;
       m.grabStart = this.clock;
       m.root.getWorldPosition(m.grabPos);
+      // Pinching money names it (« le billet de cinq euros »), like any other object on the counter.
+      events.itemPicked.emit(moneyWordId(m.card ? CARD : m.cents));
     });
     this.queries.held.subscribe('disqualify', (e) => {
       const m = this.money[e.getValue(Coin, 'slot') ?? -1];
@@ -187,6 +193,14 @@ export class CoinSystem extends createSystem({
     const card = cents === CARD;
     const root = card ? buildBankCard() : buildMoney(cents);
     root.name = card ? 'Bank Card' : `Money ${cents}`;
+    // Coins are ~2 cm across: a slightly larger invisible pick sphere (never drawn) makes them
+    // easy to pinch or click, still clear of the neighbouring coins 4.5-5 cm away.
+    if (!card && cents < 500) {
+      const pick = new Mesh(COIN_PICK_GEO, COIN_PICK_MAT);
+      pick.position.y = 0.006;
+      pick.userData.pick = true;
+      root.add(pick);
+    }
     if (Array.isArray(at)) root.position.set(at[0], at[1], at[2]);
     else root.position.copy(at);
     const entity = this.world.createTransformEntity(root);
@@ -215,12 +229,16 @@ export class CoinSystem extends createSystem({
       undwell: () => undefined,
       card,
     };
-    // Eyes-only: a one-second look at a coin in the dish sends it to the tray (only while paying).
+    // Eyes-only: a one-second look at a coin in the dish sends it to the tray while paying,
+    // and otherwise names it.
     m.undwell = addDwellTarget(
       root,
-      () => this.toTray(m, 0.12),
+      () => {
+        if (store.order.phase === 'paying') this.toTray(m, 0.12);
+        else events.itemPicked.emit(moneyWordId(m.card ? CARD : m.cents));
+      },
       2.6,
-      () => m.state === State.Dish && store.order.phase === 'paying',
+      () => m.state === State.Dish,
     );
     this.money.push(m);
     return m;
@@ -288,7 +306,7 @@ export class CoinSystem extends createSystem({
       this.toTray(m, tapped ? 0.12 : 0.03);
       return;
     }
-    if (!paying && (onTray || tapped)) this.register.setText("Commandez d'abord");
+    if (!paying && onTray) this.register.setText("Commandez d'abord");
     this.fly(m, m.home, 0.4, 0.08, State.Dish);
   }
 

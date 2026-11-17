@@ -155,6 +155,48 @@ export function setVocabPlace(place: PlaceId): void {
   MISSIONS.splice(0, MISSIONS.length, ...PLACE_MISSIONS[place]);
 }
 
+/** A word that is named when pinched but is not a shop item (money): no model, no Carnet card. */
+export interface WordEntry {
+  id: string;
+  fr: string;
+  en: string;
+  tip: string;
+}
+
+/** The learner's money, named when a coin, note or the bank card is tapped (or looked at). */
+const MONEY: [cents: number, fr: string, en: string][] = [
+  [1, "la pièce d'un centime", 'the 1-cent coin'],
+  [2, 'la pièce de deux centimes', 'the 2-cent coin'],
+  [5, 'la pièce de cinq centimes', 'the 5-cent coin'],
+  [10, 'la pièce de dix centimes', 'the 10-cent coin'],
+  [20, 'la pièce de vingt centimes', 'the 20-cent coin'],
+  [50, 'la pièce de cinquante centimes', 'the 50-cent coin'],
+  [100, "la pièce d'un euro", 'the 1-euro coin'],
+  [200, 'la pièce de deux euros', 'the 2-euro coin'],
+  [500, 'le billet de cinq euros', 'the 5-euro note'],
+  [1000, 'le billet de dix euros', 'the 10-euro note'],
+  [2000, 'le billet de vingt euros', 'the 20-euro note'],
+  [5000, 'le billet de cinquante euros', 'the 50-euro note'],
+];
+export const MONEY_WORDS: WordEntry[] = [
+  ...MONEY.map(([cents, fr, en]) => ({
+    id: `argent_${cents}`,
+    fr,
+    en,
+    tip: cents >= 500 ? 'billet = banknote, say bee-YAY' : 'piece = coin, say pyess; centime = sahn-TEEM',
+  })),
+  { id: 'carte_bancaire', fr: 'la carte bancaire', en: 'the bank card', tip: 'Pay by card: Je paie par carte.' },
+];
+
+/** The word for a piece of money (`cents` 0 = the bank card). */
+export function moneyWordId(cents: number): string {
+  return cents === 0 ? 'carte_bancaire' : `argent_${cents}`;
+}
+
+export function moneyWordById(id: string): WordEntry | undefined {
+  return MONEY_WORDS.find((w) => w.id === id);
+}
+
 /** Any word from any shop (the Carnet and spaced repetition span all shops). */
 export function vocabById(id: string): VocabEntry | undefined {
   return VOCAB.find((v) => v.id === id) ?? Object.values(PLACE_VOCAB).flat().find((v) => v.id === id);
