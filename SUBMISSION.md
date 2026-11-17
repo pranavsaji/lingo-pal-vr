@@ -30,7 +30,7 @@ No French? Pinch **Pal**, a sparrow on the counter, and ask in English; it answe
 
 ### How we built it
 
-Meta's Immersive Web SDK (three.js + ECS): WebXR hand tracking with finger counting on all 25 joints, gaze, plane detection, anchors, depth sensing and UIKitML panels. A deterministic game core owns the menu, prices, stock and every calculation; the agent proposes, the game validates, the world shows the result. Without the AI, the game still runs on its built-in scripted shopkeepers. Claude, Inworld voices and speech recognition run on Vercel server routes behind rate limits, so keys never reach the headset. 405 automated tests cover the game core, agent validation, finger counting and readiness.
+Meta's Immersive Web SDK (three.js + ECS): WebXR hand tracking with finger counting on all 25 joints, gaze, plane detection, anchors, depth sensing and UIKitML panels. A deterministic game core owns the menu, prices, stock and every calculation; the agent proposes, the game validates, the world shows the result. Without the AI, the game still runs on its built-in scripted shopkeepers. Claude, Inworld voices and speech recognition run on Vercel server routes behind rate limits, so keys never reach the headset. 430 automated tests cover the game core, agent validation, finger counting and readiness.
 
 Built and tested in the IWSDK emulator with the Quest 3 profile; we have not yet had a physical Quest. A frame-rate guard sheds extras if frames drop, and `?perf` mode reports frame rates from real headsets.
 

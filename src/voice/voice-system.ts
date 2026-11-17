@@ -144,7 +144,7 @@ export class VoiceSystem extends createSystem({}) {
     try {
       const text = await this.mic.stop();
       if (pal) {
-        this.set('heard', text.trim() ? `You (to Pal): ${text}` : "Pal didn't hear anything.");
+        this.set('heard', text.trim() ? `You (to Pal): ${text}` : this.mic.blocked ? 'Microphone blocked. Allow it in the browser.' : "Pal didn't hear anything.");
         this.set('heard-detail', '');
         events.palAsk.emit(text.trim());
       } else this.handle(text);
@@ -160,6 +160,11 @@ export class VoiceSystem extends createSystem({}) {
     this.autoListen = false;
     if (!text.trim() && auto) {
       this.set('heard', 'Dites quelque chose quand vous voulez. Speak anytime.');
+      this.set('heard-detail', '');
+      return;
+    }
+    if (!text.trim() && this.mic.blocked) {
+      this.set('heard', 'Microphone blocked. Allow it in the browser, or pinch a reply.');
       this.set('heard-detail', '');
       return;
     }

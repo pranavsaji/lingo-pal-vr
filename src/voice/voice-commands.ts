@@ -107,19 +107,23 @@ export function parseVoiceCommand(text: string, ctx: CommandContext): VoiceComma
   if (/\b(repete|repeter|repetez|repeat|again|encore une fois|say it again)\b/.test(n)) return { kind: 'repeat' };
   if (/\b(traduire|traduis|traduisez|translate|en anglais|in english)\b/.test(n)) return { kind: 'translate' };
   if (/\b(aide|help|au secours|comment faire)\b/.test(n)) return { kind: 'help' };
-  if (/\b(passer|skip)\b/.test(n)) return { kind: 'skip' };
+  // Not "je voudrais passer une commande": skipping is the bare word or "passer l'étape".
+  if (/^(passer|passe|passez|on passe|skip|skip it)$/.test(n) || /\b(skip this|skip step|passer l etape|passer le tutoriel|sauter l etape)\b/.test(n)) return { kind: 'skip' };
 
   // Panels.
   if (/\b(pret pour paris|prete pour paris|ready for paris|mon voyage|my trip)\b/.test(n)) return { kind: 'open', panel: 'ready' };
   if (/\b(ma semaine|cette semaine|rapport|my week|weekly report|report|progres|progress)\b/.test(n)) return { kind: 'open', panel: 'report' };
   if (/\b(carnet|mes mots|vocabulaire|notebook|my words|words)\b/.test(n) && (!item || /\bmon carnet\b/.test(n))) return { kind: 'open', panel: 'carnet' };
   if (/\b(reglages|parametres|settings|options|accessibilite|accessibility)\b/.test(n)) return { kind: 'open', panel: 'settings' };
-  if (/\b(plan|la carte de paris|carte de paris|map|paris)\b/.test(n) && !item) return { kind: 'open', panel: 'map' };
-  if (/\b(fermer|ferme|fermez|close|back|go back|retour|accueil|home)\b/.test(n)) return { kind: 'close' };
+  // "Paris" alone opens the map; "j'adore Paris" is small talk.
+  if ((/\b(plan|la carte de paris|carte de paris|map)\b/.test(n) || n === 'paris') && !item) return { kind: 'open', panel: 'map' };
+  // Not "c'est fermé ?": "fermer", "ferme la carte", "close", "retour".
+  if (/\b(fermer|fermez|close|back|go back|retour|accueil|home)\b/.test(n) || /^ferme( la carte| le plan| le panneau)?$/.test(n)) return { kind: 'close' };
 
   // Panel buttons that are not panels.
   if (/\b(revision|reviser|review)\b/.test(n)) return { kind: 'review' };
-  if (/\b(mission|commencer|start mission)\b/.test(n)) return { kind: 'mission' };
+  // Not "on peut commencer ?" (to the shopkeeper): "mission", "commencer la mission", or the bare word.
+  if (/\b(mission|start mission)\b/.test(n) || /^(commencer|commencez|on commence)$/.test(n)) return { kind: 'mission' };
   if (/\b(tutoriel|tutorial)\b/.test(n)) return { kind: 'tutorial' };
 
   // Settings rows.

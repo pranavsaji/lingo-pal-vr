@@ -13,7 +13,7 @@
 import type { AgentEvent, AgentTurn } from '../agent/protocol.js';
 import type { TurnResult } from '../agent/director.js';
 import { parseIntent } from '../agent/intent.js';
-import { orderTotal, type Effect, type OrderState } from '../agent/tools.js';
+import { emptyOrder, orderTotal, type Effect, type OrderState } from '../agent/tools.js';
 import { Emitter, type PlaceId } from '../game-state.js';
 import { decodeMsg, displayName, liteTurn, PROTOCOL_VERSION, type Msg, type Role, type TurnLite } from './protocol.js';
 import type { Invite } from './secret.js';
@@ -33,7 +33,9 @@ export interface GameBridge {
   director: {
     /** `scope`: a guest's turn (the shopkeeper sees only the guest's name, none of my profile). */
     handle(ev: AgentEvent, scope?: GuestScope): Promise<TurnResult>;
-    pay(cents: number): Promise<TurnResult> | null;
+    pay(cents: number, declared?: boolean): Promise<TurnResult> | null;
+    /** A fresh shopkeeper conversation (an ex-guest starts their own visit). */
+    resetConversation?(): void;
   };
   store: {
     readonly order: OrderState;
@@ -123,6 +125,16 @@ export class SocialSession {
   private friendStream: MediaStream | null = null;
   private lastPayAt = -Infinity;
   private paysThisOrder = 0;
+  /** Host: who put the last money on the shared tray, so only they get the change back. */
+  private lastPayer: Role = 'host';
+  /** Host: turns sent to the guest so far (a guest request that produced none is acked). */
+  private turnsSent = 0;
+
+  /**
+   * How my own shopkeeper greets me when I am back to solo (after "Non merci" or leaving
+   * as a guest). The app swaps in the first-run tutorial when that is still owed.
+   */
+  greetSolo: () => void = () => void this.g.director.handle({ kind: 'arrive' });
 
   constructor(
     private g: GameBridge,
@@ -177,7 +189,7 @@ export class SocialSession {
     this.code = '';
     this.invite = null;
     this.changed.emit();
-    void this.g.director.handle({ kind: 'arrive' });
+    this.greetSolo();
   }
 
   /** Join a friend's room right away (tests; the app asks first with invited()). */
@@ -211,14 +223,28 @@ export class SocialSession {
     if (!this.active) return;
     this.link?.send({ t: 'bye' });
     const link = this.link;
+    const wasGuest = this.role === 'guest';
     this.link = null;
     this.reset();
     this.state = 'off';
     this.role = null;
     this.code = '';
     this.invite = null;
+    if (wasGuest) this.soloAgain();
     this.changed.emit();
     await link?.close();
+  }
+
+  /**
+   * An ex-guest's own shop: the host's mirrored order and the forwarded conversation are
+   * gone, so start a clean visit with a greeting, as on arrival. Mid-trip, the trip itself
+   * resets the order and greets on arrival: do nothing here, or she would greet twice.
+   */
+  private soloAgain(): void {
+    if (this.g.appState.travelling) return;
+    this.g.store.setOrder(emptyOrder());
+    this.g.director.resetConversation?.();
+    this.greetSolo();
   }
 
   private reset(): void {
@@ -234,6 +260,7 @@ export class SocialSession {
     this.hostPlace = null;
     this.pendingOrder = null;
     this.guestInFlight = 0;
+    this.lastPayer = 'host';
     this.friendStream = null;
     this.stream.emit(null);
   }
@@ -347,7 +374,10 @@ export class SocialSession {
         ev.turn.on((turn) => {
           const lite = liteTurn(turn);
           if (turn.source === 'ai') this.lastTurn = lite;
-          if (this.state === 'connected') this.send({ t: 'turn', turn: lite, holder: this.turns.holder });
+          if (this.state === 'connected') {
+            this.turnsSent++;
+            this.send({ t: 'turn', turn: lite, holder: this.turns.holder });
+          }
         }),
         ev.order.on((order) => {
           if (order.phase !== 'paying' && order.phase !== 'paid') this.paysThisOrder = 0;
@@ -377,7 +407,10 @@ export class SocialSession {
   private onHostEffects(fx: Effect[]): void {
     if (this.state !== 'connected') return;
     // Memories belong to whoever spoke: the host's are never sent; the guest's are sent by act().
-    const shared = fx.filter((e) => e.kind !== 'memory' && e.kind !== 'quiz' && e.kind !== 'correction' && e.kind !== 'goodbye');
+    // Change coins go to whoever paid: the guest's dish only fills when the guest paid.
+    const shared = fx.filter(
+      (e) => e.kind !== 'memory' && e.kind !== 'quiz' && e.kind !== 'correction' && e.kind !== 'goodbye' && (e.kind !== 'return_change' || this.lastPayer === 'guest'),
+    );
     if (shared.length) this.send({ t: 'fx', fx: shared });
     if (fx.some((e) => e.kind === 'spawn')) {
       const next = this.turns.served(this.guestInFlight > 0 ? 'guest' : 'host', this.now());
@@ -463,15 +496,29 @@ export class SocialSession {
       this.friendSaid.emit(ev.text);
     }
     this.guestInFlight++;
+    const sent = this.turnsSent;
     try {
       // Guest-scoped: the shopkeeper sees the guest's name, none of my memories, mistakes or history.
       await (this.original ?? this.g.director).handle(ev, { name: this.friendName });
     } catch (err) {
       console.warn('[social] guest turn failed', err);
-      this.send({ t: 'ack' });
     } finally {
       this.guestInFlight--;
     }
+    this.releaseIfSilent(sent);
+  }
+
+  /**
+   * A guest request that sent no turn back (failed, or a stale reply dropped by the director
+   * after a trip) would hold the guest's wait until REPLY_TIMEOUT_MS: release it now.
+   */
+  private releaseIfSilent(sentBefore: number): void {
+    if (this.turnsSent === sentBefore) this.send({ t: 'ack' });
+  }
+
+  /** Did my own payment earn the change being handed back? (The coin dish asks.) */
+  changeIsMine(): boolean {
+    return !(this.role === 'host' && this.state === 'connected' && this.lastPayer === 'guest');
   }
 
   /** Validate a guest payment (pace, amount, count) before it touches my tray. */
@@ -495,19 +542,22 @@ export class SocialSession {
       return;
     }
     this.g.events.coinDropped.emit(cents); // the clink on my tray too
-    const p = this.g.director.pay(cents);
+    this.lastPayer = 'guest';
+    const p = (this.original ?? this.g.director).pay(cents);
     if (!p) {
       this.send({ t: 'ack' });
       return;
     }
     this.guestInFlight++;
+    const sent = this.turnsSent;
     try {
       await p;
     } catch {
-      this.send({ t: 'ack' });
+      // released below
     } finally {
       this.guestInFlight--;
     }
+    this.releaseIfSilent(sent);
   }
 
   // ---- Guest --------------------------------------------------------------------
@@ -580,6 +630,11 @@ export class SocialSession {
       d.handle = (ev) => this.forward(ev);
       d.pay = (cents) => this.forwardPay(cents);
     } else {
+      // My own coins, chips or voice: the change is mine (guest payments go through guestPay).
+      d.pay = (cents, declared) => {
+        this.lastPayer = 'host';
+        return original.pay(cents, declared);
+      };
       d.handle = (ev) => {
         if (ev.kind === 'say' && this.state === 'connected') {
           const r = this.turns.request('host', this.now());
@@ -612,7 +667,13 @@ export class SocialSession {
     return new Promise<TurnResult>((resolve) => {
       const done = () => resolve(noop());
       this.resolvers.push(done);
-      this.later(done, REPLY_TIMEOUT_MS);
+      this.later(() => {
+        // Timed out: stop waiting for real, or the host's next AI turn would pay the guest XP
+        // and any host turn would resolve a later wait early.
+        this.resolvers = this.resolvers.filter((r) => r !== done);
+        if (!this.resolvers.length) this.awaitingReply = false;
+        done();
+      }, REPLY_TIMEOUT_MS);
     });
   }
 

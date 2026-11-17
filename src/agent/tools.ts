@@ -154,9 +154,11 @@ export function applyActions(
       case 'remove_item': {
         const idx = s.lines.findIndex((l) => l.itemId === a.itemId);
         if (idx < 0) { reject(a, 'item not in order'); break; }
-        if (s.phase === 'paying' || s.phase === 'paid') { reject(a, 'order already closed'); break; }
+        // Once money is on the tray (or paid) the order is closed; a quoted total alone can still change.
+        if (s.phase === 'paid' || (s.phase === 'paying' && s.trayCents > 0)) { reject(a, 'order already closed'); break; }
         s.lines.splice(idx, 1);
         if (s.lines.length === 0) s.phase = 'browsing';
+        else if (s.phase === 'paying') s.phase = 'ordering'; // the old total no longer stands: quote again
         effects.push({ kind: 'despawn', itemId: a.itemId as string });
         break;
       }

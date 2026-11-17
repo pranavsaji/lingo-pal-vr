@@ -499,10 +499,19 @@ export class MixedRealitySystem extends createSystem({
     if (!uuid || !session.restorePersistentAnchor) return;
     this.anchorRestoring = true;
     try {
+      const restoring = session.restorePersistentAnchor(uuid);
+      let timedOut = false;
       const anchor = await Promise.race([
-        session.restorePersistentAnchor(uuid),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), ANCHOR_RESTORE_TIMEOUT_MS)),
+        restoring,
+        new Promise<null>((resolve) =>
+          setTimeout(() => {
+            timedOut = true;
+            resolve(null);
+          }, ANCHOR_RESTORE_TIMEOUT_MS),
+        ),
       ]);
+      // Too slow: we placed the café another way. If the anchor still arrives, free it (no leak).
+      if (timedOut) restoring.then((late) => late?.delete(), () => undefined);
       if (gen !== this.sessionGen) {
         anchor?.delete();
         return;

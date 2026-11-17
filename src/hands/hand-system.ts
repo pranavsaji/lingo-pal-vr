@@ -43,8 +43,10 @@ export class HandSystem extends createSystem({}) {
   private clockMs = 0;
   private headY = 1.2;
   private orderCandidate = '';
+  private orderCandidateN = 0;
   private orderSince = 0;
   private orderFired = '';
+  private orderFiredN = 0;
   // Wave detection: lateral wrist direction changes while the palm is open.
   private waveLastX = 0;
   private waveDir = 0;
@@ -259,14 +261,16 @@ export class HandSystem extends createSystem({}) {
       this.orderFired = '';
       return;
     }
-    const key = `${item.id}:${n}`;
-    if (key !== this.orderCandidate) {
-      this.orderCandidate = key;
+    // Compare id and count without building a string every frame (no per-frame allocation).
+    if (item.id !== this.orderCandidate || n !== this.orderCandidateN) {
+      this.orderCandidate = item.id;
+      this.orderCandidateN = n;
       this.orderSince = this.clockMs;
       return;
     }
-    if (this.orderFired !== key && this.clockMs - this.orderSince >= ORDER_HOLD_MS) {
-      this.orderFired = key;
+    if ((this.orderFired !== item.id || this.orderFiredN !== n) && this.clockMs - this.orderSince >= ORDER_HOLD_MS) {
+      this.orderFired = item.id;
+      this.orderFiredN = n;
       const phrase = `${quantityPhrase(item, n)}, s'il vous plaît.`;
       const text = phrase.charAt(0).toUpperCase() + phrase.slice(1);
       speakFrench(text, store.profile.settings.slowSpeech ? 0.7 : 0.9, 'learner');

@@ -9,7 +9,7 @@
  * since the last visit pops in a moment after arrival ("Bon retour !").
  */
 
-import { createSystem, type Group } from '@iwsdk/core';
+import { createSystem, type Entity, Group } from '@iwsdk/core';
 import { menuItem, priceToDigits } from '../agent/menu.js';
 import { dailySpecial } from '../agent/scenarios.js';
 import { definite } from '../agent/script.js';
@@ -44,8 +44,18 @@ export class DecorSystem extends createSystem({}) {
   private t = 0;
   /** Hidden by the frame-rate guard. */
   private shed = false;
+  /** Parent of the room decor: tagged so mixed reality hides it with the room (MixedRealitySystem). */
+  private room!: Entity;
 
   init(): void {
+    // In passthrough the café room is hidden and the counter sits on the learner's table: plants,
+    // lights, chalkboards and the gramophone would float in their real room. The streak candle
+    // stays on the counter, so it is not under this group.
+    const roomGroup = new Group();
+    roomGroup.name = 'Decor (room)';
+    roomGroup.userData.mrHide = true;
+    this.room = this.world.createTransformEntity(roomGroup);
+
     this.flame = buildStreakFlame();
     this.flame.root.position.set(...FLAME);
     this.flame.root.name = 'Streak Flame';
@@ -146,7 +156,7 @@ export class DecorSystem extends createSystem({}) {
     root.name = name;
     root.traverse((o) => (o.castShadow = false)); // decor sits at the edges: no shadow-pass cost
     root.visible = appState.place === place && store.profile.unlocks.includes(unlock);
-    this.world.createTransformEntity(root);
+    this.world.createTransformEntity(root, { parent: this.room });
     this.pieces.push({ unlock, root, baseScale: root.scale.x, popStart: -1, place });
   }
 

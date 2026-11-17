@@ -73,6 +73,8 @@ export class SocialSystem extends createSystem({
   private cardCanvas!: HTMLCanvasElement;
   private cardTex!: CanvasTexture;
   private buttons: Button[] = [];
+  /** The card button a pinch went down on; it acts when the pinch opens over it. */
+  private armed: Entity | null = null;
   private cardShown = false;
   private cardHideAt = -1;
   private avatar!: FriendAvatar;
@@ -93,7 +95,8 @@ export class SocialSystem extends createSystem({
   private micBlocked = false;
   /** The microphone stays off until the learner turns it on (after connecting). */
   private muted = true;
-  private audio: { el: HTMLAudioElement; panner: PannerNode | null; analyser: AnalyserNode | null; buf: Float32Array<ArrayBuffer> } | null = null;
+  /** `nodes`: every WebAudio node of the friend's voice chain, all disconnected when it is replaced. */
+  private audio: { el: HTMLAudioElement; panner: PannerNode | null; analyser: AnalyserNode | null; nodes: AudioNode[]; buf: Float32Array<ArrayBuffer> } | null = null;
   private dom: { root: HTMLDivElement; status: HTMLSpanElement; extra: HTMLDivElement; mic: HTMLButtonElement; sound: HTMLButtonElement; join: HTMLButtonElement; leave: HTMLButtonElement } | null = null;
   private inviteLabel: UIKit.Text | null = null;
 
@@ -116,7 +119,16 @@ export class SocialSystem extends createSystem({
       social.stream.on((s) => this.setFriendAudio(s)),
       this.world.visibilityState.subscribe((v) => (socialEnv.immersive = v !== VisibilityState.NonImmersive)),
     );
-    this.queries.pressed.subscribe('qualify', (e) => this.onPressed(e));
+    // Card buttons act on release (a click): "hide", "join" and "leave" take the card away, and
+    // hiding it while the pinch was still held lost the release and left the hand pointer "down".
+    this.queries.pressed.subscribe('qualify', (e) => {
+      if (this.buttons.some((x) => x.entity === e)) this.armed = e;
+    });
+    this.queries.pressed.subscribe('disqualify', (e) => {
+      if (e !== this.armed) return;
+      this.armed = null;
+      if (e.hasComponent(Hovered)) this.onPressed(e);
+    });
     this.queries.hovered.subscribe('qualify', (e) => this.setHover(e, true));
     this.queries.hovered.subscribe('disqualify', (e) => this.setHover(e, false));
 
@@ -392,7 +404,9 @@ export class SocialSystem extends createSystem({
   private setFriendAudio(stream: MediaStream | null): void {
     if (this.audio) {
       this.audio.el.srcObject = null;
-      this.audio.panner?.disconnect();
+      // The whole chain, not only the panner: the source would otherwise stay wired to the
+      // analyser (and the gain to the destination), one dead graph per reconnect.
+      for (const n of this.audio.nodes) n.disconnect();
       this.audio = null;
     }
     if (!stream) return;
@@ -402,6 +416,7 @@ export class SocialSystem extends createSystem({
     const ctx = ensureAudioContext();
     let panner: PannerNode | null = null;
     let analyser: AnalyserNode | null = null;
+    const nodes: AudioNode[] = [];
     if (ctx) {
       // Chrome only feeds a remote WebRTC stream into WebAudio while a media element plays it (muted).
       el.muted = true;
@@ -417,9 +432,10 @@ export class SocialSystem extends createSystem({
       gain.gain.value = 1.3;
       src.connect(analyser);
       src.connect(panner).connect(gain).connect(ctx.destination);
+      nodes.push(src, analyser, panner, gain);
     }
     void el.play().catch(() => undefined);
-    this.audio = { el, panner, analyser, buf: new Float32Array(256) };
+    this.audio = { el, panner, analyser, nodes, buf: new Float32Array(256) };
     this.renderDom();
   }
 

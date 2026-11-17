@@ -42,23 +42,41 @@ export class Store {
   profile: Profile;
   order: OrderState = emptyOrder();
   session: SessionStats = { xp: 0, words: new Set(), orders: 0, pronunciation: [] };
-  readonly today: Day;
+  /** A fixed day (tests, the demo seed); otherwise `today` follows the clock past midnight. */
+  private readonly fixedDay: Day | null;
+  /** `onboarded` is set in memory only (a friend's invite is still open): saved as false until they join. */
+  onboardedHeld = false;
+  /** startSession ran: from then on a new day is counted on the next save. */
+  private started = false;
   /** Set by startSession: what changed since the last visit. */
   arrival: Arrival | null = null;
 
   constructor(
     private kv: KV | null,
-    today: Day = localDay(),
+    today?: Day,
   ) {
     this.profile = loadProfile(kv);
-    this.today = today;
+    this.fixedDay = today ?? null;
+  }
+
+  /** Today (local). A session left open past midnight logs XP, words and orders to the new day. */
+  get today(): Day {
+    return this.fixedDay ?? localDay();
   }
 
   private save(): void {
+    // Still playing after midnight: count the new day for the streak, as a fresh launch would.
+    const p = this.profile;
+    if (this.started && p.lastPlayedDay && p.lastPlayedDay < this.today) {
+      const s = touchStreakWithRest(p.lastPlayedDay, p.streakDays, p.restDays, this.today);
+      p.streakDays = s.streakDays;
+      p.lastPlayedDay = s.lastPlayedDay;
+      p.restDays = s.restDays;
+    }
     // Any progress can earn a passport stamp: collect them on every save.
     const stamps = collectStamps(this.stampFacts(), this.today);
     if (stamps.length) this.refreshUnlocks(); // stamps can open decor (the stamp board)
-    saveProfile(this.kv, this.profile);
+    saveProfile(this.kv, this.onboardedHeld ? { ...this.profile, onboarded: false } : this.profile);
     events.profile.emit(this.profile);
     for (const id of stamps) events.stamp.emit(id);
   }
@@ -69,6 +87,7 @@ export class Store {
     const before = [...p.unlocks];
     const stampsBefore = Object.keys(p.passport.stamps);
     const s = touchStreakWithRest(p.lastPlayedDay, p.streakDays, p.restDays, this.today);
+    this.started = true;
     p.streakDays = s.streakDays;
     p.lastPlayedDay = s.lastPlayedDay;
     p.restDays = s.restDays;
@@ -254,6 +273,7 @@ export class Store {
   }
 
   markOnboarded(): void {
+    this.onboardedHeld = false;
     this.profile.onboarded = true;
     this.save();
   }
@@ -347,4 +367,4 @@ export class Store {
 }
 
 /** App-wide store (browser storage). Tests construct their own Store. */
-export const store = new Store(withDemoSeed(browserKV(), localDay())); // ?demo=week seeds a simulated week (src/state/demo.ts)
+export const store = new Store(withDemoSeed(browserKV(), localDay())); // ?demo=week seeds a simulated week (src/state/demo.ts); today follows the clock

@@ -26,6 +26,7 @@ import { SHARED_GEOMETRIES, SHARED_MATERIALS } from '../models/model-kit.js';
 import { buildBankCard } from '../models/place-items.js';
 import { addDwellTarget } from '../ui/dwell.js';
 import { needsCard, pickCoins, WALLET } from './pick-coins.js';
+import { social } from '../social/runtime.js';
 import { store } from '../state/store.js';
 import { moneyWordId } from '../vocab.js';
 
@@ -152,7 +153,9 @@ export class CoinSystem extends createSystem({
       events.effects.on((fx) => {
         for (const e of fx) {
           if (e.kind === 'show_total') this.register.setText(priceToDigits(e.totalCents));
-          if (e.kind === 'return_change') this.giveChange(e.coins);
+          // Café à deux: change goes back only to the dish of whoever paid (the host's change is
+          // not mirrored into the guest's dish, nor the guest's into the host's).
+          if (e.kind === 'return_change' && social.changeIsMine()) this.giveChange(e.coins);
         }
       }),
       events.settings.on((s) => {

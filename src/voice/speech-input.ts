@@ -21,7 +21,7 @@ type Recognizer = {
   stop(): void;
   abort(): void;
   onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: ((e: unknown) => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
   onend: (() => void) | null;
 };
 
@@ -90,9 +90,12 @@ export class SpeechInput {
 
   /** The last start() was called off by stop() before the microphone opened (not a blocked mic). */
   cancelled = false;
+  /** The browser recognizer reported a blocked or missing microphone during the last listen. */
+  blocked = false;
 
   async start(lang: SttLang = 'fr'): Promise<boolean> {
     this.cancelled = false;
+    this.blocked = false;
     if (this.listening || this.engine === 'none') return false;
     this.listening = true;
     this.lang = sttLang(lang);
@@ -190,7 +193,10 @@ export class SpeechInput {
       for (let i = 0; i < e.results.length; i++) parts.push(e.results[i][0]?.transcript ?? '');
       this.browserText = parts.join(' ').trim();
     };
-    r.onerror = () => undefined;
+    r.onerror = (e) => {
+      // A blocked microphone is not silence: say so (VoiceSystem reads `blocked`).
+      if (e?.error === 'not-allowed' || e?.error === 'service-not-allowed' || e?.error === 'audio-capture') this.blocked = true;
+    };
     r.onend = () => {
       const done = this.resolveStop;
       this.resolveStop = null;

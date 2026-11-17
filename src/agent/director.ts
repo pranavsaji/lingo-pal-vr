@@ -484,7 +484,10 @@ export class AgentDirector {
     req.scene.shoppingList = '';
     const turn = await this.transport(req, () => this.onSlow());
     if (epoch !== this.epoch) return staleTurn();
-    const { state, effects, rejected } = applyActions(this.store.order, turn.actions, { vocabIds: this.vocabIds, stock: this.stock() });
+    // The host's change test is waiting for an answer: the friend's turn must not hand the change
+    // back (the test's own resolve line does, with the coins), or that line would move no coins.
+    const actions = this.trick ? turn.actions.filter((a) => !(a && typeof a === 'object' && (a as { type?: unknown }).type === 'give_change')) : turn.actions;
+    const { state, effects, rejected } = applyActions(this.store.order, actions, { vocabIds: this.vocabIds, stock: this.stock() });
     if (rejected.length) this.rejectedLog.push(...rejected);
     this.store.setOrder(state);
     // Only the shared scene: memories, goodbyes (visit summary, plans) and offers stay out.

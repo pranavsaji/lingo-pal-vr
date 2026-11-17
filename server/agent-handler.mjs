@@ -11,10 +11,12 @@
  * Env:
  *   ANTHROPIC_API_KEY   required (without it the client uses its offline script)
  *   AGENT_MODEL         optional, defaults to claude-haiku-5-5 (latency-first)
+ *   AGENT_DAILY_CALLS   optional, shopkeeper turns per day per server instance (default 4000);
+ *                       past it the client plays the offline script for the rest of the day
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { createRateLimiter } from './limits.mjs';
+import { createDailyBudget, createRateLimiter } from './limits.mjs';
 import { handlePal } from './pal-handler.mjs';
 import placesData from '../shared/places.json' with { type: 'json' };
 
@@ -291,6 +293,8 @@ export function toTurn(content) {
   };
 }
 
+let dailyBudget = null;
+
 /** Returns { status, body } so each host can send it its own way. */
 export async function handleAgent(payload, env = process.env, ip = 'local') {
   const key = env.ANTHROPIC_API_KEY;
@@ -298,6 +302,10 @@ export async function handleAgent(payload, env = process.env, ip = 'local') {
   // Pal, the English-speaking companion: its own prompt, one text-only tool, its own limits.
   if (payload?.mode === 'pal') return handlePal(payload, env, ip);
   if (rateLimited(ip)) return { status: 429, body: { error: 'slow down' } };
+  // A daily ceiling on the costliest calls too (voices and Pal already have one): beyond it the
+  // client falls back to the built-in scripted shopkeeper, so the game keeps working.
+  dailyBudget ??= createDailyBudget(Number(env.AGENT_DAILY_CALLS) || 4000);
+  if (!dailyBudget.take(1)) return { status: 429, body: { error: 'daily shopkeeper budget used up' } };
 
   // Warm-up ping at app start: open the connection and wake the function so the
   // first real turn is fast. One output token on the same prefix.

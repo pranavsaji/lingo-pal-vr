@@ -28,6 +28,7 @@ import { appState, events, type PlaceId } from '../game-state.js';
 import { PLACE_LOOKS, PLACE_ORDER, placeModelIds, placeUnlocked, PRELOAD_PLACES } from '../places/places.js';
 import { store } from '../state/store.js';
 import { PLACE_VOCAB, setVocabPlace } from '../vocab.js';
+import { disposeObject } from '../models/cafe-models.js';
 import { buildShopSet, type ShopSet } from './shop-set.js';
 import { loadSurface, type TextureSet } from './surfaces.js';
 
@@ -43,6 +44,8 @@ export class PlaceSystem extends createSystem({
   private fadeMat!: MeshBasicMaterial;
   private fadeTarget = 0;
   private busy = false;
+  /** A trip asked for while another was under way: taken as soon as that one ends (the latest wins). */
+  private queued: { place: PlaceId; anyway: boolean } | null = null;
   private loaded = new Map<PlaceId, Promise<void>>();
 
   init(): void {
@@ -80,7 +83,12 @@ export class PlaceSystem extends createSystem({
   async travel(place: PlaceId, initial = false): Promise<void> {
     const anyway = appState.travelAnyway === place;
     appState.travelAnyway = null;
-    if (this.busy || (!initial && place === appState.place)) return;
+    if (this.busy) {
+      // Not dropped: the map already folded away, so the learner expects to go there next.
+      if (!initial) this.queued = { place, anyway };
+      return;
+    }
+    if (!initial && place === appState.place) return;
     if (!anyway && !placeUnlocked(place, store.profile)) return;
     this.busy = true;
     appState.travelling = true;
@@ -107,9 +115,19 @@ export class PlaceSystem extends createSystem({
         // The new shopkeeper greets the learner (the first-run tutorial greets in the cafe itself).
         void director.handle({ kind: 'arrive' });
       }
+    } catch (err) {
+      // Never leave the learner behind a black fade: show whatever shop is up.
+      console.error('[place] trip failed', err);
+      if (!initial) void this.fadeTo(0);
     } finally {
       this.busy = false;
       appState.travelling = false;
+      const next = this.queued;
+      this.queued = null;
+      if (next && next.place !== appState.place) {
+        appState.travelAnyway = next.anyway ? next.place : null;
+        setTimeout(() => void this.travel(next.place), 0);
+      }
     }
   }
 
@@ -121,7 +139,11 @@ export class PlaceSystem extends createSystem({
     if (this.set) {
       // Cached model instances share geometry and materials with the asset cache: detach, then dispose the rest.
       for (const prop of this.set.shop.props) prop.removeFromParent();
-      this.set.entity.dispose();
+      // Keep shared materials (the bistrot chalkboard's wood, cached GLTF props): disposing them made
+      // three.js re-upload or recompile them on the next visit. Per-instance resources still go.
+      const root = this.set.entity.object3D;
+      this.set.entity.dispose({ disposeResources: false });
+      if (root) disposeObject(root);
       for (const g of this.set.shop.geometries) g.dispose(); // merged prop meshes (static-merge.ts)
     }
     this.set = { entity: this.world.createTransformEntity(shop.root), shop };

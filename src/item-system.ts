@@ -21,6 +21,8 @@ import {
   ExtrudeGeometry,
   Shape,
   Path,
+  type Object3D,
+  type Texture,
 } from '@iwsdk/core';
 import { director } from './agent/runtime.js';
 import { emptyOrder, type OrderState } from './agent/tools.js';
@@ -28,7 +30,8 @@ import { buildHitArea, buildItem } from './cafe-builder.js';
 import { VocabItem } from './components.js';
 import { appState, events, type PlaceId } from './game-state.js';
 import { COUNTER_Y, counterKeepOuts, displayStandRects } from './layout.js';
-import { makeCanvasTexture } from './models/model-kit.js';
+import { disposeObject } from './models/cafe-models.js';
+import { makeCanvasTexture, SHARED_GEOMETRIES, SHARED_MATERIALS, SHARED_TEXTURES } from './models/model-kit.js';
 import { layoutOrder, type Rect, type ServeGroupIn, type ServeGroupOut } from './serve-layout.js';
 import { store } from './state/store.js';
 import { addDwellTarget } from './ui/dwell.js';
@@ -47,6 +50,30 @@ function grounded(model: Group): Group {
   return model;
 }
 
+const TEX_KEYS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap'] as const;
+
+/** A GLTF clone shares geometry, materials and textures with the asset cache: never free those. */
+function markCached(root: Object3D): void {
+  root.traverse((o) => {
+    if (!(o instanceof Mesh)) return;
+    SHARED_GEOMETRIES.add(o.geometry);
+    for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+      SHARED_MATERIALS.add(m);
+      for (const k of TEX_KEYS) {
+        const t = (m as unknown as Record<string, Texture | null | undefined>)[k];
+        if (t) SHARED_TEXTURES.add(t);
+      }
+    }
+  });
+}
+
+/** Dispose an item entity: its own geometry/materials go, the cached model's stay. */
+function release(e: Entity): void {
+  const root = e.object3D;
+  e.dispose({ disposeResources: false });
+  if (root) disposeObject(root);
+}
+
 /** The realistic model when it has loaded, otherwise the procedural stand-in, resting on y = 0. */
 function itemModel(entry: VocabEntry, served = false): Group {
   return grounded(rawItemModel(entry, served));
@@ -62,6 +89,7 @@ function rawItemModel(entry: VocabEntry, served: boolean): Group {
   }
   const g = new Group();
   const scene = gltf.scene;
+  markCached(scene); // before stripping/merging: what is left of the cached model is kept on dispose
   scene.scale.setScalar(entry.modelScale ?? 1);
   scene.position.y = entry.modelY ?? 0;
   scene.rotation.y = served ? 0 : (entry.rotY ?? 0);
@@ -219,7 +247,7 @@ export class ItemSystem extends createSystem({
   private buildItems(): void {
     for (const off of this.itemCleanups) off();
     this.itemCleanups = [];
-    for (const e of this.itemEntities) e.dispose();
+    for (const e of this.itemEntities) release(e);
     this.itemEntities = [];
     this.visuals = [];
     this.footprints.clear();
@@ -405,7 +433,7 @@ export class ItemSystem extends createSystem({
         next.push(v);
       });
     }
-    for (const v of old.values()) v.entity.dispose();
+    for (const v of old.values()) release(v.entity);
     this.served = next;
     this.syncBadges(placed);
   }
