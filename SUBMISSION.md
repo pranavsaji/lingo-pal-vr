@@ -75,14 +75,16 @@ Every action in Lingo Pal VR works with bare hands, seated, end to end; no contr
 
 ## Demo video
 
-`lingo-pal-demo.mp4`, 2:58 (177.6 s), 1080p30. It opens with a 10-second card narrated by Pal
-(what the app is, the three steps, the seven places), then real gameplay recorded in the IWSDK
-emulator (Meta Quest 3 profile) with the app's own audio, rendered at 1920 and captured at about
-30 fps. All seven places are shown in a real AI conversation (café, boulangerie, métro, marché,
-pharmacie, bistrot, hôtel), with orders served together on each shop's tray. The emulator has no
-microphone, so the learner's lines are spoken by the app's learner voice and fed in as heard speech;
-the shopkeepers' replies are live. Upload copy, chapters and thumbnail:
-`~/Downloads/Videos to upload/Lingo Pal VR/`. A 720p copy plays from the start page ("Regarder la visite").
+`lingo-pal-demo.mp4`, 2:53, 1080p30, narrated throughout (Inworld TTS in Pal's voice). Chapters in
+story order: how you order (one continuous croissant order, served and paid), AI shopkeepers (one coffee
+left, wrong change on purpose), Pal, the Plan de Paris, then every place with a name banner (Métro,
+Marché, Pharmacie, Bistrot, Hôtel, Boulangerie in Vraie vie), nothing to install and accessibility,
+Café à deux. French lines carry English subtitles. All footage is real gameplay recorded in the IWSDK
+emulator (Meta Quest 3 profile) with the app's own audio, rendered at 1920 and captured at about 30 fps.
+The emulator has no microphone, so the learner's lines are spoken by the app's learner voice and fed in
+as heard speech; the shopkeepers' replies are live. Edit list: `.tmp/video/edit/edit2.py`. Upload copy,
+chapters and thumbnail: `~/Downloads/Videos to upload/Lingo Pal VR/`. A 720p copy plays from the start
+page ("Regarder la visite").
 
 ## Before you press Submit
 
@@ -91,7 +93,7 @@ the shopkeepers' replies are live. Upload copy, chapters and thumbnail:
 - [ ] Devpost: country of residence + the three eligibility checkboxes (age, jurisdiction, not a Meta employee)
 - [ ] Devpost: YouTube/Vimeo link (public or unlisted) in Project details
 - [ ] Link opens on Quest 3 and 3S in a logged-out browser; Enter VR works
-- [ ] Video public or unlisted, under 3:00 (current cut: 2:58, intro card + all seven places in conversation)
+- [ ] Video public or unlisted, under 3:00 (current cut: 2:53, narrated, all seven places in conversation)
 - [ ] Screenshots: hero cafe, wow moment, Carnet, high contrast, mixed reality
 - [ ] Anthropic console spend limit set; keep the Vercel project and key live until winners
       are announced (about Dec 11)
